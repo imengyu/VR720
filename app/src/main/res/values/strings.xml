@@ -1,0 +1,106 @@
+<resources>
+    <string name="app_name">720全景图查看器</string>
+    <string name="app_itroduction">一款简单易用的全景图浏览软件</string>
+
+    <string name="navigation_drawer_open">开启侧边栏</string>
+    <string name="navigation_drawer_close">关闭侧边栏</string>
+    <string name="nav_header_title">一款精简的 720 全景图浏览软件</string>
+    <string name="nav_header_subtitle">720 Pano On Android</string>
+    <string name="nav_header_desc">导航标题</string>
+    <string name="nav_header_soft">软件</string>
+
+    <string name="title_activity_settings">设置</string>
+    <string name="title_activity_about">关于 VR720</string>
+    <string name="title_activity_pano">全景图浏览</string>
+
+    <string name="version_code">1</string>
+    <string name="version_name">BULID.DEV.10–1</string>
+
+
+    <string name="pref_header_general">通用</string>
+
+
+    <string name="action_import_pano">导入全景图</string>
+    <string name="action_settings">设置</string>
+    <string name="action_about">关于本软件</string>
+    <string name="action_send_feed_back">发送反馈</string>
+    <string name="action_quit">退出</string>
+
+    <string name="action_ok">确定</string>
+    <string name="action_cancel">取消</string>
+    <string name="action_delete">删除</string>
+    <string name="action_sure_delete">确定删除</string>
+    <string name="action_select_all">全选</string>
+    <string name="action_clear">清空列表</string>
+    <string name="action_sort">排序方式</string>
+    <string name="action_sort_name">按名称排序</string>
+    <string name="action_sort_date">按修改日期排序</string>
+    <string name="action_sort_size">按大小排序</string>
+    <string name="action_move_out_list">移出列表</string>
+    <string name="action_view_file_info">查看文件信息</string>
+    <string name="action_openwith_text">其他应用打开</string>
+    <string name="action_delete_file">删除文件</string>
+    <string name="action_back_main">返回主界面</string>
+    <string name="action_open_now">立即开启</string>
+
+
+    <string name="text_return">返回</string>
+    <string name="text_choosed_items">已选择 %d 项</string>
+
+    <string name="text_vr_mode">VR模式</string>
+    <string name="text_more">更多</string>
+    <string name="text_gryo">陀螺仪</string>
+    <string name="text_mode_ball">球形</string>
+    <string name="text_mode_little_planet">小行星</string>
+    <string name="text_mode_video_ball">水晶球</string>
+    <string name="text_mode_rectilinear">平面</string>
+    <string name="text_mode_source">全景</string>
+    <string name="text_loading_wait">正在加载，请稍后</string>
+    <string name="text_unknow_pano">未知全景文件</string>
+    <string name="text_unknow_size">未知大小</string>
+    <string name="text_end">到底啦</string>
+    <string name="text_press_once_more_to_quit">再按一次退出程序</string>
+    <string name="text_would_you_want_clear_list">是否要清空列表？</string>
+    <string name="text_all_list_wiil_be_clear">所有列表将会被清空</string>
+
+    <string name="text_more_actions">更多操作</string>
+    <string name="text_file_info">文件信息</string>
+
+    <string name="text_delete_success">删除成功</string>
+    <string name="text_delete_failed">文件删除失败</string>
+
+    <string name="text_file_path">完整路径：</string>
+    <string name="text_file_size">文件大小：</string>
+    <string name="text_image_size">分辨率：</string>
+    <string name="text_image_date">拍摄日期：</string>
+
+    <string name="text_sure_delete_pano">是否要删除选中的全景图？</string>
+    <string name="text_youcan_remove_choosed_images">你可以把已选择 %d 个全景图删除或移出列表</string>
+    <string name="text_choose_some_file_to_del">请选择一些你要删除的文件</string>
+    <string name="text_choose_one_file_to_open">请选择一个你要打开的文件</string>
+
+    <string name="main_empty_text">空空如也\n点击下面的 “+” 添加一些全景图吧！</string>
+
+    <string name="text_no_storage_permission">存储权限不可用</string>
+    <string name="text_storage_permission_useage">由于本程序需要读取本地文件才能为您打开全景图\n否则，您将无法正常使用本软件</string>
+    <string name="text_storage_permission_open_intro">请在-应用设置-权限-中，允许本程序使用存储权限来允许本程序读取本地文件</string>
+
+    <string name="text_logo">标题Logo</string>
+
+    <!-- Preference Titles -->
+    <string name="messages_header">Messages</string>
+    <string name="sync_header">Sync</string>
+
+    <!-- Messages Preferences -->
+    <string name="signature_title">Your signature</string>
+    <string name="reply_title">Default reply action</string>
+
+    <!-- Sync Preferences -->
+    <string name="sync_title">Sync email periodically</string>
+    <string name="attachment_title">Download incoming attachments</string>
+    <string name="attachment_summary_on">Automatically download attachments for incoming emails
+    </string>
+    <string name="attachment_summary_off">Only download attachments when manually requested</string>
+
+
+</resources>

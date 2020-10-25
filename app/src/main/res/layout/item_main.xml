@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <com.dreamfish.com.vr720.widget.MainThumbnailImageView
+        android:id="@+id/img_item"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="10dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginRight="10dp"
+        android:minHeight="200dp"
+        android:saveEnabled="true"
+        android:scaleType="fitXY"
+        app:imageRoundHeight="10dp"
+        app:imageRoundWidth="10dp"
+        app:imageSize="@string/text_unknow_size"
+        app:imageText=""
+        app:imageTextColor="@android:color/white"
+        app:imageTextSize="15dp"
+        app:srcCompat="@drawable/ic_noprob" />
+
+    <TextView
+        android:id="@+id/text_item"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp"
+        android:textAlignment="center" />
+
+
+</LinearLayout>
