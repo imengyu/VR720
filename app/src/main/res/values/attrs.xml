@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="RoundAngleImageView">
+        <attr name="roundWidth" format="dimension" />
+        <attr name="roundHeight" format="dimension" />
+    </declare-styleable>
+    <declare-styleable name="MainThumbnailImageView">
+        <attr name="imageText" format="string" />
+        <attr name="imageTextColor" format="color" />
+        <attr name="imageTextSize" format="dimension" />
+        <attr name="imageSize" format="string" />
+        <attr name="imageRoundWidth" format="dimension" />
+        <attr name="imageRoundHeight" format="dimension" />
+    </declare-styleable>
+    <declare-styleable name="ToolbarButton">
+        <attr name="normalColor" format="color" />
+        <attr name="hoverColor" format="color" />
+        <attr name="normalIcon" format="reference" />
+        <attr name="hoverIcon" format="reference" />
+        <attr name="activeable" format="boolean" />
+    </declare-styleable>
+    <declare-styleable name="MyTitleBar">
+        <attr name="title" format="string"/>
+        <attr name="left_icon" format="reference|color"/>
+        <attr name="right_icon" format="reference|color"/>
+        <attr name="right_text" format="string"/>
+        <attr name="title_bar_dark" format="boolean"/>
+        <attr name="title_bar_type" format="integer">
+            <enum name="OneButton" value="10" />
+            <enum name="OneButtonAndText" value="11" />
+            <enum name="TwoButton" value="12" />
+        </attr>
+    </declare-styleable>
+</resources>

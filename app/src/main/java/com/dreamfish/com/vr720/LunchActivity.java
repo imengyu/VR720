@@ -13,6 +13,8 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.dreamfish.com.vr720.dialog.CommonDialog;
+
 public class LunchActivity extends AppCompatActivity {
 
     private static final int REQUEST_CODE = 179;
@@ -84,13 +86,24 @@ public class LunchActivity extends AppCompatActivity {
 
     // 提示用户该请求权限的弹出框
     private void showDialogTipUserRequestPermission() {
-
-        new AlertDialog.Builder(this)
-                .setCancelable(false)
+        new CommonDialog(this)
                 .setTitle(getString(R.string.text_no_storage_permission))
                 .setMessage(getString(R.string.text_storage_permission_useage))
-                .setPositiveButton(getString(R.string.action_open_now), (dialog, which) -> startRequestPermission())
-                .setNegativeButton(getString(R.string.action_cancel), (dialog, which) -> finish())
+                .setPositive(getString(R.string.action_open_now))
+                .setNegative(getString(R.string.action_cancel))
+                .setOnClickBottomListener(new CommonDialog.OnClickBottomListener() {
+                    @Override
+                    public void onPositiveClick(CommonDialog dialog) {
+                        startRequestPermission();
+                        dialog.dismiss();
+                    }
+                    @Override
+                    public void onNegativeClick(CommonDialog dialog) {
+                        finish();
+                        dialog.dismiss();
+                    }
+                })
+                .setDialogCancelable(false)
                 .show();
     }
     // 开始提交请求权限
@@ -102,15 +115,25 @@ public class LunchActivity extends AppCompatActivity {
     private void showDialogTipUserGoToAppSettting() {
 
         // 跳转到应用设置界面
-        new AlertDialog.Builder(this)
-                .setCancelable(false)
-                .setTitle("存储权限不可用")
-                .setMessage("请在-应用设置-权限-中，允许本程序使用存储权限来允许本程序读取本地文件")
-                .setPositiveButton(getString(R.string.action_open_now), (dialog1, which) -> {
-                    // 跳转到应用设置界面
-                    goToAppSetting();
+        new CommonDialog(this)
+                .setDialogCancelable(false)
+                .setTitle(getString(R.string.text_no_storage_permission))
+                .setMessage(getString(R.string.text_storage_permission_open_intro))
+                .setPositive(getString(R.string.action_open_now))
+                .setNegative(getString(R.string.action_cancel))
+                .setOnClickBottomListener(new CommonDialog.OnClickBottomListener() {
+                    @Override
+                    public void onPositiveClick(CommonDialog dialog) {
+                        // 跳转到应用设置界面
+                        goToAppSetting();
+                        dialog.dismiss();
+                    }
+                    @Override
+                    public void onNegativeClick(CommonDialog dialog) {
+                        finish();
+                        dialog.dismiss();
+                    }
                 })
-                .setNegativeButton(getString(R.string.action_cancel), (dialog12, which) -> finish())
                 .show();
     }
     // 跳转到当前应用的设置界面

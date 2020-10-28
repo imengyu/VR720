@@ -25,19 +25,24 @@
         android:id="@+id/pano_toolbar_view"
         layout="@layout/content_pano_bar"
         android:layout_width="match_parent"
-        android:layout_height="68dp"
+        android:layout_height="wrap_content"
         android:visibility="visible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <include
-        android:id="@+id/pano_title_view"
-        layout="@layout/content_pano_title"
+    <com.dreamfish.com.vr720.widget.MyTitleBar
+        android:id="@+id/myTitleBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/colorPanoBarBackground"
         android:visibility="visible"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:left_icon="@drawable/ic_back_white"
+        app:title="@string/text_unknow_pano"
+        app:title_bar_dark="true" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

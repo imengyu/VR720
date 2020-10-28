@@ -1,0 +1,2 @@
+APP_MODULES := vr720
+APP_ABI := all

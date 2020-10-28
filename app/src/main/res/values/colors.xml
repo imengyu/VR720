@@ -2,7 +2,17 @@
 <resources>
     <color name="colorPrimary">#7EAFE0</color>
     <color name="colorPrimaryDark">#6F97B5</color>
-    <color name="colorAccent">#163EDA</color>
+    <color name="colorAccent">#58A2F0</color>
     <color name="colorTransparent">#00000000</color>
     <color name="colorPanoBarBackground">#64000000</color>
+    <color name="colorButtonPressed">#4d595d66</color>
+    <color name="colorButtonNormal">#D2E9E9E9</color>
+
+    <color name="colorButtonDarkPressed">#3148587A</color>
+    <color name="colorButtonDarkNormal">#00FFFFFF</color>
+
+    <color name="colorTextBgStart">#01000000</color>
+    <color name="colorTextBgEnd">#81000000</color>
+    <color name="colorBottomBorder">#CECECE</color>
+
 </resources>

@@ -1,88 +1,323 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="70dp"
-    android:background="@color/colorPanoBarBackground">
+    android:layout_height="wrap_content"
+    android:background="@color/colorPanoBarBackground"
+    android:focusable="true"
+    android:orientation="vertical">
 
-    <com.dreamfish.com.vr720.widget.ToolbarButton
-        android:id="@+id/button_vr"
-        style="@style/Widget.AppCompat.Button.Borderless"
-        android:layout_width="wrap_content"
-        android:layout_height="70dp"
-        android:layout_marginStart="8dp"
-        android:drawableTop="@drawable/ic_bar_vr"
-        android:text="@string/text_vr_mode"
-        android:textAlignment="center"
-        app:normalColor="@android:color/white"
-        android:textColor="@android:color/white"
-        app:hoverColor="@color/colorPrimary"
-        app:hoverIcon="@drawable/ic_bar_vr_hover"
-        app:normalIcon="@drawable/ic_bar_vr"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/button_gryo"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+    <LinearLayout
+        android:id="@+id/pano_menu"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-    <com.dreamfish.com.vr720.widget.ToolbarButton
-        android:id="@+id/button_gryo"
-        style="@style/Widget.AppCompat.Button.Borderless"
-        android:layout_width="wrap_content"
-        android:layout_height="70dp"
-        android:drawableTop="@drawable/ic_bar_gryo"
-        android:text="@string/text_gryo"
-        android:textAlignment="center"
-        android:textColor="@android:color/white"
-        app:normalColor="@android:color/white"
-        app:hoverColor="@color/colorPrimary"
-        app:hoverIcon="@drawable/ic_bar_gryo_hover"
-        app:normalIcon="@drawable/ic_bar_gryo"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/button_mode"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toEndOf="@+id/button_vr"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.533" />
+        <Button
+            android:id="@+id/action_view_file_info"
+            style="@style/ButtonDarkItem"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:drawableStart="@drawable/ic_file_info"
+            android:drawableTint="@android:color/white"
+            android:text="@string/action_view_file_info" />
 
-    <com.dreamfish.com.vr720.widget.ToolbarButton
-        android:id="@+id/button_mode"
-        style="@style/Widget.AppCompat.Button.Borderless"
-        android:layout_width="wrap_content"
-        android:layout_height="70dp"
-        android:layout_marginStart="4dp"
-        android:drawableTop="@drawable/ic_bar_projection_ball"
-        android:text="@string/text_mode_ball"
-        android:textAlignment="center"
-        android:textColor="@android:color/white"
-        app:activeable="false"
-        app:hoverColor="@color/colorPrimary"
-        app:normalColor="@android:color/white"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/button_more"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toEndOf="@+id/button_gryo"
-        app:layout_constraintTop_toTopOf="parent" />
+        <Button
+            android:id="@+id/action_openwith_text"
+            style="@style/ButtonDarkItem"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:drawableStart="@drawable/ic_file_open"
+            android:drawableTint="@android:color/white"
+            android:text="@string/action_openwith_text" />
 
-    <com.dreamfish.com.vr720.widget.ToolbarButton
-        android:id="@+id/button_more"
-        style="@style/Widget.AppCompat.Button.Borderless"
-        android:layout_width="wrap_content"
-        android:layout_height="70dp"
-        android:layout_marginEnd="8dp"
-        android:drawableTop="@drawable/ic_bar_more"
-        android:text="@string/text_more"
-        android:textAlignment="center"
-        android:textColor="@android:color/white"
-        app:hoverColor="@color/colorPrimary"
-        app:normalColor="@android:color/white"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toEndOf="@+id/button_mode"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.533"
-        app:normalIcon="@drawable/ic_bar_more"
-        app:hoverIcon="@drawable/ic_bar_more_hover"/>
+        <Button
+            android:id="@+id/action_delete_file"
+            style="@style/ButtonDarkItem"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:drawableStart="@drawable/ic_file_delete"
+            android:drawableTint="@android:color/white"
+            android:text="@string/action_delete_file" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <Button
+            android:id="@+id/action_back_main"
+            style="@style/ButtonDarkItem"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:drawableStart="@drawable/ic_file_close"
+            android:drawableTint="@android:color/white"
+            android:text="@string/action_back_main" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/pano_info"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <RelativeLayout
+            android:id="@+id/pano_info_title"
+            style="@style/FileInfoDarkItem"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="fill|fill_horizontal"
+            android:orientation="horizontal">
+
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:text="@string/text_file_info"
+                android:textColor="@android:color/white" />
+
+            <Button
+                android:id="@+id/button_close_pano_info"
+                style="@style/ButtonTransParent"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:foreground="@drawable/ic_file_close"
+                android:foregroundTint="@android:color/white" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            style="@style/FileInfoDarkItem"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="fill|fill_horizontal"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:text="@string/text_image_size"
+                android:textColor="@android:color/white" />
+
+            <TextView
+                android:id="@+id/text_pano_info_size"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:text="@string/text_placeholder"
+                android:textColor="@android:color/white" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            style="@style/FileInfoDarkItem"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="fill|fill_horizontal"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:text="@string/text_image_date"
+                android:textColor="@android:color/white" />
+
+            <TextView
+                android:id="@+id/text_pano_info_image_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:text="@string/text_placeholder"
+                android:textColor="@android:color/white" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            style="@style/FileInfoDarkItem"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="fill|fill_horizontal"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:text="@string/text_file_size"
+                android:textColor="@android:color/white" />
+
+            <TextView
+                android:id="@+id/text_pano_info_file_size"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:text="@string/text_placeholder"
+                android:textColor="@android:color/white" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            style="@style/FileInfoDarkItem"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="fill|fill_horizontal"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:text="@string/text_file_path"
+                android:textColor="@android:color/white" />
+
+            <TextView
+                android:id="@+id/text_pano_info_file_path"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:text="@string/text_placeholder"
+                android:textColor="@android:color/white" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            style="@style/FileInfoDarkItem"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="fill|fill_horizontal"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:text="@string/text_image_shutter_time"
+                android:textColor="@android:color/white" />
+
+            <TextView
+                android:id="@+id/text_pano_info_shutter_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:text="@string/text_placeholder"
+                android:textColor="@android:color/white" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            style="@style/FileInfoDarkItem"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="fill|fill_horizontal"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:text="@string/text_image_exposure_bias_value"
+                android:textColor="@android:color/white" />
+
+            <TextView
+                android:id="@+id/text_pano_info_exposure_bias_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:text="@string/text_placeholder"
+                android:textColor="@android:color/white" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            style="@style/FileInfoDarkItem"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:text="@string/text_image_iso_sensitivity"
+                android:textColor="@android:color/white" />
+
+            <TextView
+                android:id="@+id/text_pano_info_iso_sensitivit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:text="@string/text_placeholder"
+                android:textColor="@android:color/white" />
+        </RelativeLayout>
+
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/pano_tools"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal">
+
+        <com.dreamfish.com.vr720.widget.ToolbarButton
+            android:id="@+id/button_vr"
+            style="@style/Widget.AppCompat.Button.Borderless"
+            android:layout_width="wrap_content"
+            android:layout_height="70dp"
+            android:layout_marginStart="8dp"
+            android:drawableTop="@drawable/ic_bar_vr"
+            android:text="@string/text_vr_mode"
+            android:textAlignment="center"
+            android:textColor="@android:color/white"
+            app:hoverColor="@color/colorPrimary"
+            app:hoverIcon="@drawable/ic_bar_vr_hover"
+            app:normalColor="@android:color/white"
+            app:normalIcon="@drawable/ic_bar_vr" />
+
+        <com.dreamfish.com.vr720.widget.ToolbarButton
+            android:id="@+id/button_gryo"
+            style="@style/Widget.AppCompat.Button.Borderless"
+            android:layout_width="wrap_content"
+            android:layout_height="70dp"
+            android:drawableTop="@drawable/ic_bar_gryo"
+            android:text="@string/text_gryo"
+            android:textAlignment="center"
+            android:textColor="@android:color/white"
+            app:hoverColor="@color/colorPrimary"
+            app:hoverIcon="@drawable/ic_bar_gryo_hover"
+            app:normalColor="@android:color/white"
+            app:normalIcon="@drawable/ic_bar_gryo" />
+
+        <com.dreamfish.com.vr720.widget.ToolbarButton
+            android:id="@+id/button_mode"
+            style="@style/Widget.AppCompat.Button.Borderless"
+            android:layout_width="wrap_content"
+            android:layout_height="70dp"
+            android:layout_marginStart="4dp"
+            android:drawableTop="@drawable/ic_bar_projection_ball"
+            android:text="@string/text_mode_ball"
+            android:textAlignment="center"
+            android:textColor="@android:color/white"
+            app:activeable="false"
+            app:hoverColor="@color/colorPrimary"
+            app:normalColor="@android:color/white" />
+
+        <com.dreamfish.com.vr720.widget.ToolbarButton
+            android:id="@+id/button_more"
+            style="@style/Widget.AppCompat.Button.Borderless"
+            android:layout_width="wrap_content"
+            android:layout_height="70dp"
+            android:layout_marginEnd="8dp"
+            android:drawableTop="@drawable/ic_bar_more"
+            android:text="@string/text_more"
+            android:textAlignment="center"
+            android:textColor="@android:color/white"
+            app:hoverColor="@color/colorPrimary"
+            app:hoverIcon="@drawable/ic_bar_more_hover"
+            app:normalColor="@android:color/white"
+            app:normalIcon="@drawable/ic_bar_more" />
+
+    </LinearLayout>
+
+</LinearLayout>

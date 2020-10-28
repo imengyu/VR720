@@ -7,7 +7,9 @@ import android.net.Uri;
 import android.os.Build;
 import android.widget.Toast;
 import androidx.core.content.FileProvider;
-import com.donkingliang.imageselector.BuildConfig;
+
+import com.dreamfish.com.vr720.BuildConfig;
+import com.dreamfish.com.vr720.R;
 
 import java.io.File;
 
@@ -43,9 +45,9 @@ public class FileUtils {
             } else {
                 intent.setDataAndType(Uri.fromFile(new File(file)), MapTable.getMIMEType(file));
             }
-            context.startActivity(Intent.createChooser(intent, "选择对应的软件打开该图像"));
+            context.startActivity(Intent.createChooser(intent, context.getString(R.string.text_choose_program_to_open)));
         } catch (ActivityNotFoundException e) {
-            Toast.makeText(context, "图像不能打开，请下载相关软件！", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, context.getString(R.string.text_image_cannot_open), Toast.LENGTH_SHORT).show();
         }
     }
 }

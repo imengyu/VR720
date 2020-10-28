@@ -6,20 +6,25 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceFragmentCompat;
 
+import com.dreamfish.com.vr720.utils.StatusBarUtils;
+import com.dreamfish.com.vr720.widget.MyTitleBar;
+
 public class SettingsActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.settings_activity);
+
+        setContentView(R.layout.activity_settings);
         getSupportFragmentManager()
                 .beginTransaction()
                 .replace(R.id.settings, new SettingsFragment())
                 .commit();
-        ActionBar actionBar = getSupportActionBar();
-        if (actionBar != null) {
-            actionBar.setDisplayHomeAsUpEnabled(true);
-        }
+
+        MyTitleBar titleBar = findViewById(R.id.myTitleBar);
+        titleBar.setLeftIconOnClickListener(v -> finish());
+
+        StatusBarUtils.setLightMode(this);
     }
 
     public static class SettingsFragment extends PreferenceFragmentCompat {

@@ -3,12 +3,24 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion 29
     defaultConfig {
-        applicationId "com.dreamfish.com.vr360"
+        applicationId "com.dreamfish.com.vr720"
         minSdkVersion 23
         targetSdkVersion 29
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+        ndk {
+            moduleName "vr720"
+            stl "stlport_static"
+            ldLibs "log"
+            abiFilters "armeabi-v7a", "armeabi", "arm64-v8a", "x86"
+        }
+    }
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['libs']
+        }
     }
     buildTypes {
         release {

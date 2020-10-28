@@ -9,6 +9,7 @@
     <string name="nav_header_desc">导航标题</string>
     <string name="nav_header_soft">软件</string>
 
+    <string name="title_activity_main">VR720</string>
     <string name="title_activity_settings">设置</string>
     <string name="title_activity_about">关于 VR720</string>
     <string name="title_activity_pano">全景图浏览</string>
@@ -43,9 +44,15 @@
     <string name="action_back_main">返回主界面</string>
     <string name="action_open_now">立即开启</string>
 
-
+    <string name="text_tip">提示</string>
+    <string name="text_placeholder">文字占位符</string>
     <string name="text_return">返回</string>
     <string name="text_choosed_items">已选择 %d 项</string>
+    <string name="text_please_choose_item">请选择项目</string>
+    <string name="text_also_delete_files">同时删除文件</string>
+    <string name="text_core_init_failed">抱歉，程序出现了故障</string>
+    <string name="text_title">标题</string>
+    <string name="text_core_ver">内核版本：</string>
 
     <string name="text_vr_mode">VR模式</string>
     <string name="text_more">更多</string>
@@ -64,18 +71,24 @@
     <string name="text_all_list_wiil_be_clear">所有列表将会被清空</string>
 
     <string name="text_more_actions">更多操作</string>
-    <string name="text_file_info">文件信息</string>
 
     <string name="text_delete_success">删除成功</string>
     <string name="text_delete_failed">文件删除失败</string>
 
+    <string name="text_file_info">内容信息</string>
     <string name="text_file_path">完整路径：</string>
     <string name="text_file_size">文件大小：</string>
     <string name="text_image_size">分辨率：</string>
     <string name="text_image_date">拍摄日期：</string>
+    <string name="text_image_shutter_time">快门时间：</string>
+    <string name="text_image_exposure_bias_value">曝光补偿：</string>
+    <string name="text_image_iso_sensitivity">ISO感光度：</string>
+
+    <string name="text_choose_program_to_open">选择对应的软件打开该图像</string>
+    <string name="text_image_cannot_open">抱歉，你的系统不能打开此图像</string>
 
     <string name="text_sure_delete_pano">是否要删除选中的全景图？</string>
-    <string name="text_youcan_remove_choosed_images">你可以把已选择 %d 个全景图删除或移出列表</string>
+    <string name="text_youcan_remove_choosed_images">你可以把已选择的 %d 个全景图从此列表删除或一并删除文件</string>
     <string name="text_choose_some_file_to_del">请选择一些你要删除的文件</string>
     <string name="text_choose_one_file_to_open">请选择一个你要打开的文件</string>
 
