@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <memory.h>
-#include <tchar.h>
+#include <GLES/gl2.h>
 
 #include <string>
 #include <glm/glm.hpp>

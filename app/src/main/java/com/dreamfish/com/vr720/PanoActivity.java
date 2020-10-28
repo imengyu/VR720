@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.media.ExifInterface;
+import android.opengl.GLSurfaceView;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -20,6 +21,8 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.dreamfish.com.vr720.config.MainMessages;
+import com.dreamfish.com.vr720.core.NativeVR720Renderer;
+import com.dreamfish.com.vr720.core.RendererWrapper;
 import com.dreamfish.com.vr720.dialog.CommonDialog;
 import com.dreamfish.com.vr720.core.NativeVR720;
 import com.dreamfish.com.vr720.utils.DateUtils;
@@ -48,7 +51,6 @@ public class PanoActivity extends AppCompatActivity {
     private Context mContext;
     private Resources resources;
 
-    private View pano_view;
     private View pano_bar;
     private View pano_error;
     private View pano_loading;
@@ -74,6 +76,8 @@ public class PanoActivity extends AppCompatActivity {
 
     private String filePath;
 
+    private boolean rendererSet = false;
+    private GLSurfaceView glSurfaceView;
 
     private Drawable iconModeBall;
     private Drawable iconModeLittlePlanet;
@@ -104,14 +108,19 @@ public class PanoActivity extends AppCompatActivity {
         initButtons();
 
         //初始化内核
-        if(!NativeVR720.initNative())
-            showErr(getString(R.string.text_core_init_failed));
-        else {
-            //加载图片基础信息
-            loadImageInfo();
-            //加载图片
-            loadImage();
+        if(!NativeVR720Renderer.checkSupportsEs2(this)) {
+            showErr(getString(R.string.text_your_device_dosnot_support_es20));
+            return;
         }
+        if(!NativeVR720.initNative()) {
+            showErr(getString(R.string.text_core_init_failed));
+            return;
+        }
+
+        //加载图片基础信息
+        loadImageInfo();
+        //加载图片
+        loadImage();
     }
 
     @Override
@@ -127,10 +136,16 @@ public class PanoActivity extends AppCompatActivity {
     private String imageExposureBiasValue = "0";
     private String imageISOSensitivity = "0";
 
+    private NativeVR720Renderer renderer;
+
+    private void initRenderer() {
+        renderer = new NativeVR720Renderer();
+        glSurfaceView = findViewById(R.id.pano_view);
+        glSurfaceView.setRenderer(new RendererWrapper(renderer));
+    }
     private void initControls() {
         myTitleBar = findViewById(R.id.myTitleBar);
 
-        pano_view = findViewById(R.id.pano_view);
         pano_bar = findViewById(R.id.pano_toolbar_view);
         pano_error = findViewById(R.id.pano_error_view);
         pano_error.setVisibility(View.GONE);
@@ -173,7 +188,7 @@ public class PanoActivity extends AppCompatActivity {
         button_mode = findViewById(R.id.button_mode);
         button_mode.setOnClickListener(v -> changeMode());
 
-        pano_view.setOnClickListener(v -> switchToolBar());
+        glSurfaceView.setOnClickListener(v -> switchToolBar());
         myTitleBar.setLeftIconOnClickListener(v -> finish());
 
         findViewById(R.id.button_more).setOnClickListener(v -> showMore());
@@ -342,6 +357,24 @@ public class PanoActivity extends AppCompatActivity {
 
         myTitleBar.setTitle(FileUtils.getFileName(filePath));
         pano_loading.setVisibility(View.GONE);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        if (rendererSet) {
+            glSurfaceView.onPause();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        if (rendererSet) {
+            glSurfaceView.onResume();
+        }
     }
 
     //主图片处理逻辑

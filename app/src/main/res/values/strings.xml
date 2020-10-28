@@ -51,6 +51,7 @@
     <string name="text_please_choose_item">请选择项目</string>
     <string name="text_also_delete_files">同时删除文件</string>
     <string name="text_core_init_failed">抱歉，程序出现了故障</string>
+    <string name="text_your_device_dosnot_support_es20">抱歉，你的设备不支持最基础的 OpenGL ES 2.0, 本程序无法继续进行渲染</string>
     <string name="text_title">标题</string>
     <string name="text_core_ver">内核版本：</string>
 
