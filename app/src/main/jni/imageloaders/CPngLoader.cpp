@@ -41,15 +41,15 @@ BYTE* CPngLoader::GetImageChunkData(int x, int y, int chunkW, int chunkH)
 void CPngLoader::user_read_data(png_structp png_ptr, png_bytep data, png_size_t length)
 {
     CPngLoader* loader = (CPngLoader*)png_get_io_ptr(png_ptr);
-    fread_s(data, length, 1, length, loader->file);
+    fread(data, 1, length, loader->file);
 }
 
-bool CPngLoader::Load(const wchar_t* path)
+bool CPngLoader::Load(const char* path)
 {
     decodeSuccess = false;
     this->path = path;
     if (file == nullptr) {
-        _wfopen_s(&file, path, L"rb");
+        file = fopen(path, "rb");
         if (file) {
             
             png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, 0, 0, 0);
@@ -79,7 +79,7 @@ bool CPngLoader::Load(const wchar_t* path)
                 png_destroy_info_struct(png_ptr, png_infopp(&info_ptr));
                 png_destroy_read_struct(&png_ptr, png_infopp(0), png_infopp(0));
 
-                SetLastError(L"²»Ö§³Ö´ËÍ¼ÏñÎ»Éî¶È");
+                SetLastError("ä¸æ”¯æŒæ­¤å›¾åƒä½æ·±åº¦");
                 return false;
             }
 
@@ -89,7 +89,7 @@ bool CPngLoader::Load(const wchar_t* path)
                 png_destroy_info_struct(png_ptr, png_infopp(&info_ptr));
                 png_destroy_read_struct(&png_ptr, png_infopp(0), png_infopp(0));
 
-                SetLastError(L"²»Ö§³Ö´ËÍ¼ÏñÑÕÉ«ÀàĞÍ");
+                SetLastError("ä¸æ”¯æŒæ­¤å›¾åƒé¢œè‰²ç±»å‹");
                 return false;
             }
 
@@ -102,7 +102,7 @@ bool CPngLoader::Load(const wchar_t* path)
     return false;
 }
 
-const wchar_t* CPngLoader::GetPath()
+const char* CPngLoader::GetPath()
 {
     return path.c_str();
 }

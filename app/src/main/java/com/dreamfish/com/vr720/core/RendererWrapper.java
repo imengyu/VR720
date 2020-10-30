@@ -20,7 +20,7 @@ public class RendererWrapper implements android.opengl.GLSurfaceView.Renderer {
         return nativeVR720Renderer;
     }
 
-    private NativeVR720Renderer nativeVR720Renderer;
+    private final NativeVR720Renderer nativeVR720Renderer;
 
 
 

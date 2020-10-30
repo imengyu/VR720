@@ -3,6 +3,7 @@
 #include "CCTexture.h"
 #include <list>
 
+//贴图加载返回信息
 struct TextureLoadQueueDataResult {
 	bool success;
 	int width;
@@ -11,6 +12,7 @@ struct TextureLoadQueueDataResult {
 	size_t size;
 	BYTE* buffer;
 };
+//贴图队列元素信息
 struct TextureLoadQueueInfo {
 	CCTexture* texture;
 	int x;
@@ -29,11 +31,30 @@ public:
 	CCTextureLoadQueue();
 	~CCTextureLoadQueue();
 
+	/**
+	 * 推入要加载的贴图
+	 * @param texture 贴图实例
+	 * @param x x坐标
+	 * @param y y坐标
+	 * @param id 自定义ID
+	 * @return
+	 */
 	CCTexture* Push(CCTexture * texture, int x, int y, int id);
 
+	/**
+	 * 设置贴图加载回调
+	 * @param handle 回调
+	 * @param data 自定义数据
+	 */
 	void SetLoadHandle(CCTextureLoadQueueLoadHandle handle, void *data);
 
+	/**
+	 * 主线程处理
+	 */
 	void ResolveMain();
+	/**
+	 * 渲染线程处理
+	 */
 	void ResolveRender();
 
 private:

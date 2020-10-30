@@ -1,7 +1,9 @@
 #pragma once
+#ifndef VR720_CCSHADER_H
+#define VR720_CCSHADER_H
 #include "stdafx.h"
 
-//Shader ¿‡
+//Shader Â∞ÅË£ÖÁ±ª
 class CCShader
 {
 public:
@@ -9,11 +11,11 @@ public:
     unsigned int ID;
 
     // constructor reads and builds the shader
-    CCShader(const char* vertexPath, const char* fragmentPath);
+    CCShader(const vchar* vertexPath, const vchar* fragmentPath);
     ~CCShader();
 
     // use/activate the shader
-    void Use();
+    void Use() const;
 
     //GetUniformLocation
     GLint GetUniformLocation(const char* name) const;
@@ -32,3 +34,4 @@ public:
     GLint modelLoc = -1;
 };
 
+#endif

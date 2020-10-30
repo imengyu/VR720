@@ -5,7 +5,7 @@
 #undef inline
 
 /* How to obtain function inlining. */
-#define INLINE  __forceinline
+#define INLINE  __inline
 
 /* How to obtain thread-local storage */
 #define THREAD_LOCAL  __declspec(thread)
@@ -23,7 +23,7 @@
 /* #undef HAVE_BUILTIN_CTZL */
 
 /* Define to 1 if you have the <intrin.h> header file. */
-#define HAVE_INTRIN_H
+//#define HAVE_INTRIN_H 0
 
 #if defined(_MSC_VER) && defined(HAVE_INTRIN_H)
 #if (SIZEOF_SIZE_T == 8)

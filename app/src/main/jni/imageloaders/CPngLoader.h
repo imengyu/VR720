@@ -1,6 +1,6 @@
 #pragma once
 #include "CImageLoader.h"
-#include <../libpng/png.h>
+#include "../libpng/png.h"
 
 class CPngLoader : public CImageLoader
 {
@@ -8,14 +8,14 @@ class CPngLoader : public CImageLoader
 	BYTE* GetAllImageData() override;
 	BYTE* GetImageChunkData(int x, int y, int chunkW, int chunkH) override;
 
-	bool Load(const wchar_t* path) override;
-	const wchar_t* GetPath() override;
+	bool Load(const char* path) override;
+	const char* GetPath() override;
 	void Destroy() override;
 	bool IsOpened() override;
 	USHORT GetImageDepth() override;
 
 	FILE* file = nullptr;
-	std::wstring path;
+	std::string path;
 	png_structp png_ptr = nullptr;
 	png_infop info_ptr = nullptr;
 	png_byte colorType = 0;

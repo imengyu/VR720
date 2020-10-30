@@ -1,7 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="Encoding">
+    <file url="file://$PROJECT_DIR$/app/src/main/jni/core/CCFileManager.cpp" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/jni/core/CCFileManager.h" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/app/src/main/jni/core/CCMesh.h" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/app/src/main/jni/core/CCMeshLoader.h" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/app/src/main/jni/core/CCModel.cpp" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/app/src/main/jni/core/CCModel.h" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/app/src/main/jni/core/CCPanoramaCamera.cpp" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/app/src/main/jni/core/CCPanoramaCamera.h" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/app/src/main/jni/core/CCPanoramaRenderer.cpp" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/jni/core/CCPanoramaRenderer.h" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/jni/core/CCTextureLoadQueue.h" charset="GBK" />
     <file url="file://$PROJECT_DIR$/app/src/main/jni/core/CCamera.cpp" charset="GB2312" />
-    <file url="file://$PROJECT_DIR$/app/src/main/jni/core/CGameRenderer.cpp" charset="GB2312" />
+    <file url="file://$PROJECT_DIR$/app/src/main/jni/core/CCamera.h" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/jni/core/CColor.h" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/app/src/main/jni/core/CMobileGameRenderer.cpp" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/jni/core/CMobileGameRenderer.h" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/jni/core/COpenGLView.cpp" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/jni/core/GlUtils.cpp" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/app/src/main/jni/stdafx.h" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/jni/utils/CStringHlp.cpp" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/app/src/main/jni/utils/CStringHlp.h" charset="GBK" />
   </component>
 </project>

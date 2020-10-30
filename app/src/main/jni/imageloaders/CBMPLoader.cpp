@@ -50,11 +50,11 @@ BYTE* CBMPLoader::GetImageChunkData(int x, int y, int chunkW, int chunkH)
     if (file) {
 
         if (x < 0 || x >  bitmapInfoHeader.biWidth || y < 0 || y > bitmapInfoHeader.biHeight) {
-            SetLastError(L"Chunk pos not currect");
+            SetLastError("Chunk pos not currect");
             return nullptr;
         }
         if (x + chunkW > bitmapInfoHeader.biWidth || y + chunkH > bitmapInfoHeader.biHeight) {
-            SetLastError(L"Chunk size not currect");
+            SetLastError("Chunk size not currect");
             return nullptr;
         }
 
@@ -94,22 +94,23 @@ BYTE* CBMPLoader::GetImageChunkData(int x, int y, int chunkW, int chunkH)
     return nullptr;
 }
 
-bool CBMPLoader::Load(const wchar_t* path)
+bool CBMPLoader::Load(const char* path)
 {
     this->path = path;
+
     if (file == nullptr) {
-        _wfopen_s(&file, path, L"rb");
+        file = fopen(path, "rb");
         if (file) {
             fread(&bitmapHeader, 1, sizeof(bitmapHeader), file);
             fread(&bitmapInfoHeader, 1, sizeof(bitmapInfoHeader), file);
             fseek(file, 0, SEEK_END);
             fileLength = ftell(file);
             if (bitmapInfoHeader.biBitCount < 24) { //Only support 24 and 32 bmp
-                SetLastError(L"��֧�ֻҶ�ɫ��256ɫλͼ��ʽ");
+                SetLastError("不支持灰度色或256色位图格式");
                 return false;
             }
             if (bitmapInfoHeader.biCompression != 0) {
-                SetLastError(L"��֧�ָ�λͼ��ʽ");
+                SetLastError("不支持该位图格式");
                 return false;
             }
 
@@ -119,7 +120,7 @@ bool CBMPLoader::Load(const wchar_t* path)
     return false;
 }
 
-const wchar_t* CBMPLoader::GetPath()
+const char* CBMPLoader::GetPath()
 {
     return path.c_str();
 }

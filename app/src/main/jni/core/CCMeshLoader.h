@@ -1,7 +1,10 @@
 #pragma once
+#ifndef VR720_CCMESHLOADER_H
+#define VR720_CCMESHLOADER_H
 #include "stdafx.h"
 
-enum CCMeshType {
+//Mesh 类型
+enum class CCMeshType {
 	MeshTypeObj,
 	MeshTypeFbx,
 };
@@ -11,16 +14,50 @@ class CCMesh;
 class CCMeshLoader
 {
 public:
+	/**
+	 * 获取指定类型的Mesh加载器
+	 * @param type 类型，CCMeshType
+	 * @return 返回加载器
+	 */
 	static CCMeshLoader* GetMeshLoaderByType(CCMeshType type);
+	/**
+	 * 全局初始化
+	 */
 	static void Init();
+	/**
+	 * 全局释放资源
+	 */
 	static void Destroy();
 
-	virtual bool Load(const wchar_t*path, CCMesh *mesh);
-	virtual const wchar_t* GetLastError();
+	/**
+	 * 从文件加载Mesh
+	 * @param path 文件路径
+	 * @param mesh 要被加载的Mesh
+	 * @return 返回是否成功
+	 */
+	virtual bool Load(const vchar * path, CCMesh *mesh);
+	/**
+	 * 从内存数据加载Mesh
+	 * @param buffer mesh数据内存
+	 * @param bufferSize mesh数据大小
+	 * @param mesh 要被加载的Mesh
+	 * @return 返回是否成功
+	 */
+	virtual bool Load(BYTE * buffer, size_t bufferSize, CCMesh *mesh);
+	/**
+	 * 获取上一次加载发生的错误
+	 * @return 加载错误
+	 */
+	virtual const vchar* GetLastError();
 
 protected:
-	void SetLastError(const wchar_t* err);
+	/**
+	 * 设置加载错误
+	 * @param err 加载错误
+	 */
+	void SetLastError(const vchar* err);
 private:
-	std::wstring lastErr;
+	vstring lastErr;
 };
 
+#endif

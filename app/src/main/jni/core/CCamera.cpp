@@ -11,12 +11,12 @@ CCamera::CCamera(glm::vec3 position, glm::vec3 up, glm::vec3 rotate)
 }
 
 // 返回使用欧拉角和LookAt矩阵计算的view矩阵
-glm::mat4 CCamera::GetViewMatrix()
+glm::mat4 CCamera::GetViewMatrix() const
 {
 	return glm::lookAt(Position, Position + Front, Up);
 }
 
-void CCamera::SetPosItion(glm::vec3 position)
+void CCamera::SetPosition(glm::vec3 position)
 {
 	Position = position;
 	updateCameraVectors();
@@ -93,7 +93,7 @@ void CCamera::SetView(COpenGLView* view)
 }
 
 
-glm::vec3 CCamera::Screen2World(const glm::vec2& screenPoint, glm::mat4& model, float* pPointDepth = nullptr)
+glm::vec3 CCamera::Screen2World(const glm::vec2& screenPoint, glm::mat4& model, const float* pPointDepth = nullptr)
 {
 	GLfloat pointDepth(0.0f);
 	if (nullptr != pPointDepth)

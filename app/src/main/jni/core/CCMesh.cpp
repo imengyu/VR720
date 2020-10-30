@@ -3,10 +3,7 @@
 #include "CCMaterial.h"
 #include "CCMeshLoader.h"
 
-CCMesh::CCMesh()
-{
-
-}
+CCMesh::CCMesh() = default;
 CCMesh::~CCMesh()
 {
 	ReleaseBuffer();
@@ -51,7 +48,7 @@ void CCMesh::ReleaseBuffer()
 	if (MeshVBO > 0) glDeleteBuffers(1, &MeshVBO);
 }
 
-void CCMesh::RenderMesh()
+void CCMesh::RenderMesh() const
 {
 	if (MeshVBO > 0) {
 		glBindBuffer(GL_ARRAY_BUFFER, MeshVBO);
@@ -60,7 +57,7 @@ void CCMesh::RenderMesh()
 		glEnableVertexAttribArray(1);
 		glEnableVertexAttribArray(2);
 
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*) nullptr);
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
 		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
 
@@ -73,7 +70,7 @@ void CCMesh::RenderMesh()
 	}
 }
 
-void CCMesh::LoadFromObj(const wchar_t* path)
+void CCMesh::LoadFromObj(const vchar* path)
 {
 	CCMeshLoader::GetMeshLoaderByType(MeshTypeObj)->Load(path, this);
 }

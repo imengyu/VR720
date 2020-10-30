@@ -1162,13 +1162,10 @@ jinit_memory_mgr(j_common_ptr cinfo)
    */
 #ifndef NO_GETENV
   {
-    char* memenv;
-    size_t memenvBuffercount;
-    _dupenv_s(&memenv, &memenvBuffercount, "JPEGMEM");
+    char* memenv = getenv("JPEGMEM");
     if (memenv != 0) {
       char ch = 'x';
-
-      if (sscanf_s(memenv, "%ld%c", &max_to_use, &ch, 1) > 0) {
+      if (sscanf(memenv, "%ld%c", &max_to_use, &ch) > 0) {
         if (ch == 'm' || ch == 'M')
           max_to_use *= 1000L;
         mem->pub.max_memory_to_use = max_to_use * 1000L;

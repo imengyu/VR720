@@ -484,12 +484,12 @@ png_convert_from_struct_tm(png_timep ptime, const struct tm * ttime)
 void PNGAPI
 png_convert_from_time_t(png_timep ptime, time_t ttime)
 {
-   struct tm tbuf;
+   struct tm *tbuf;
 
    png_debug(1, "in png_convert_from_time_t");
 
-   gmtime_s(&tbuf , &ttime);
-   png_convert_from_struct_tm(ptime, &tbuf);
+   tbuf = gmtime(&ttime);
+   png_convert_from_struct_tm(ptime, tbuf);
 }
 #endif
 
@@ -2334,9 +2334,7 @@ png_image_write_to_file(png_imagep image, const char *file_name,
    {
       if (file_name != NULL && buffer != NULL)
       {
-          FILE* fp;
-          fopen_s(&fp, file_name, "wb");
-
+         FILE* fp = fopen(file_name, "wb");
          if (fp != NULL)
          {
             if (png_image_write_to_stdio(image, fp, convert_to_8bit, buffer,
@@ -2363,9 +2361,7 @@ png_image_write_to_file(png_imagep image, const char *file_name,
                /* The image has already been cleaned up; this is just used to
                 * set the error (because the original write succeeded).
                 */
-               char errorBuffer[128];
-               strerror_s(errorBuffer, 128, errno);
-               return png_image_error(image, errorBuffer);
+               return png_image_error(image, strerror(errno));
             }
 
             else
@@ -2378,9 +2374,7 @@ png_image_write_to_file(png_imagep image, const char *file_name,
          }
 
          else {
-             char errorBuffer[128];
-             strerror_s(errorBuffer, 128, errno);
-             return png_image_error(image, errorBuffer);
+             return png_image_error(image, strerror(errno));
          }
       }
 

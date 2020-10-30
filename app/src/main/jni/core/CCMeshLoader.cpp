@@ -8,9 +8,9 @@ CCMeshLoader* CCMeshLoader::GetMeshLoaderByType(CCMeshType type)
 {
 	switch (type)
 	{
-	case MeshTypeObj:
+	case CCMeshType::MeshTypeObj:
 		return objLoader;
-	case MeshTypeFbx:
+	case CCMeshType::MeshTypeFbx:
 		break;
 	}
 	return nullptr;
@@ -23,16 +23,19 @@ void CCMeshLoader::Destroy()
 {
 	delete objLoader;
 }
-bool CCMeshLoader::Load(const wchar_t* path, CCMesh* mesh)
+bool CCMeshLoader::Load(const vchar* path, CCMesh* mesh)
 {
 	return false;
 }
-
-const wchar_t* CCMeshLoader::GetLastError()
+bool CCMeshLoader::Load(BYTE *buffer, size_t bufferSize, CCMesh *mesh) {
+	return false;
+}
+const vchar* CCMeshLoader::GetLastError()
 {
 	return lastErr.c_str();
 }
-void CCMeshLoader::SetLastError(const wchar_t* err)
+void CCMeshLoader::SetLastError(const vchar* err)
 {
 	lastErr = err;
 }
+

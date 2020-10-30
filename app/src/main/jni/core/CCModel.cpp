@@ -6,17 +6,7 @@ CCModel::CCModel()
 {
     Reset();
 }
-CCModel::~CCModel()
-{
-    if (Mesh) {
-        delete Mesh;
-        Mesh = nullptr;
-    }
-    if (Material) {
-        delete Material;
-        Material = nullptr;
-    }
-}
+CCModel::~CCModel() = default;
 
 void CCModel::UpdateVectors()
 {
@@ -30,24 +20,24 @@ void CCModel::UpdateVectors()
     Right = glm::normalize(glm::cross(Front, WorldUp));  // ±ê×¼»¯
     Up = glm::normalize(glm::cross(Right, Front));
 }
-glm::mat4 CCModel::GetMatrix()
+glm::mat4 CCModel::GetMatrix() const
 {    
     glm::mat4 model(1.0f);
-    model = glm::translate(model, Positon);
+    model = glm::translate(model, Position);
     model = glm::rotate(model, glm::radians(Rotation.x), Right);
     model = glm::rotate(model, glm::radians(Rotation.y), Up);
     model = glm::rotate(model, glm::radians(Rotation.z), Front);
     return model;
 }
 void CCModel::Reset() {
-    Positon = glm::vec3(0.0f);
+    Position = glm::vec3(0.0f);
     Rotation = glm::vec3(0.0f);
     UpdateVectors();
 }
 
-void CCModel::Render()
+void CCModel::Render() const
 {
     if (!Visible) return;
-    if (Material) Material->Use();
-    if (Mesh) Mesh->RenderMesh();
+    if (!Material.IsNullptr()) Material->Use();
+    if (!Mesh.IsNullptr()) Mesh->RenderMesh();
 }

@@ -1,18 +1,25 @@
 #include "CCObjLoader.h"
-#include "CApp.h"
 #include "CCMesh.h"
 #include <vector>
 
-bool CCObjLoader::Load(const wchar_t* path, CCMesh* mesh)
+bool CCObjLoader::Load(const vchar* path, CCMesh* mesh)
 {
-    FILE* file;
-    _wfopen_s(&file, path, L"r");
-    if (file == NULL) {
-        CApp::Instance->GetLogger()->LogError2(L"[CCObjLoader] Open %s failed !", path);
+    if(mesh == nullptr || path == nullptr) {
         return false;
     }
 
-    while (1) {
+    FILE* file;
+#if defined(_MSC_VER) && _MSC_VER > 1600
+    _v_fopen_s(&file, path, _vstr("r"));
+#else
+    file = _v_fopen(path, _vstr("r"));
+#endif
+    if (file == nullptr) {
+        LOGEF(_vstr("[CCObjLoader] Open %s failed !"), path);
+        return false;
+    }
+
+    while (true) {
 
         char lineHeader[128];
         int res = fscanf(file, "%s", lineHeader);
@@ -44,9 +51,12 @@ bool CCObjLoader::Load(const wchar_t* path, CCMesh* mesh)
             if (matches < 9)
                 continue;
 
-            mesh->indices.push_back(CCFace(vertexIndex[0] - 1, normalIndex[0] - 1, uvIndex[0] - 1));
-            mesh->indices.push_back(CCFace(vertexIndex[1] - 1, normalIndex[1] - 1, uvIndex[1] - 1));
-            mesh->indices.push_back(CCFace(vertexIndex[2] - 1, normalIndex[2] - 1, uvIndex[2] - 1));
+            mesh->indices.push_back(CCFace(vertexIndex[0] - 1, normalIndex[0] - 1,
+                    uvIndex[0] - 1));
+            mesh->indices.push_back(CCFace(vertexIndex[1] - 1, normalIndex[1] - 1,
+                    uvIndex[1] - 1));
+            mesh->indices.push_back(CCFace(vertexIndex[2] - 1, normalIndex[2] - 1,
+                    uvIndex[2] - 1));
         }
         else {
             // Probably a comment, eat up the rest of the line  
@@ -54,12 +64,72 @@ bool CCObjLoader::Load(const wchar_t* path, CCMesh* mesh)
             fgets(stupidBuffer, 1000, file);
         }
     }
+
     fclose(file);
 
-    Logger* logger = CApp::Instance->GetLogger();
-    logger->Log(L"[CCObjLoader]  Load obj %s", path);
-    logger->Log(L"vertex count: %d , normals  count: %d , texCoords count: %d , indices count: %d", mesh->positions.size(), mesh->normals.size(), mesh->texCoords.size(), mesh->indices.size());
+    LOGIF(_vstr("[CCObjLoader]  Load obj %s"), path);
+    LOGIF(_vstr("vertex count: %d , normals  count: %d , texCoords count: %d , indices count: %d"),
+            mesh->positions.size(), mesh->normals.size(), mesh->texCoords.size(), mesh->indices.size());
 
     mesh->GenerateBuffer();
     return true;
+}
+bool CCObjLoader::Load(BYTE *buffer, size_t bufferSize, CCMesh *mesh) {
+    if(buffer && mesh) {
+
+        const char* string = (char*)buffer;
+        const char* strPos = nullptr;
+        ULONG off = 0, strSize = (ULONG)strPos - (ULONG)string;
+        while (true) {
+
+            char lineHeader[128];
+            strPos = strchr(string, '\n');
+            if(strPos == nullptr)
+                break;
+
+            strncpy(lineHeader, (char*)((ULONG)string + off), strSize);
+            off += strSize;
+
+            if (strncmp(lineHeader, "v", 1) == 0) {
+                glm::vec3 vertex;
+                sscanf(lineHeader, "v %f %f %f", &vertex.x, &vertex.y, &vertex.z);
+                mesh->positions.push_back(vertex);
+            }
+            else if (strncmp(lineHeader, "vt", 2) == 0) {
+                glm::vec2 uv;
+                sscanf(lineHeader, "vt %f %f", &uv.x, &uv.y);
+                mesh->texCoords.push_back(uv);
+            }
+            else if (strncmp(lineHeader, "vn", 2) == 0) {
+                glm::vec3 normal;
+                sscanf(lineHeader, "vn %f %f %f", &normal.x, &normal.y, &normal.z);
+                mesh->normals.push_back(normal);
+            }
+            else if (strncmp(lineHeader, "f", 1) == 0) {
+                std::string vertex1, vertex2, vertex3;
+                unsigned int vertexIndex[3], uvIndex[3], normalIndex[3];
+                int matches = sscanf(lineHeader, "f %d/%d/%d %d/%d/%d %d/%d/%d",
+                                     &vertexIndex[0], &uvIndex[0], &normalIndex[0],
+                                     &vertexIndex[1], &uvIndex[1], &normalIndex[1],
+                                     &vertexIndex[2], &uvIndex[2], &normalIndex[2]);
+                if (matches < 9)
+                    continue;
+
+                mesh->indices.push_back(CCFace(vertexIndex[0] - 1, normalIndex[0] - 1,
+                                               uvIndex[0] - 1));
+                mesh->indices.push_back(CCFace(vertexIndex[1] - 1, normalIndex[1] - 1,
+                                               uvIndex[1] - 1));
+                mesh->indices.push_back(CCFace(vertexIndex[2] - 1, normalIndex[2] - 1,
+                                               uvIndex[2] - 1));
+            }
+        }
+
+        LOGIF(_vstr("[CCObjLoader]  Load obj 0x%x, size : %d"), buffer, bufferSize);
+        LOGIF(_vstr("vertex count: %d , normals  count: %d , texCoords count: %d , indices count: %d"),
+              mesh->positions.size(), mesh->normals.size(), mesh->texCoords.size(), mesh->indices.size());
+
+        mesh->GenerateBuffer();
+        return true;
+    }
+    return false;
 }

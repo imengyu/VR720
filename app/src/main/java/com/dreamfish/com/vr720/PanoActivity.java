@@ -3,7 +3,7 @@ package com.dreamfish.com.vr720;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
-import android.media.ExifInterface;
+import androidx.exifinterface.media.ExifInterface;
 import android.opengl.GLSurfaceView;
 import android.os.Build;
 import android.os.Bundle;
@@ -391,7 +391,7 @@ public class PanoActivity extends AppCompatActivity {
                 imageTime = exifInterface.getAttribute(ExifInterface.TAG_DATETIME);
                 imageSize = exifInterface.getAttribute(ExifInterface.TAG_IMAGE_WIDTH) +
                         "x" + exifInterface.getAttribute(ExifInterface.TAG_IMAGE_LENGTH);
-                imageISOSensitivity = exifInterface.getAttribute(ExifInterface.TAG_ISO);
+                imageISOSensitivity = exifInterface.getAttribute(ExifInterface.TAG_RW2_ISO);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                     imageShutterTime = exifInterface.getAttribute(ExifInterface.TAG_EXPOSURE_TIME);
                     imageExposureBiasValue = exifInterface.getAttribute(ExifInterface.TAG_EXPOSURE_BIAS_VALUE);

@@ -1,15 +1,44 @@
 #include "CCShader.h"
-#include "CApp.h"
+#include "CStringHlp.h"
 #include <string>
 #include <fstream>
 #include <sstream>
 #include <iostream>
 
-CCShader::CCShader(const char* vertexPath, const char* fragmentPath)
+CCShader::CCShader(const vchar* vertexPath, const vchar* fragmentPath)
 {
     // 1. retrieve the vertex/fragment source code from filePath
-    std::string vertexCode;
-    std::string fragmentCode;
+    vstring vertexCode;
+    vstring fragmentCode;
+#if WCHAR_API
+    std::wifstream vShaderFile;
+    std::wifstream fShaderFile;
+    // ensure ifstream objects can throw exceptions:
+    vShaderFile.exceptions(std::wifstream::failbit | std::wifstream::badbit);
+    fShaderFile.exceptions(std::wifstream::failbit | std::wifstream::badbit);
+    try
+    {
+        // open files
+        vShaderFile.open(vertexPath);
+        fShaderFile.open(fragmentPath);
+        std::wstringstream vShaderStream, fShaderStream;
+        // read file's buffer contents into streams
+        vShaderStream << vShaderFile.rdbuf();
+        fShaderStream << fShaderFile.rdbuf();
+        // close file handlers
+        vShaderFile.close();
+        fShaderFile.close();
+        // convert stream into string
+        vertexCode = vShaderStream.str();
+        fragmentCode = fShaderStream.str();
+    }
+    catch (std::wifstream::failure e)
+    {
+        LOGEF(_vstr("[CCShader] Read shader file failed! %s (%d)"), e.code().message().c_str(), e.code().value());
+    }
+    const char* vShaderCode = CStringHlp::UnicodeToAnsi(vertexCode).c_str();
+    const char* fShaderCode = CStringHlp::UnicodeToAnsi(fragmentCode).c_str();
+#else
     std::ifstream vShaderFile;
     std::ifstream fShaderFile;
     // ensure ifstream objects can throw exceptions:
@@ -33,10 +62,11 @@ CCShader::CCShader(const char* vertexPath, const char* fragmentPath)
     }
     catch (std::ifstream::failure e)
     {
-        CApp::Instance->GetLogger()->LogError2(L"[CCShader] Read shader file failed! %hs (%d)", e.code().message(), e.code().value());
+        LOGEF(_vstr("[CCShader] Read shader file failed! %s (%d)"), e.code().message().c_str(), e.code().value());
     }
     const char* vShaderCode = vertexCode.c_str();
     const char* fShaderCode = fragmentCode.c_str();
+#endif
 
     // 2. compile shaders
     unsigned int vertex, fragment;
@@ -45,26 +75,35 @@ CCShader::CCShader(const char* vertexPath, const char* fragmentPath)
 
     // vertex Shader
     vertex = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertex, 1, &vShaderCode, NULL);
+    glShaderSource(vertex, 1, &vShaderCode, nullptr);
     glCompileShader(vertex);
     // print compile errors if any
     glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
     if (!success)
     {
-        glGetShaderInfoLog(vertex, 512, NULL, infoLog);
-        CApp::Instance->GetLogger()->LogError2(L"[CCShader] Compile vertex shader file failed! \n%hs", infoLog);
+        glGetShaderInfoLog(vertex, 512, nullptr, infoLog);
+#if WCHAR_API
+        LOGEF(_vstr("[CCShader] Compile vertex shader file failed! \n%hs"), infoLog);
+#else
+        LOGEF(_vstr("[CCShader] Compile vertex shader file failed! \n%s"), infoLog);
+#endif
     };
 
     // similiar for Fragment Shader
     fragment = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment, 1, &fShaderCode, NULL);
+    glShaderSource(fragment, 1, &fShaderCode, nullptr);
     glCompileShader(fragment);
     // print compile errors if any
     glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
     if (!success)
     {
-        glGetShaderInfoLog(fragment, 512, NULL, infoLog);
-        CApp::Instance->GetLogger()->LogError2(L"[CCShader] Compile fragment shader file failed! \n%hs", infoLog);
+        glGetShaderInfoLog(fragment, 512, nullptr, infoLog);
+#if WCHAR_API
+        LOGEF(_vstr("[CCShader] Compile fragment shader file failed! \n%hs"), infoLog);
+#else
+        LOGEF(_vstr("[CCShader] Compile fragment shader file failed! \n%s"), infoLog);
+#endif
+
     };
 
     // shader Program
@@ -76,8 +115,12 @@ CCShader::CCShader(const char* vertexPath, const char* fragmentPath)
     glGetProgramiv(ID, GL_LINK_STATUS, &success);
     if (!success)
     {
-        glGetProgramInfoLog(ID, 512, NULL, infoLog);
-        CApp::Instance->GetLogger()->LogError2(L"[CCShader] Link shader program failed! \n%hs", infoLog);
+        glGetProgramInfoLog(ID, 512, nullptr, infoLog);
+#if WCHAR_API
+        LOGEF(_vstr("[CCShader] Link shader program failed! \n%hs"), infoLog);
+#else
+        LOGEF(_vstr("[CCShader] Link shader program failed! \n%s"), infoLog);
+#endif
     }
 
     // delete the shaders as they're linked into our program now and no longer necessary
@@ -93,7 +136,7 @@ CCShader::~CCShader()
     glDeleteProgram(ID);
 }
 
-void CCShader::Use()
+void CCShader::Use() const
 {
     glUseProgram(ID);
 }

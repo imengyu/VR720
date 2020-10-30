@@ -1505,8 +1505,7 @@ png_image_begin_read_from_file(png_imagep image, const char *file_name)
    {
       if (file_name != NULL)
       {
-         FILE* fp;
-         fopen_s(&fp, file_name, "rb");
+         FILE* fp = fopen(file_name, "rb");
 
          if (fp != NULL)
          {
@@ -1522,9 +1521,7 @@ png_image_begin_read_from_file(png_imagep image, const char *file_name)
          }
 
          else {
-             char errorBuffer[128];
-             strerror_s(errorBuffer, 128, errno);
-             return png_image_error(image, errorBuffer);
+             return png_image_error(image, strerror(errno));
          }
       }
 

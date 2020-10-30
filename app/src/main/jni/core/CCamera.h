@@ -1,10 +1,12 @@
 #pragma once
+#ifndef VR720_CCAMER_H
+#define VR720_CCAMER_H
 #include "stdafx.h"
 #include <gtc/matrix_transform.hpp>
 #include <vector>
 #include "CColor.h"
 
-// ³õÊ¼»¯ÉãÏñ»ú±äÁ¿
+// åˆå§‹åŒ–æ‘„åƒæœºå˜é‡
 const float DEF_YAW = -90.0f;
 const float DEF_PITCH = 0.0f;
 const float DEF_SPEED = 2.5f;
@@ -12,71 +14,132 @@ const float DEF_ROATE_SPEED = 20.0f;
 const float DEF_SENSITIVITY = 0.1f;
 const float DEF_FOV = 45.0f;
 
+/**
+ * æ‘„åƒæœºæŠ•å½±æ¨¡å¼
+ */
 enum class CCameraProjection {
+	/**
+	 * é€è§†æŠ•å½±
+	 */
 	Perspective,
+	/**
+	 * æ­£äº¤æŠ•å½±
+	 */
 	Orthographic
 };
 
+/**
+ * æ‘„åƒæœºFOVæ”¹å˜æ—¶çš„å›è°ƒ
+ */
 typedef void(*CCPanoramaCameraFovChangedCallback)(void* data, float fov);
 
 class COpenGLView;
-// ÉãÏñ»úÀà£¬´¦ÀíÊäÈë²¢¼ÆËãÏàÓ¦µÄÅ·À­½Ç£¬Ê¸Á¿ºÍ¾ØÕó
+/**
+ * æ‘„åƒæœºç±»ï¼Œå¤„ç†è¾“å…¥å¹¶è®¡ç®—ç›¸åº”çš„æ¬§æ‹‰è§’ï¼ŒçŸ¢é‡å’ŒçŸ©é˜µ
+ */
 class CCamera
 {
 public:
-	// ÉãÏñ»úÎ»ÖÃ
+	// æ‘„åƒæœºä½ç½®
 	glm::vec3 Position = glm::vec3(0.0f);
-	// Ğı×ªÅ·À­½Ç
+	// æ—‹è½¬æ¬§æ‹‰è§’
 	glm::vec3 Rotate = glm::vec3(0.0f);
-	//ÉãÏñ»úÍ¶Ó°
+	//æ‘„åƒæœºæŠ•å½±
 	CCameraProjection Projection = CCameraProjection::Perspective;
-	// ÉãÏñ»úFOV
+	// æ‘„åƒæœºFOV
 	float FiledOfView = DEF_FOV;
-	//Õı½»Í¶Ó°ÉãÏñ»úÊÓÍ¼´¹Ö±·½ÏòµÄ´óĞ¡
+	//æ­£äº¤æŠ•å½±æ‘„åƒæœºè§†å›¾å‚ç›´æ–¹å‘çš„å¤§å°
 	float OrthographicSize = 1.0f;
-	//¼ô²ÃÆ½Ãæ½ü¶Ë
+	//å‰ªè£å¹³é¢è¿‘ç«¯
 	float ClippingNear = 0.1f;
-	//¼ô²ÃÆ½ÃæÔ¶¶Ë
+	//å‰ªè£å¹³é¢è¿œç«¯
 	float ClippingFar = 1000.0f;
-	//ÉãÏñ»ú±³¾°ÑÕÉ«
+	//æ‘„åƒæœºèƒŒæ™¯é¢œè‰²
 	CColor Background = CColor::Black;
 
+	//æ‘„åƒæœºè§†å›¾çŸ©é˜µ
 	glm::mat4 view = glm::mat4(1.0f);
+	//æ‘„åƒæœºé€è§†çŸ©é˜µ
 	glm::mat4 projection = glm::mat4(1.0f);
 
+	/**
+	 * åˆå§‹åŒ–æ‘„åƒæœº
+	 * @param position ä½ç½®
+	 * @param up ä¸Šå‘é‡
+	 * @param rotate æ—‹è½¬
+	 */
 	CCamera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3 rotate = glm::vec3(0.0f, 0.0f, 0.0f));
-	// ·µ»ØÊ¹ÓÃÅ·À­½ÇºÍLookAt¾ØÕó¼ÆËãµÄview¾ØÕó
-	glm::mat4 GetViewMatrix();
 
-	void SetOrthoSize(float o);
+	/**
+	 * è¿”å›ä½¿ç”¨æ¬§æ‹‰è§’å’ŒLookAtçŸ©é˜µè®¡ç®—çš„viewçŸ©é˜µ
+	 * @return
+	 */
+	glm::mat4 GetViewMatrix() const;
 
+	/**
+	 * è®¾ç½®æ‘„åƒæœºé€è§†æŠ•å½±FOVæ”¹å˜æ—¶çš„å›è°ƒ
+	 * @param callback å›è°ƒ
+	 * @param data è‡ªå®šä¹‰å›è°ƒå‚æ•°
+	 */
 	void SetFOVChangedCallback(CCPanoramaCameraFovChangedCallback callback, void* data);
+	/**
+	 * è®¾ç½®æ‘„åƒæœºæ­£äº¤æŠ•å½±å¤§å°æ”¹å˜æ—¶çš„å›è°ƒ
+	 * @param callback å›è°ƒ
+	 * @param data è‡ªå®šä¹‰å›è°ƒå‚æ•°
+	 */
 	void SetOrthoSizeChangedCallback(CCPanoramaCameraFovChangedCallback callback, void* data);
 
-	void SetPosItion(glm::vec3 position);
+	/**
+	 * è®¾ç½®æ‘„åƒæœºä½ç½®
+	 * @param position æ‘„åƒæœºä½ç½®
+	 */
+	void SetPosition(glm::vec3 position);
+	/**
+	 * è®¾ç½®æ‘„åƒæœºæ—‹è½¬
+	 * @param rotation æ—‹è½¬æ¬§æ‹‰è§’
+	 */
 	void SetRotation(glm::vec3 rotation);
+	/**
+	 * è®¾ç½®æ‘„åƒæœºfov
+	 * @param fov FiledOfView
+	 */
 	void SetFOV(float fov);
+	/**
+	 * è®¾ç½®æ‘„åƒæœºæ­£äº¤æŠ•å½±å¤§å°
+	 * @param o æ­£äº¤æŠ•å½±å¤§å°(ä»¥å±å¹•å®½åº¦ä¸ºåŸºå‡†)
+	 */
+	void SetOrthoSize(float o);
 
+	/**
+	 * å¼ºåˆ¶åˆ·æ–°æ‘„åƒæœº
+	 */
 	void ForceUpdate();
+	/**
+	 * é‡ç½®æ‘„åƒæœºæ—‹è½¬å’Œä½ç½®
+	 */
 	void Reset();
 
 	glm::vec3 Front = glm::vec3(0.0f, 0.0f, -1.0f);
-	glm::vec3 Up;
-	glm::vec3 Right;
-	glm::vec3 WorldUp;
+	glm::vec3 Up = glm::vec3(0.0f);
+	glm::vec3 Right = glm::vec3(0.0f);
+	glm::vec3 WorldUp = glm::vec3(0.0f);
 
+	/**
+	 * è®¾ç½®æ‘„åƒæœºæ‰€å± VIEW
+	 * @param view
+	 */
 	void SetView(COpenGLView* view);
 
 	/**
-	 * @brief  					´°¿Ú×ø±ê×ª»¯ÎªÊÀ½ç×ø±ê
-	 * @brief screenPoint		´°¿Ú×ø±êµã
-	 * @brief viewportRange 	ÊÓ¿Ú·¶Î§¡£ ¸÷¸öÖµÒÀ´ÎÎª£º×óÉÏ-ÓÒÏÂ
-	 * @brief modelViewMatrix 	Ä£ĞÍÊÓÍ¼¾ØÕó
-	 * @brief projectMatrix 	Í¶Ó°¾ØÕó
-	 * @brief pPointDepth   	ÆÁÄ»µãµÄÉî¶È£¬Èç¹û²»Ö¸¶¨(Îªnullptr),´ÓÉî¶È»º³åÇøÖĞ¶ÁÈ¡Éî¶ÈÖµ
-	 * @return 					ÊÀ½ç×ø±êÏµ
-	 * @note ×¢Òâ£ºµÃµ½µÄÊÀ½ç×ø±êÏµÔÚÊ¹ÓÃÇ°Òª³ıÒÔÆë´Î×ø±êÖµw£¬
-	 *		 Èç¹ûwÊÇ0£¬Ôò²»Ó¦Ê¹ÓÃ´Ëµã¡£
+	 * @brief  					çª—å£åæ ‡è½¬åŒ–ä¸ºä¸–ç•Œåæ ‡
+	 * @brief screenPoint		çª—å£åæ ‡ç‚¹
+	 * @brief viewportRange 	è§†å£èŒƒå›´ã€‚ å„ä¸ªå€¼ä¾æ¬¡ä¸ºï¼šå·¦ä¸Š-å³ä¸‹
+	 * @brief modelViewMatrix 	æ¨¡å‹è§†å›¾çŸ©é˜µ
+	 * @brief projectMatrix 	æŠ•å½±çŸ©é˜µ
+	 * @brief pPointDepth   	å±å¹•ç‚¹çš„æ·±åº¦ï¼Œå¦‚æœä¸æŒ‡å®š(ä¸ºnullptr),ä»æ·±åº¦ç¼“å†²åŒºä¸­è¯»å–æ·±åº¦å€¼
+	 * @return 					ä¸–ç•Œåæ ‡ç³»
+	 * @note æ³¨æ„ï¼šå¾—åˆ°çš„ä¸–ç•Œåæ ‡ç³»åœ¨ä½¿ç”¨å‰è¦é™¤ä»¥é½æ¬¡åæ ‡å€¼wï¼Œ
+	 *		 å¦‚æœwæ˜¯0ï¼Œåˆ™ä¸åº”ä½¿ç”¨æ­¤ç‚¹ã€‚
 	 * @code
 	 *  // sample
 	 *  ...
@@ -92,23 +155,23 @@ public:
 	 *		// error handler
 	 *	}
 	 */
-	glm::vec3 Screen2World(const glm::vec2& screenPoint, glm::mat4& model, float* pPointDepth);
+	glm::vec3 Screen2World(const glm::vec2& screenPoint, glm::mat4& model, const float* pPointDepth);
 	/**
-	 * @brief ÊÀ½ç×ø±êÏµ×ª»»ÎªÆÁÄ»×ø±êÏµ
-	 * @brief worldPoint		ÊÀ½ç×ø±êµÄµã×ø±êµã
-	 * @brief viewportRange 	ÊÓ¿Ú·¶Î§¡£ ¸÷¸öÖµÒÀ´ÎÎª£º×óÉÏ-ÓÒÏÂ
-	 * @brief modelViewMatrix 	Ä£ĞÍÊÓÍ¼¾ØÕó
-	 * @brief projectMatrix 	Í¶Ó°¾ØÕó
-	 * @brief pPointDepth   	ÆÁÄ»µãµÄÉî¶È£¬Èç¹û²»Ö¸¶¨(Îªnullptr),´ÓÉî¶È»º³åÇøÖĞ¶ÁÈ¡Éî¶ÈÖµ
-	 * @return 					´°¿Ú×ø±êµã
-	 * @note ·µ»ØµÄ´°¿Ú×ø±ê´øÉî¶ÈÖµ£¬Èç¹û½öÊÊÓÃ2D´°¿ÚÏñËØ×ø±êµã£¬½öÊÊÓÃËüµÄx,yÎ¬¼´¿É
+	 * @brief ä¸–ç•Œåæ ‡ç³»è½¬æ¢ä¸ºå±å¹•åæ ‡ç³»
+	 * @brief worldPoint		ä¸–ç•Œåæ ‡çš„ç‚¹åæ ‡ç‚¹
+	 * @brief viewportRange 	è§†å£èŒƒå›´ã€‚ å„ä¸ªå€¼ä¾æ¬¡ä¸ºï¼šå·¦ä¸Š-å³ä¸‹
+	 * @brief modelViewMatrix 	æ¨¡å‹è§†å›¾çŸ©é˜µ
+	 * @brief projectMatrix 	æŠ•å½±çŸ©é˜µ
+	 * @brief pPointDepth   	å±å¹•ç‚¹çš„æ·±åº¦ï¼Œå¦‚æœä¸æŒ‡å®š(ä¸ºnullptr),ä»æ·±åº¦ç¼“å†²åŒºä¸­è¯»å–æ·±åº¦å€¼
+	 * @return 					çª—å£åæ ‡ç‚¹
+	 * @note è¿”å›çš„çª—å£åæ ‡å¸¦æ·±åº¦å€¼ï¼Œå¦‚æœä»…é€‚ç”¨2Dçª—å£åƒç´ åæ ‡ç‚¹ï¼Œä»…é€‚ç”¨å®ƒçš„x,yç»´å³å¯
 	 */
 	glm::vec3 World2Screen(const glm::vec3& worldPoint, glm::mat4& model);
 
 protected:
 	COpenGLView* glView = nullptr;
 
-	// ´Ó¸üĞÂµÄCameraEulerµÄÅ·À­½Ç¼ÆËãÇ°ÏòÁ¿
+	// ä»æ›´æ–°çš„CameraEulerçš„æ¬§æ‹‰è§’è®¡ç®—å‰å‘é‡
 	void updateCameraVectors();
 
 	CCPanoramaCameraFovChangedCallback fovChangedCallback = nullptr;
@@ -116,3 +179,5 @@ protected:
 	CCPanoramaCameraFovChangedCallback orthoSizeChangedCallback = nullptr;
 	void* orthoSizeChangedCallbackData = nullptr;
 };
+
+#endif

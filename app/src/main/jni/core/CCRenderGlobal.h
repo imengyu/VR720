@@ -1,4 +1,6 @@
 #pragma once
+#ifndef VR720_CCRENDER_GLOBAL_H
+#define VR720_CCRENDER_GLOBAL_H
 #include "stdafx.h"
 
 class CCRenderGlobal
@@ -23,3 +25,4 @@ public :
 	GLubyte* glslVersion = nullptr;
 };
 
+#endif

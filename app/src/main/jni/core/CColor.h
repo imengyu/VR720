@@ -1,4 +1,6 @@
 #pragma once
+#ifndef VR720_CCCOLOR_H
+#define VR720_CCCOLOR_H
 #include "stdafx.h"
 
 //ÑÕÉ«Àà
@@ -24,4 +26,6 @@ public:
 	static CColor Black; 
 	static CColor White;
 };
+
+#endif
 

@@ -40,10 +40,8 @@ public:
 	void ProcessMouseScroll(float yoffset);
 	//设置模式
 	void SetMode(CCPanoramaCameraMode mode);
-
+	//设置旋转回调
 	void SetRotateCallback(CCPanoramaCameraCallback callback, void* data);
-
-
 
 	float RoateNearMax = 0.2f;
 	float RoateFarMax = 3.5f;
