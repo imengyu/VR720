@@ -2,45 +2,25 @@
 #include "COpenGLView.h"
 #include "CImageLoader.h"
 #include "CCRenderGlobal.h"
+#include "CMobileGameUIEventDistributor.h"
 #include "CCMaterial.h"
-#include "CCursor.h"
-#include "CApp.h"
 #include "CStringHlp.h"
-#include "SettingHlp.h"
-#include <Shlwapi.h>
-#include <time.h>
+#include <ctime>
 
 CMobileGameRenderer::CMobileGameRenderer()
 {
-    logger = CApp::Instance->GetLogger();
+    logger = Logger::GetStaticInstance();
 }
-CMobileGameRenderer::~CMobileGameRenderer()
-{
-}
+CMobileGameRenderer::~CMobileGameRenderer() = default;
 
-void CMobileGameRenderer::SetOpenFilePath(const wchar_t* path)
+void CMobileGameRenderer::SetOpenFilePath(const char* path)
 {
 	currentOpenFilePath = path;
 }
 void CMobileGameRenderer::DoOpenFile()
 {
-    loading_dialog_active = true;
-    if (fileManager->DoOpenFile(currentOpenFilePath.c_str())) {
-
-        if (fileManager->ImageRatioNotStandard && mode <= PanoramaMode::PanoramaOuterBall) {
-            if (uiWapper->ShowConfirmBox(L"看起来这张图片的长宽比不是 2:1，不是标准的720度全景图像，如果要显示此图像，可能会导致图像变形，是否继续？", 
-                L"提示", L"", L"", CAppUIMessageBoxIcon::IconWarning) == CAppUIMessageBoxResult::ResultCancel)
-            {
-                welecome_dialog_active = true;
-                file_opened = false;
-                renderer->renderOn = false;
-                loading_dialog_active = false;
-                return;
-            }
-        }
-
-        LoadImageInfo();
-
+    uiEventDistributor->SendEvent(CCMobileGameUIEvent::MarkLoadingStart);
+    if (fileManager->OpenFile(currentOpenFilePath.c_str())) {
         //主图
         renderer->panoramaThumbnailTex = texLoadQueue->Push(new CCTexture(), 0, 0, -1);//MainTex
         renderer->panoramaTexPool.push_back(renderer->panoramaThumbnailTex);
@@ -48,37 +28,25 @@ void CMobileGameRenderer::DoOpenFile()
 
         //检查是否需要分片并加载
         needTestImageAndSplit = true;
-        welecome_dialog_active = false;
         file_opened = true;
         renderer->renderOn = true;
+        uiInfo->currentImageOpened = true;
+        uiEventDistributor->SendEvent(CCMobileGameUIEvent::UiInfoChanged);
     }
     else {
-        last_image_error = CStringHlp::UnicodeToUtf8(std::wstring(fileManager->GetLastError()));
+        last_image_error = vstring(fileManager->GetLastError());
         ShowErrorDialog();
     }
 }
 void CMobileGameRenderer::ShowErrorDialog() {
-    welecome_dialog_active = false;
-    image_err_dialog_active = true;
     file_opened = false;
     renderer->renderOn = false;
-    loading_dialog_active = false;
-    uiWapper->MessageBeep(CAppUIMessageBoxIcon::IconWarning);
+    uiInfo->currentImageOpened = false;
+    uiEventDistributor->SendEvent(CCMobileGameUIEvent::UiInfoChanged);
+    uiEventDistributor->SendEvent(CCMobileGameUIEvent::MarkLoadingEnd);
+    uiEventDistributor->SendEvent(CCMobileGameUIEvent::MarkLoadFailed);
 }
-void CMobileGameRenderer::LoadImageInfo() {
-    //获取图片信息
-    auto loader = fileManager->CurrentFileLoader;
-    auto imgSize = loader->GetImageSize();
-    auto imgFileInfo = loader->GetImageFileInfo();
 
-    uiInfo->currentImageType = fileManager->CurrenImageType;
-    uiInfo->currentImageName = CStringHlp::UnicodeToUtf8(fileManager->GetCurrentFileName());
-    uiInfo->currentImageImgSize = CStringHlp::FormatString("%dx%dx%db", (int)imgSize.x, (int)imgSize.y, loader->GetImageDepth());
-    uiInfo->currentImageSize = CStringHlp::GetFileSizeStringAuto(imgFileInfo->fileSize);
-    uiInfo->currentImageChangeDate = imgFileInfo->Write;
-
-    uiInfo->currentImageOpened = true;
-}
 void CMobileGameRenderer::TestSplitImageAndLoadTexture() {
     glm::vec2 size = fileManager->CurrentFileLoader->GetImageSize();
     SplitFullImage = size.x > 4096 || size.y > 2048;
@@ -88,7 +56,7 @@ void CMobileGameRenderer::TestSplitImageAndLoadTexture() {
         if (chunkW < 2) chunkW = 2;
         if (chunkH < 2) chunkH = 2;
         if (chunkW > 64 || chunkH > 32) {
-            logger->LogError2(L"Too big image (%.2f, %.2f) that cant split chunks.", chunkW, chunkH);
+            logger->LogError2(_vstr("Too big image (%.2f, %.2f) that cant split chunks."), chunkW, chunkH);
             SplitFullImage = false;
             return;
         }
@@ -97,13 +65,15 @@ void CMobileGameRenderer::TestSplitImageAndLoadTexture() {
 
         uiInfo->currentImageAllChunks = chunkWi * chunkHi;
         uiInfo->currentImageLoadChunks = 0;
-        logger->Log(L"Image use split mode , size: %d, %d", chunkWi, chunkHi);
+        uiEventDistributor->SendEvent(CCMobileGameUIEvent::UiInfoChanged);
+        logger->Log(_vstr("Image use split mode , size: %d, %d"), chunkWi, chunkHi);
         renderer->sphereFullSegmentX = renderer->sphereSegmentX + (renderer->sphereSegmentX % chunkWi);
         renderer->sphereFullSegmentY = renderer->sphereSegmentY + (renderer->sphereSegmentY % chunkHi);
         renderer->GenerateFullModel(chunkWi, chunkHi);
     }
     else {
         uiInfo->currentImageAllChunks = 0;
+        uiEventDistributor->SendEvent(CCMobileGameUIEvent::UiInfoChanged);
     }
 
     SwitchMode(mode);
@@ -111,12 +81,9 @@ void CMobileGameRenderer::TestSplitImageAndLoadTexture() {
 
 bool CMobileGameRenderer::Init()
 {
-    CCursor::SetViewCursur(View, CCursor::Default);
-
     camera = new CCPanoramaCamera();
     renderer = new CCPanoramaRenderer(this);
     fileManager = new CCFileManager(this);
-    uiWapper = new CAppUIWapper(this->View);
     texLoadQueue = new CCTextureLoadQueue();
     uiInfo = new CCGUInfo();
 
@@ -125,16 +92,13 @@ bool CMobileGameRenderer::Init()
     camera->SetMode(CCPanoramaCameraMode::CenterRoate);
     camera->SetFOVChangedCallback(CameraFOVChanged, this);
     camera->SetOrthoSizeChangedCallback(CameraOrthoSizeChanged, this);
-    camera->SetRotateCallback(CameraRotate, this);
     camera->Background = CColor::FromString("#FFFFFF");
     fileManager->SetOnCloseCallback(FileCloseCallback, this);
 
     View->SetCamera(camera);
-    View->SetBeforeQuitCallback(BeforeQuitCallback);
     View->SetMouseCallback(MouseCallback);
-    View->SetScrollCallback(ScrollCallback);
+    View->SetZoomViewCallback(ScrollCallback);
 
-    LoadSettings();
     SwitchMode(mode);
 
     //renderer->renderPanoramaFullTest = true;
@@ -152,13 +116,13 @@ void CMobileGameRenderer::Destroy()
         delete uiInfo;
         uiInfo = nullptr;
     }
+    if (uiEventDistributor != nullptr) {
+        delete uiEventDistributor;
+        uiEventDistributor = nullptr;
+    }
     if (fileManager != nullptr) {
         delete fileManager;
         fileManager = nullptr;
-    }
-    if (uiWapper != nullptr) {
-        delete uiWapper;
-        uiWapper = nullptr;
     }
     if (texLoadQueue != nullptr) {
         delete texLoadQueue;
@@ -175,29 +139,6 @@ void CMobileGameRenderer::Destroy()
         renderer = nullptr;
     }
 }
-char* CMobileGameRenderer::GetPanoramaModeStr(PanoramaMode mode)
-{
-    switch (mode)
-    {
-    case PanoramaSphere:
-        return (char*)u8"球面";
-    case PanoramaAsteroid:
-        return (char*)u8"小行星";
-    case PanoramaOuterBall:
-        return (char*)u8"水晶球";
-    case PanoramaCylinder:
-        return (char*)u8"平面";
-    case PanoramaMercator:
-        return (char*)u8"全景";
-    case PanoramaFull360:
-        return (char*)u8"360度全景";
-    case PanoramaFullOrginal:
-        return (char*)u8"原始图像";
-    default:
-        break;
-    }
-    return nullptr;
-}
 void CMobileGameRenderer::Resize(int Width, int Height)
 {
     glViewport(0, 0, Width, Height);
@@ -206,57 +147,36 @@ void CMobileGameRenderer::Resize(int Width, int Height)
 //输入处理
 
 void CMobileGameRenderer::MouseCallback(COpenGLView* view, float xpos, float ypos, int button, int type) {
-    CMobileGameRenderer* renderer = (CMobileGameRenderer*)view->GetRenderer();
+    auto* renderer = (CMobileGameRenderer*)view->GetRenderer();
 
     if (type == ViewMouseEventType::ViewMouseMouseDown) {
-        if ((button & MK_LBUTTON) == MK_LBUTTON) {
-            renderer->lastX = xpos;
-            renderer->lastY = ypos;
-            view->MouseCapture();
-            CCursor::SetViewCursur(view, CCursor::Grab);
-        }
-    }
-    else  if (type == ViewMouseEventType::ViewMouseMouseUp) {
-        if ((button & MK_LBUTTON) == MK_LBUTTON) {
-            view->ReleaseCapture();
-            CCursor::SetViewCursur(view, CCursor::Default);
-        }
+        renderer->lastX = xpos;
+        renderer->lastY = ypos;
     }
     else  if (type == ViewMouseEventType::ViewMouseMouseMove) {
 
-        //Skip when mouse hover on window
-        if (ImGui::IsAnyWindowHovered()) {
-            renderer->main_menu_active = true;
-            return;
+        renderer->xoffset = xpos - renderer->lastX;
+        renderer->yoffset =
+                renderer->lastY - ypos; // reversed since y-coordinates go from bottom to top
+
+        renderer->lastX = xpos;
+        renderer->lastY = ypos;
+
+        //旋转球体
+        if (renderer->mode <= PanoramaMode::PanoramaOuterBall) {
+            float xoffset = -renderer->xoffset * renderer->MouseSensitivity;
+            float yoffset = -renderer->yoffset * renderer->MouseSensitivity;
+            renderer->renderer->RotateModel(xoffset, yoffset);
         }
-
-        if ((button & MK_LBUTTON) == MK_LBUTTON) {//left button down
-
-            renderer->xoffset = xpos - renderer->lastX;
-            renderer->yoffset = renderer->lastY - ypos; // reversed since y-coordinates go from bottom to top
-
-            renderer->lastX = xpos;
-            renderer->lastY = ypos;
-
-            //旋转球体
-            if (renderer->mode <= PanoramaMode::PanoramaOuterBall) {
-                float xoffset = -renderer->xoffset * renderer->MouseSensitivity;
-                float yoffset = -renderer->yoffset * renderer->MouseSensitivity;
-                renderer->renderer->RotateModel(xoffset, yoffset);
-            }
             //全景模式是更改U偏移和纬度偏移
-            else if(renderer->mode == PanoramaMode::PanoramaMercator) {
+        else if (renderer->mode == PanoramaMode::PanoramaMercator) {
 
-            }
-            else if (renderer->mode == PanoramaMode::PanoramaFull360 
-                || renderer->mode == PanoramaMode::PanoramaFullOrginal) {
-                float xoffset = -renderer->xoffset * renderer->MouseSensitivity;
-                float yoffset = -renderer->yoffset * renderer->MouseSensitivity;
-                renderer->renderer->MoveModel(xoffset, yoffset);
-            }
+        } else if (renderer->mode == PanoramaMode::PanoramaFull360
+                   || renderer->mode == PanoramaMode::PanoramaFullOrginal) {
+            float xoffset = -renderer->xoffset * renderer->MouseSensitivity;
+            float yoffset = -renderer->yoffset * renderer->MouseSensitivity;
+            renderer->renderer->MoveModel(xoffset, yoffset);
         }
-
-        renderer->main_menu_active = ypos < 100 || ypos >  renderer->View->Height - 70;
     }
 }
 void CMobileGameRenderer::ScrollCallback(COpenGLView* view, float x, float yoffset, int button, int type) {
@@ -279,6 +199,8 @@ void CMobileGameRenderer::KeyMoveCallback(CCameraMovement move) {
         case CCameraMovement::ROATE_RIGHT:
             renderer->RotateModelForce(RotateSpeed * View->GetDeltaTime(), 0);
             break;
+        default:
+            break;
         }
     }
     else if (mode == PanoramaMode::PanoramaMercator) {
@@ -299,51 +221,10 @@ void CMobileGameRenderer::KeyMoveCallback(CCameraMovement move) {
         case CCameraMovement::ROATE_RIGHT:
             renderer->MoveModelForce(MoveSpeed * View->GetDeltaTime(), 0);
             break;
+        default:
+            break;
         }
     }
-}
-
-//Settings
-
-void CMobileGameRenderer::LoadSettings()
-{
-    settings = CApp::Instance->GetSettings();
-
-    View->ShowInfoOverlay = settings->GetSettingBool(L"ShowInfoOverlay", false);
-    show_console = settings->GetSettingBool(L"ShowConsole", false);
-    show_fps = settings->GetSettingBool(L"ShowFps", show_fps);
-    show_status_bar = settings->GetSettingBool(L"ShowStatusBar", show_status_bar);
-    debug_tool_active = settings->GetSettingBool(L"DebugTool", false);
-    renderer->renderDebugWireframe = settings->GetSettingBool(L"renderDebugWireframe", false);
-    renderer->renderDebugVector = settings->GetSettingBool(L"renderDebugVector", false);
-    renderer->sphereSegmentX = settings->GetSettingInt(L"sphereSegmentX", renderer->sphereSegmentX);
-    renderer->sphereSegmentY = settings->GetSettingInt(L"sphereSegmentY", renderer->sphereSegmentY);
-    mode = (PanoramaMode)settings->GetSettingInt(L"LastMode", mode);
-    View->IsFullScreen = settings->GetSettingBool(L"FullScreen", false);
-    View->Width = settings->GetSettingInt(L"Width", 1024);
-    View->Height = settings->GetSettingInt(L"Height", 768);
-    if (View->Width <= 800) View->Width = 1024;
-    if (View->Height <= 600) View->Height = 768;
-    View->Resize(View->Width, View->Height, true);
-    View->UpdateFullScreenState();
-
-    UpdateConsoleState();
-}
-void CMobileGameRenderer::SaveSettings()
-{
-    settings->SetSettingBool(L"ShowInfoOverlay", View->ShowInfoOverlay);
-    settings->SetSettingBool(L"DebugTool", debug_tool_active);
-    settings->SetSettingBool(L"ShowConsole", show_console);
-    settings->SetSettingBool(L"renderDebugWireframe", renderer->renderDebugWireframe);
-    settings->SetSettingBool(L"renderDebugVector", renderer->renderDebugVector);
-    settings->SetSettingBool(L"FullScreen", View->IsFullScreen);
-    settings->SetSettingInt(L"Width", View->Width);
-    settings->SetSettingInt(L"Height", View->Height);
-    settings->SetSettingInt(L"sphereSegmentX", renderer->sphereSegmentX);
-    settings->SetSettingInt(L"sphereSegmentY", renderer->sphereSegmentY);
-    settings->SetSettingInt(L"LastMode", mode);
-    settings->SetSettingBool(L"ShowFps", show_fps);
-    settings->SetSettingBool(L"ShowStatusBar", show_status_bar);
 }
 
 //绘制
@@ -379,13 +260,9 @@ void CMobileGameRenderer::Render(float FrameTime)
     //loop count
     //===========================
 
-    LoadAndChechRegister();
     if (should_close_file) {
         should_close_file = false;
-        std::wstring path = fileManager->CurrentFileLoader->GetPath();
         fileManager->CloseFile();
-        if (delete_after_close)
-            DeleteFile(path.c_str());
     }
 }
 void CMobileGameRenderer::RenderUI()
@@ -398,6 +275,14 @@ void CMobileGameRenderer::Update()
     //===========================
 
     texLoadQueue->ResolveMain();
+
+    //加检测按键
+    //===========================
+
+    if (View->GetKeyPress(VR720_KEY_LEFT)) KeyMoveCallback(CCameraMovement::ROATE_LEFT);
+    if (View->GetKeyPress(VR720_KEY_UP)) KeyMoveCallback(CCameraMovement::ROATE_UP);
+    if (View->GetKeyPress(VR720_KEY_RIGHT)) KeyMoveCallback(CCameraMovement::ROATE_RIGHT);
+    if (View->GetKeyPress(VR720_KEY_DOWN)) KeyMoveCallback(CCameraMovement::ROATE_DOWN);
 }
 
 //逻辑控制
@@ -415,9 +300,10 @@ TextureLoadQueueDataResult* CMobileGameRenderer::LoadChunkTexCallback(TextureLoa
 
     uiInfo->currentImageLoading = true;
     uiInfo->currentImageLoadChunks = info->id;
+    uiEventDistributor->SendEvent(CCMobileGameUIEvent::UiInfoChanged);
     
     //Load full main tex
-    TextureLoadQueueDataResult* result = new TextureLoadQueueDataResult();
+    auto* result = new TextureLoadQueueDataResult();
     result->buffer = fileManager->CurrentFileLoader->GetImageChunkData(chunkX, chunkY, chunkW, chunkH);
     result->size = fileManager->CurrentFileLoader->GetChunkDataSize();
     result->compoents = fileManager->CurrentFileLoader->GetImageDepth();
@@ -427,24 +313,26 @@ TextureLoadQueueDataResult* CMobileGameRenderer::LoadChunkTexCallback(TextureLoa
 
     uiInfo->currentImageLoadedChunks++;
     uiInfo->currentImageLoading = false;
+    uiEventDistributor->SendEvent(CCMobileGameUIEvent::UiInfoChanged);
 
     return result;
 }
 TextureLoadQueueDataResult* CMobileGameRenderer::LoadTexCallback(TextureLoadQueueInfo* info, CCTexture* texture, void* data) {
-    CMobileGameRenderer* ptr = (CMobileGameRenderer*)data;
+    auto* ptr = (CMobileGameRenderer*)data;
     if (ptr->destroying)
         return nullptr;
     if (info->id == -1) {
-        ptr->logger->Log(L"Load main tex: id: -1");
+        ptr->logger->Log(_vstr("Load main tex: id: -1"));
         ptr->uiInfo->currentImageLoading = true;
+        ptr->uiEventDistributor->SendEvent(CCMobileGameUIEvent::UiInfoChanged);
 
         //Load full main tex
-        TextureLoadQueueDataResult* result = new TextureLoadQueueDataResult();
+        auto* result = new TextureLoadQueueDataResult();
         result->buffer = ptr->fileManager->CurrentFileLoader->GetAllImageData();
         if (!result->buffer) {
-            ptr->last_image_error = CStringHlp::UnicodeToUtf8(std::wstring(L"图像可能已经损坏，错误信息：") + std::wstring(ptr->fileManager->CurrentFileLoader->GetLastError()));
+            ptr->last_image_error = vstring("图像可能已经损坏，错误信息：") + vstring(ptr->fileManager->CurrentFileLoader->GetLastError());
             ptr->ShowErrorDialog();
-            ptr->logger->LogError2(L"Load tex main buffer failed : %s", ptr->fileManager->CurrentFileLoader->GetLastError());
+            ptr->logger->LogError2(_vstr("Load tex main buffer failed : %s"), ptr->fileManager->CurrentFileLoader->GetLastError());
             delete result;
             return nullptr;
         }
@@ -456,61 +344,48 @@ TextureLoadQueueDataResult* CMobileGameRenderer::LoadTexCallback(TextureLoadQueu
         result->height = (int)size.y;
         result->success = true;
 
-        ptr->logger->Log(L"Load tex buffer: w: %d h: %d (%d)  Buffer Size: %d", (int)size.x, (int)size.y, result->compoents, result->size);
-        ptr->loading_dialog_active = false;
+        ptr->logger->Log(_vstr("Load tex buffer: w: %d h: %d (%d)  Buffer Size: %d"), (int)size.x, (int)size.y, result->compoents, result->size);
         ptr->uiInfo->currentImageLoading = false;
+        ptr->uiEventDistributor->SendEvent(CCMobileGameUIEvent::UiInfoChanged);
 
         return result;
     }
     else {
-        ptr->logger->Log(L"Load block tex : x: %d y: %d id: %d", info->x, info->y, info->id);
+        ptr->logger->Log(_vstr("Load block tex : x: %d y: %d id: %d"), info->x, info->y, info->id);
         return ptr->LoadChunkTexCallback(info, texture);
     }
-    return nullptr;
 }
 void CMobileGameRenderer::FileCloseCallback(void* data) {
-    CMobileGameRenderer* ptr = (CMobileGameRenderer*)data;
+    auto* ptr = (CMobileGameRenderer*)data;
     ptr->renderer->panoramaThumbnailTex = nullptr;
     ptr->renderer->renderPanoramaFull = false;
     ptr->renderer->ReleaseTexPool();
     ptr->renderer->ReleaseFullModel();
     ptr->renderer->UpdateMainModelTex();
     ptr->uiInfo->currentImageOpened = false;
+    ptr->uiEventDistributor->SendEvent(CCMobileGameUIEvent::UiInfoChanged);
     ptr->renderer->renderOn = false;
-    ptr->welecome_dialog_active = true;
     ptr->file_opened = false;
+    ptr->uiEventDistributor->SendEvent(CCMobileGameUIEvent::FileClosed);
 }
 void CMobileGameRenderer::CameraFOVChanged(void* data, float fov) {
-    CMobileGameRenderer* ptr = (CMobileGameRenderer*)data;
-    ptr->zoom_slider_value = (int)((1.0f - (fov - ptr->camera->FovMin) / (ptr->camera->FovMax - ptr->camera->FovMin)) * 100);
+    auto* ptr = (CMobileGameRenderer*)data;
     if (ptr->mode == PanoramaSphere || ptr->mode == PanoramaCylinder) {
         ptr->renderer->renderPanoramaFull = ptr->SplitFullImage && fov < 40;
         if(ptr->renderer->renderPanoramaFull) ptr->renderer->UpdateFullChunksVisible();
     }
 }
 void CMobileGameRenderer::CameraOrthoSizeChanged(void* data, float fov) {
-    CMobileGameRenderer* ptr = (CMobileGameRenderer*)data;
-    ptr->zoom_slider_value = (int)((1.0f - (fov - ptr->camera->OrthoSizeMin) / (ptr->camera->OrthoSizeMax - ptr->camera->OrthoSizeMin)) * 100);
+    auto* ptr = (CMobileGameRenderer*)data;
     ptr->renderer->UpdateFlatModelMinMax(fov);
-}
-
-void CMobileGameRenderer::CameraRotate(void* data, CCPanoramaCamera* cam)
-{
-    CMobileGameRenderer* ptr = (CMobileGameRenderer*)data;
-    if (ptr->SplitFullImage) {
-    }
-}
-void CMobileGameRenderer::BeforeQuitCallback(COpenGLView* view) {
-    CMobileGameRenderer* renderer = (CMobileGameRenderer*)view->GetRenderer();
-    renderer->SaveSettings();
 }
 
 void CMobileGameRenderer::AddTextureToQueue(CCTexture* tex, int x, int y, int id) {
     texLoadQueue->Push(tex, x, y, id);
 }
-void CMobileGameRenderer::SwitchMode(PanoramaMode mode)
+void CMobileGameRenderer::SwitchMode(PanoramaMode panoramaMode)
 {
-    this->mode = mode;
+    mode = panoramaMode;
     renderer->renderPanoramaFull = false;
     switch (mode)
     {
@@ -599,33 +474,9 @@ void CMobileGameRenderer::SwitchMode(PanoramaMode mode)
         break;
     }
 }
-void CMobileGameRenderer::UpdateConsoleState() {
-    ShowWindow(GetConsoleWindow(), show_console ? SW_SHOW : SW_HIDE);
-    if (show_console) View->Active();
-}
-void CMobileGameRenderer::LoadAndChechRegister() {
-    if (!reg_dialog_showed) {
-        loopCount += View->GetDeltaTime();
-        if (loopCount >= 10.0f) {
-            loopCount = 0;
-            reg_dialog_showed = true;
-            time_t timep;
-            struct tm* p;
-            time(&timep);
-            p = gmtime(&timep);
-            int lastDayShowRegCount = settings->GetSettingInt(L"regShowLast", p->tm_mday);
-            int todayShowRegCount = 0;
-            if (lastDayShowRegCount == p->tm_mday) {
-                todayShowRegCount = settings->GetSettingInt(L"regShowCount", 0);
-            }
-            else 
-                settings->SetSettingInt(L"regShowCount", 0);
 
-            if (!settings->GetSettingBool(L"registered", false) && todayShowRegCount < 2) {
-                settings->SetSettingInt(L"regShowCount", todayShowRegCount++);
-                settings->SetSettingInt(L"regShowLast", p->tm_mday);
-                View->SendWindowsMessage(WM_CUSTOM_SHOW_REG, 0, 0);
-            }
-        }
+void CMobileGameRenderer::UpdsteGryoValue(float x, float y, float z) {
+    if(gryoEnabled) {
+        
     }
 }

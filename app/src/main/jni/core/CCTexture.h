@@ -15,6 +15,12 @@ public:
 	 */
 	bool Load(const vchar* path);
 	/**
+	 * 从内存自动加载贴图数据
+	 * @param buffer 数据
+	 * @param bufferSize 数据长度
+	 */
+	bool Load(BYTE* buffer, size_t bufferSize);
+	/**
 	 * 从内存加载贴图RGB数据
 	 * @param data RGB数据
 	 * @param width 图像宽

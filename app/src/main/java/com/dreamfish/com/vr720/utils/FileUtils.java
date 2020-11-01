@@ -14,23 +14,24 @@ import com.dreamfish.com.vr720.R;
 import java.io.File;
 
 public class FileUtils {
-    public static String getFileName(String pathandname){
-        int start=pathandname.lastIndexOf("/");
-        int end=pathandname.lastIndexOf(".");
-        if (start!=-1 && end!=-1) {
-            return pathandname.substring(start+1, end);
-        }
-        else {
+    public static String getFileName(String pathandname) {
+        int start = pathandname.lastIndexOf("/");
+        int end = pathandname.lastIndexOf(".");
+        if (start != -1 && end != -1) {
+            return pathandname.substring(start + 1, end);
+        } else {
             return null;
         }
     }
-    public static boolean deleteFile(String path){
+
+    public static boolean deleteFile(String path) {
         File file = new File(path);
-        if(file.exists()){
+        if (file.exists()) {
             return file.delete();
         }
         return false;
     }
+
     public static void openFile(Context context, String file) {
         try {
             Intent intent = new Intent();
@@ -49,5 +50,18 @@ public class FileUtils {
         } catch (ActivityNotFoundException e) {
             Toast.makeText(context, context.getString(R.string.text_image_cannot_open), Toast.LENGTH_SHORT).show();
         }
+    }
+
+    public static void shareFile(Context context, String file) {
+
+        Uri imgUri = Uri.parse("file:///" + file);
+
+        Intent shareIntent = new Intent();
+        shareIntent.setAction(Intent.ACTION_SEND);
+        shareIntent.putExtra(Intent.EXTRA_STREAM, imgUri);
+        shareIntent.setType("image/*");
+        //切记需要使用Intent.createChooser，否则会出现别样的应用选择框，您可以试试
+        shareIntent = Intent.createChooser(shareIntent, context.getString(R.string.text_share_image_title));
+        context.startActivity(shareIntent);
     }
 }

@@ -4,20 +4,27 @@
 #include "Logger.h"
 #include "CCAssetsManager.h"
 #include "CCMeshLoader.h"
+#include "CCSmartPtr.hpp"
 
-extern "C" jboolean JNICALL Java_com_dreamfish_com_vr720_core_NativeVR720_initNative(JNIEnv *env, jclass, jobject assetManager) {
+extern "C" JNIEXPORT jboolean JNICALL Java_com_dreamfish_com_vr720_core_NativeVR720_initNative(JNIEnv *env, jclass, jobject assetManager) {
   Logger::InitConst();
+  CCPtrPool::InitPool();
   CCMeshLoader::Init();
   CCAssetsManager::Android_InitFromJni(env, assetManager);
 
-  return JNI_FALSE;
+  return JNI_TRUE;
 }
-extern "C" void JNICALL Java_com_dreamfish_com_vr720_core_NativeVR720_releaseNative(JNIEnv *env, jclass) {
+extern "C" JNIEXPORT void JNICALL Java_com_dreamfish_com_vr720_core_NativeVR720_releaseNative(JNIEnv *env, jclass) {
 
 
   CCMeshLoader::Destroy();
+  CCPtrPool::ReleasePool();
   Logger::DestroyConst();
 }
-extern "C" jstring JNICALL Java_com_dreamfish_com_vr720_core_NativeVR720_getNativeVersion(JNIEnv *env, jclass) {
+extern "C" JNIEXPORT jstring JNICALL Java_com_dreamfish_com_vr720_core_NativeVR720_getNativeVersion(JNIEnv *env, jclass) {
   return env->NewStringUTF("1.0.2.DEV-3");
+}
+extern "C" JNIEXPORT void JNICALL Java_com_dreamfish_com_vr720_core_NativeVR720_lowMemory(JNIEnv *env, jclass clazz) {
+    auto* pool = CCPtrPool::GetStaticPool();
+    if(pool) pool->ClearUnUsedPtr();
 }

@@ -21,6 +21,12 @@ public:
 	 */
 	static CCMeshLoader* GetMeshLoaderByType(CCMeshType type);
 	/**
+	 * 通过文件路径获取指定类型的Mesh加载器
+	 * @param path 网格文件路径
+	 * @return 返回加载器
+	 */
+	static CCMeshLoader* GetMeshLoaderByFilePath(const vchar* path);
+	/**
 	 * 全局初始化
 	 */
 	static void Init();

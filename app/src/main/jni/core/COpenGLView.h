@@ -20,7 +20,10 @@ class CCRenderGlobal;
 class COpenGLView
 {
 public:
-	COpenGLView(COpenGLRenderer *renderer);
+	COpenGLView(COpenGLRenderer* renderer);
+
+	COpenGLView();
+
 	virtual ~COpenGLView();
 
 	//视图高度
@@ -46,6 +49,14 @@ public:
 	 * @param h 高度
 	 */
 	virtual void Resize(int w, int h);
+	/**
+	 * 设置鼠标事件回调
+	 */
+	void SetMouseCallback(ViewMouseCallback mouseCallback);
+	/**
+	 * 设置用户缩放手势事件回调
+	 */
+	void SetZoomViewCallback(ViewMouseCallback mouseCallback);
 
 #elif defined(VR720_WINDOWS) || defined(VR720_LINUX)
 
@@ -103,7 +114,7 @@ public:
 	 * 设置当前窗口的文字
 	 * @param text 文字
 	 */
-	virtual void SetViewText(const vchar * text) {}
+	virtual void SetViewText(const vchar* text) {}
 
 	/**
 	 * 设置当窗口关闭前回调
@@ -134,17 +145,17 @@ public:
 	 * 计算当前主摄像机的矩阵映射
 	 * @param shader 使用的程序
 	 */
-	void CalcMainCameraProjection(CCShader* shader);
+	void CalcMainCameraProjection(CCShader* shader) const;
 	/**
 	 * 计算无摄像机时的矩阵映射
 	 * @param shader 使用的程序
 	 */
-	void CalcNoMainCameraProjection(CCShader* shader);
+	void CalcNoMainCameraProjection(CCShader* shader) const;
 	/**
 	 * 计算当前主摄像机的矩阵映射
 	 * @param shader 使用的程序
 	 */
-	void CalcCameraProjection(CCamera* camera, CCShader* shader);
+	void CalcCameraProjection(CCamera* camera, CCShader* shader) const;
 
 	//当前主摄像机
 	CCamera* Camera = nullptr;
@@ -187,32 +198,41 @@ public:
 	 * @param code 按键键值
 	 * @return
 	 */
-	virtual bool GetKeyPress(int code) { return false; }
+	virtual bool GetKeyPress(int code);
 	/**
 	 * 获取是否有键正在按下
 	 * @param code 按键键值
 	 * @return
 	 */
-	virtual bool GetKeyDown(int code) { return false; }
+	virtual bool GetKeyDown(int code);
 	/**
 	 * 获取是否有键放开
 	 * @param code 按键键值
 	 * @return
 	 */
-	virtual bool GetKeyUp(int code) { return false; }
+	virtual bool GetKeyUp(int code);
 
 	/**
 	 * 获取当前渲染器
 	 * @return
 	 */
-	COpenGLRenderer * GetRenderer();
+	COpenGLRenderer* GetRenderer();
 
 protected:
 
-	COpenGLRenderer * OpenGLRenderer = NULL;
+	int DownedKeys[MAX_KEY_LIST];
+	int UpedKeys[MAX_KEY_LIST];
+
+	COpenGLRenderer* OpenGLRenderer = NULL;
 
 	ViewMouseCallback scrollCallback = nullptr;
 	ViewMouseCallback mouseCallback = nullptr;
 	BeforeQuitCallback beforeQuitCallback = nullptr;
+
+	int AddKeyInKeyList(int* list, int code);
+	int IsKeyInKeyListExists(int* list, int code);
+	void HandleDownKey(int code);
+	void HandleUpKey(int code);
+
 };
 

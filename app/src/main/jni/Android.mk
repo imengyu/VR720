@@ -29,6 +29,7 @@ MY_CPP_LIST := $(LOCAL_PATH)/vr720.cpp
 MY_CPP_LIST += $(wildcard $(LOCAL_PATH)/utils/*.cpp)
 MY_CPP_LIST += $(wildcard $(LOCAL_PATH)/imageloaders/*.cpp)
 MY_CPP_LIST += $(wildcard $(LOCAL_PATH)/core/*.cpp)
+MY_CPP_LIST += $(LOCAL_PATH)/vr720Renderer.cpp
 
 MY_CPP_LIST += $(LIB_PNG_FILES)
 MY_CPP_LIST += $(filter-out $(EXCLUDE_JPEG_FILES), $(LIB_JPEG_FILES))

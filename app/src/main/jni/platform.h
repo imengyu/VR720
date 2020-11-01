@@ -4,10 +4,13 @@
 
 #if defined(_WIN16) || defined(_WIN32) || defined(_WIN64)
 #define VR720_WINDOWS 1
+#define VR720_USE_GLES 0
 #elif defined(ANDROID)
 #define VR720_ANDROID 1
+#define VR720_USE_GLES 1
 #elif defined(__linux__)
 #define VR720_LINUX 1
+#define VR720_USE_GLES 0
 #else
 #define VR720_UNKNOW 1
 #endif
@@ -25,6 +28,23 @@
 #define vstring std::string
 #define _vstr(x) x
 #define WCHAR_API 0
+#endif
+
+//key map
+
+#if defined(VR720_WINDOWS)
+#define VR720_KEY_LEFT VK_LEFT
+#define VR720_KEY_UP VK_UP
+#define VR720_KEY_RIGHT VK_RIGHT
+#define VR720_KEY_DOWN VK_DOWN
+#define VR720_KEY_ESCAPE VK_ESCAPE
+#define VR720_KEY_F11 VK_F11
+#define VR720_KEY_F10 VK_F10
+#elif defined(VR720_ANDROID)
+#define VR720_KEY_LEFT 0
+#define VR720_KEY_UP 1
+#define VR720_KEY_RIGHT 2
+#define VR720_KEY_DOWN 3
 #endif
 
 #endif // !PLATFORM_H

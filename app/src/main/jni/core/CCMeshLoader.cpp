@@ -1,6 +1,7 @@
 #include "CCMeshLoader.h"
 #include "CCMesh.h"
 #include "CCObjLoader.h"
+#include "PathHelper.h"
 
 CCObjLoader* objLoader = nullptr;
 
@@ -15,6 +16,13 @@ CCMeshLoader* CCMeshLoader::GetMeshLoaderByType(CCMeshType type)
 	}
 	return nullptr;
 }
+CCMeshLoader *CCMeshLoader::GetMeshLoaderByFilePath(const vchar *path) {
+	vstring ext = Path::GetExtension(path);
+	if(ext == _vstr("obj"))
+		return objLoader;
+	return nullptr;
+}
+
 void CCMeshLoader::Init()
 {
 	objLoader = new CCObjLoader();
@@ -38,4 +46,5 @@ void CCMeshLoader::SetLastError(const vchar* err)
 {
 	lastErr = err;
 }
+
 

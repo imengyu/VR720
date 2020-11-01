@@ -5,84 +5,113 @@
 #ifndef VR720_CCSMARTPTR_HPP
 #define VR720_CCSMARTPTR_HPP
 
+#include <unordered_map>
+
 //模板类作为友元时要先有声明
 template <typename T>
 class CCSmartPtr;
 
 //辅助类
-template <typename T>
 class CCUPtr
 {
-private:
-    //该类成员访问权限全部为private，因为不想让用户直接使用该类
-    friend class CCSmartPtr<T>;      //定义智能指针类为友元，因为智能指针类需要直接操纵辅助类
+public:
 
     //构造函数的参数为基础对象的指针
-    CCUPtr(T *ptr) :p(ptr), count(1) { }
+    CCUPtr(void* ptr);
 
     //析构函数
-    ~CCUPtr() { delete p; }
+    ~CCUPtr();
+
     //引用计数
     int count;
 
     //基础对象指针
-    T *p;
+    void *p;
 };
+
+//指针池
+class CCPtrPool {
+
+public:
+
+    std::unordered_map<void*, CCUPtr*> pool;
+
+    static CCPtrPool* GetStaticPool();
+    static void InitPool();
+    static void ReleasePool();
+
+    CCUPtr* GetPtr(void* ptr);
+    CCUPtr* AddPtr(void* ptr);
+    CCUPtr* AddRefPtr(void* ptr);
+    CCUPtr* RemoveRefPtr(void* ptr);
+    void ReleasePtr(void* ptr);
+    void ClearUnUsedPtr();
+};
+#define CCPtrPoolStatic CCPtrPool::GetStaticPool()
 
 //智能指针类
 template <typename T>
 class CCSmartPtr
 {
+private:
+    T* ptr = nullptr;
+    CCUPtr* rp = nullptr;  //辅助类对象指针
 public:
-    CCSmartPtr() {}
-    CCSmartPtr(T *ptr) :rp(new CCUPtr<T>(ptr)) { }      //构造函数
-    CCSmartPtr(const CCSmartPtr<T> &sp) : rp(sp.rp) { ++rp->count; }  //复制构造函数
-    CCSmartPtr& operator = (const CCSmartPtr<T>& rhs) {    //重载赋值操作符
-        if(rp) {
-            if(rhs.rp)
-                ++rhs.rp->count;     //首先将右操作数引用计数加1，
-            if (--rp->count == 0)     //然后将引用计数减1，可以应对自赋值
-                ForceRelease();
-            rp = rhs.rp;
-        }
+    CCSmartPtr() {  
+        ptr = nullptr;
+        rp = CCPtrPoolStatic->AddPtr(nullptr);   
+    }
+    //构造函数
+    CCSmartPtr(T *srcPtr)  { 
+        ptr = srcPtr;
+        rp = CCPtrPoolStatic->AddPtr(srcPtr);
+    }      
+    //复制构造函数
+    CCSmartPtr(const CCSmartPtr<T> &sp)  {      
+        ptr = sp.ptr;
+        rp = CCPtrPoolStatic->AddRefPtr(sp.ptr);
+    }     
+
+    //重载赋值操作符
+    CCSmartPtr& operator = (const CCSmartPtr<T>& rhs) {    
+        CCPtrPoolStatic->RemoveRefPtr(ptr);
+        ptr = rhs.ptr;
+        rp = CCPtrPoolStatic->AddRefPtr(ptr);
         return *this;
     }
 
     T & operator *() const { //重载*操作符
-        return *(rp->p);
+        return *ptr;
     }
     T* operator ->() const { //重载->操作符
-        return rp->p;
+        return ptr;
     }
 
     bool IsNullptr() const {
-        return rp == nullptr || rp->p == nullptr;
+        return ptr == nullptr;
     }
-    T* GetPtr() const {
-        return rp ? rp->p : nullptr;
-    }
+    T* GetPtr() const { return ptr;  }
     int CheckRef() {
         if (rp) return rp->count;
         return 0;
     }
     int AddRef() {
-        if (rp) {
+        if (rp) 
             return ++rp->count;
-        }
         return 0;
     }
     void ForceRelease() {
-        if (rp)
-            delete rp;
-        rp = nullptr;
+        CCPtrPool::GetStaticPool()->ReleasePtr(ptr);
+        ptr = nullptr;
+        *rp = nullptr;
     }
 
     ~CCSmartPtr() {        //析构函数
-        if (rp && --rp->count == 0)    //当引用计数减为0时，删除辅助类对象指针，从而删除基础对象
-            ForceRelease();
+        CCPtrPoolStatic->RemoveRefPtr(ptr);
+        ptr = nullptr;
+        rp = nullptr;
     }
-private:
-    CCUPtr<T> *rp = nullptr;  //辅助类对象指针
+
 };
 
 

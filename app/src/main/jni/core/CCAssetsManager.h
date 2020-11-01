@@ -7,6 +7,8 @@
 
 #include "stdafx.h"
 
+class CCMesh;
+class CCTexture;
 /**
  * 资源管理
  */
@@ -39,6 +41,20 @@ public:
      * @return 返回数据缓冲区
      */
     static BYTE* LoadResource(const vchar* path, size_t *bufferLength);
+
+    /**
+     * 从文件加载贴图
+     * @param path 贴图路径
+     * @return 返回贴图，如果加载失败返回nullptr
+     */
+    static CCTexture* LoadTexture(const vchar* path);
+
+    /**
+     * 从文件加载网格
+     * @param path 网格路径
+     * @return 返回网格，如果加载失败返回nullptr
+     */
+    static CCMesh* LoadMesh(const vchar* path);
 
 #ifdef VR720_ANDROID
     /**

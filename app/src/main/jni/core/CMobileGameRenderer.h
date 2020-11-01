@@ -7,12 +7,13 @@
 #include "CCTextureLoadQueue.h"
 #include "CCModel.h"
 #include "CCFileManager.h"
+#include "CCGUInfo.h"
 
 #include <vector>
 
 //全景模式
 enum PanoramaMode : int16_t {
-	PanoramaSphere,
+	PanoramaSphere = 0,
 	PanoramaCylinder,
 	PanoramaAsteroid,
 	PanoramaOuterBall,
@@ -22,6 +23,7 @@ enum PanoramaMode : int16_t {
 	PanoramaModeMax,
 };
 
+class CMobileGameUIEventDistributor;
 class CImageLoader;
 class CMobileGameRenderer : public COpenGLRenderer
 {
@@ -29,20 +31,27 @@ public:
 	CMobileGameRenderer();
 	~CMobileGameRenderer();
 
-	void SetOpenFilePath(const wchar_t* path);
+	void SetOpenFilePath(const char* path);
 	void DoOpenFile();
 	void MarkShouldOpenFile() { should_open_file = true; }
 	void MarkCloseFile(bool delete_after_close) {
 		should_close_file = true; 
 		this->delete_after_close = delete_after_close;
 	}
-	void AddTextureToQueue(CCTexture* tex, int x, int y, int id);
+	void SwitchMode(PanoramaMode mode);
+	void SetGryoEnabled(bool enable) { gryoEnabled = enable; }
+	void SetVREnabled(bool enable) { vREnabled = enable; }
+	void UpdsteGryoValue(float x, float y, float z);
 
+	PanoramaMode GetMode() { return mode; }
+	const char* GetImageOpenError() { return last_image_error.c_str(); }
+    CCGUInfo* GetGUInfo() { return uiInfo; }
+	void SetUiEventDistributor( CMobileGameUIEventDistributor*uv) { uiEventDistributor = uv; }
 private:
 
 	Logger* logger;
 
-	std::wstring currentOpenFilePath;
+	std::string currentOpenFilePath;
 	bool fileOpened = false;
 
 	bool Init() override;
@@ -52,8 +61,6 @@ private:
 	void Resize(int Width, int Height) override;
 	void Destroy() override;
 
-	char* GetPanoramaModeStr(PanoramaMode mode);
-
 	//全景模式
 	PanoramaMode mode = PanoramaMode::PanoramaSphere;
 	CCPanoramaCamera*camera = nullptr;
@@ -61,15 +68,16 @@ private:
 	CCFileManager*fileManager = nullptr;
 	CCTextureLoadQueue*texLoadQueue = nullptr;
 
+	gryoEnabled = false;
+	vREnabled = false;
+
 	void ShowErrorDialog();
-	
-	bool reg_dialog_showed = false;
+
+    CMobileGameUIEventDistributor*uiEventDistributor = nullptr;
+    CCGUInfo* uiInfo = nullptr;
 	bool file_opened = false;
 
-	std::string last_image_error;
-
-	float current_fps = 0;
-	DWORD current_draw_time = 0;
+	vstring last_image_error;
 
 	bool render_init_finish = false;
 	bool should_open_file = false;
@@ -81,7 +89,6 @@ private:
 	float lastX = 0, lastY = 0, xoffset = 0, yoffset = 0;
 	float loopCount = 0;
 
-	void LoadImageInfo();
 	void TestSplitImageAndLoadTexture();
 
 	TextureLoadQueueDataResult* LoadChunkTexCallback(TextureLoadQueueInfo* info, CCTexture* texture);
@@ -89,13 +96,6 @@ private:
 	static void FileCloseCallback(void* data);
 	static void CameraFOVChanged(void* data, float fov);
 	static void CameraOrthoSizeChanged(void* data, float fov);
-	static void CameraRotate(void* data, CCPanoramaCamera* cam);
-	static void BeforeQuitCallback(COpenGLView* view);
-
-	void SwitchMode(PanoramaMode mode);
-	void UpdateConsoleState();
-
-	void LoadAndChechRegister();
 
 	float MouseSensitivity = 0.1f;
 	float RotateSpeed = 20.0f;
@@ -103,11 +103,10 @@ private:
 
 	bool SplitFullImage = true;
 
+	void AddTextureToQueue(CCTexture* tex, int x, int y, int id);
+
 	static void MouseCallback(COpenGLView* view, float x, float y, int button, int type);
 	static void ScrollCallback(COpenGLView* view, float x, float y, int button, int type);
-
-	void LoadSettings();
-	void SaveSettings();
-
+	void KeyMoveCallback(CCameraMovement move);
 };
 

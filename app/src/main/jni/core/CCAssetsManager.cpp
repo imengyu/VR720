@@ -4,6 +4,9 @@
 
 #include "CCAssetsManager.h"
 #include "CCFileReader.h"
+#include "CCTexture.h"
+#include "CCMesh.h"
+#include "CCMeshLoader.h"
 
 #if defined(VR720_WINDOWS)
 #include "CApp.h"
@@ -76,6 +79,34 @@ BYTE *CCAssetsManager::LoadResource(const vchar *path, size_t *bufferLength) {
 #endif
     return nullptr;
 }
+CCTexture *CCAssetsManager::LoadTexture(const vchar *path) {
+#if defined(VR720_ANDROID)
+    auto * tex = new CCTexture();
+    BYTE *buffer = nullptr;
+    size_t bufferLength = 0;
+    if (Android_LoadAsset(path, &buffer, &bufferLength))
+        tex->Load(buffer, bufferLength);
+#else
+    auto * tex = new CCTexture();
+    tex->Load(path);
+#endif
+    return tex;
+}
+CCMesh *CCAssetsManager::LoadMesh(const vchar *path) {
+    auto * mesh = new CCMesh();
+    CCMeshLoader * meshLoader = CCMeshLoader::GetMeshLoaderByFilePath(path);
+    if(meshLoader) {
+#if defined(VR720_ANDROID)
+        BYTE *buffer = nullptr;
+        size_t bufferLength = 0;
+        if (Android_LoadAsset(path, &buffer, &bufferLength))
+            meshLoader->Load(buffer, bufferLength, mesh);
+#else
+        meshLoader->Load(path, mesh);
+#endif
+    }
+    return mesh;
+}
 
 #ifdef VR720_ANDROID
 
@@ -98,6 +129,7 @@ bool CCAssetsManager::Android_LoadAsset(const char *path, BYTE **buffer, size_t 
     AAsset_close(asset);
     return true;
 }
+
 
 #endif
 

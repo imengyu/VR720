@@ -1,5 +1,6 @@
 #include "CCPanoramaRenderer.h"
 #include "COpenGLRenderer.h"
+#include "COpenGLView.h"
 #include "CCFileManager.h"
 #include "CCAssetsManager.h"
 #include "CCMesh.h"
@@ -12,6 +13,7 @@
 CCPanoramaRenderer::CCPanoramaRenderer(CMobileGameRenderer* renderer)
 {
     Renderer = renderer;
+    logger = Logger::GetStaticInstance();
 }
 
 #elif defined(VR720_WINDOWS)
@@ -20,6 +22,7 @@ CCPanoramaRenderer::CCPanoramaRenderer(CMobileGameRenderer* renderer)
 CCPanoramaRenderer::CCPanoramaRenderer(CWindowsGameRenderer* renderer)
 {
     Renderer = renderer;
+    logger = Logger::GetStaticInstance();
 }
 #endif
 
@@ -36,8 +39,8 @@ void CCPanoramaRenderer::Init()
     LoadBuiltInResources();
 
     shader = new CCShader(
-            CCAssetsManager::GetResourcePath(_vstr("shader"), _vstr("Standard_vertex.glsl")).c_str(),
-            CCAssetsManager::GetResourcePath(_vstr("shader"), _vstr("Standard_fragment.glsl")).c_str());
+        CCAssetsManager::GetResourcePath(_vstr("shader"), _vstr("Standard_vertex.glsl")).c_str(),
+        CCAssetsManager::GetResourcePath(_vstr("shader"), _vstr("Standard_fragment.glsl")).c_str());
 
     CreateMainModel();
 
@@ -90,8 +93,10 @@ void CCPanoramaRenderer::Render(float deltaTime)
     model = mainModel->GetMatrix();
     glUniformMatrix4fv(globalRenderInfo->modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
+#if !VR720_USE_GLES
     glPolygonMode(GL_FRONT, GL_FILL);
     glPolygonMode(GL_BACK, GL_LINE);
+#endif
 
     //完整绘制
     glUniform1i(globalRenderInfo->useColorLoc, 0);
@@ -107,6 +112,7 @@ void CCPanoramaRenderer::Render(float deltaTime)
             RenderFlat();
     }
 
+#if !(VR720_USE_GLES && VR720_ANDROID)
     //绘制测试
     if (renderPanoramaFullTest) {
         glPolygonMode(GL_FRONT, GL_LINE);
@@ -156,6 +162,7 @@ void CCPanoramaRenderer::Render(float deltaTime)
         glVertex3f(0.05f, 0.0f, 0.0f);
         glEnd();
     }
+#endif
 }
 
 void CCPanoramaRenderer::CreateMainModel() {
@@ -175,20 +182,22 @@ void CCPanoramaRenderer::CreateMainModel() {
 
     CreateMainModelFlatMesh(mainFlatModel->Mesh.GetPtr());
 }
-void CCPanoramaRenderer::CreateMainModelFlatMesh(CCMesh* mesh) {
+void CCPanoramaRenderer::CreateMainModelFlatMesh(CCMesh* mesh) const {
     mesh->normals.clear();
     mesh->positions.clear();
     mesh->texCoords.clear();
     mesh->indices.clear();
 
-    float ustep = 1.0f / sphereSegmentX, vstep = 1.0f / sphereSegmentY;
+    float ustep = 1.0f / (float)sphereSegmentX, vstep = 1.0f / (float)sphereSegmentY;
     float u, v = 0;
 
-    for (int j = 0; j <= sphereSegmentY; j++, v += vstep) {
+    for (int j = 0; j <= sphereSegmentY; j++) {
+        v += vstep;
         u = 0;
-        for (int i = 0; i <= sphereSegmentX; i++, u += ustep) {
-            mesh->positions.push_back(glm::vec3(0.5f - u, (0.5f - v) / 2.0f, 0.0f));
-            mesh->texCoords.push_back(glm::vec2(1.0f - u, v));
+        for (int i = 0; i <= sphereSegmentX; i++) {
+            u += ustep;
+            mesh->positions.emplace_back(glm::vec3(0.5f - u, (0.5f - v) / 2.0f, 0.0f));
+            mesh->texCoords.emplace_back(glm::vec2(1.0f - u, v));
         }
     }
 
@@ -198,33 +207,35 @@ void CCPanoramaRenderer::CreateMainModelFlatMesh(CCMesh* mesh) {
         int line_start_pos = (j)*vertices_line_count;
         for (int i = 0; i < sphereSegmentX; i++) {
 
-            mesh->indices.push_back(CCFace(line_start_pos + i, 0, -1));
-            mesh->indices.push_back(CCFace(line_start_pos + i + vertices_line_count + 1, 0, -1));
-            mesh->indices.push_back(CCFace(line_start_pos + i + vertices_line_count, 0, -1));
+            mesh->indices.emplace_back(CCFace(line_start_pos + i, 0, -1));
+            mesh->indices.emplace_back(CCFace(line_start_pos + i + vertices_line_count + 1, 0, -1));
+            mesh->indices.emplace_back(CCFace(line_start_pos + i + vertices_line_count, 0, -1));
 
-            mesh->indices.push_back(CCFace(line_start_pos + i + vertices_line_count + 1, 0, -1));
-            mesh->indices.push_back(CCFace(line_start_pos + i, 0, -1));
-            mesh->indices.push_back(CCFace(line_start_pos + i + 1, 0, -1));
+            mesh->indices.emplace_back(CCFace(line_start_pos + i + vertices_line_count + 1, 0, -1));
+            mesh->indices.emplace_back(CCFace(line_start_pos + i, 0, -1));
+            mesh->indices.emplace_back(CCFace(line_start_pos + i + 1, 0, -1));
         }
     }
 
     //创建缓冲区
     mesh->GenerateBuffer();
 }
-void CCPanoramaRenderer::CreateMainModelSphereMesh(CCMesh* mesh) {
+void CCPanoramaRenderer::CreateMainModelSphereMesh(CCMesh* mesh) const {
 
     float r = 1.0f;
-    float ustep = 1.0f / sphereSegmentX, vstep = 1.0f / sphereSegmentY;
+    float ustep = 1.0f / (float)sphereSegmentX, vstep = 1.0f / (float)sphereSegmentY;
     float u, v = 0;
 
     //顶点
     //=======================================================
 
-    for (int j = 0; j <= sphereSegmentY; j++, v += vstep) {
+    for (int j = 0; j <= sphereSegmentY; j++) {
+        v += vstep;
         u = 0;
-        for (int i = 0; i <= sphereSegmentX; i++, u += ustep) {
+        for (int i = 0; i <= sphereSegmentX; i++) {
+            u += ustep;
             mesh->positions.push_back(GetSpherePoint(u, v, r));
-            mesh->texCoords.push_back(glm::vec2(1.0f - u, v));
+            mesh->texCoords.emplace_back(glm::vec2(1.0f - u, v));
         }
     }
 
@@ -235,61 +246,65 @@ void CCPanoramaRenderer::CreateMainModelSphereMesh(CCMesh* mesh) {
     int line_start_pos = vertices_line_count;
 
     for (int i = 0; i < sphereSegmentX; i++) {
-        mesh->indices.push_back(CCFace(line_start_pos + i + 1, 0, -1));
-        mesh->indices.push_back(CCFace(line_start_pos + i, 0, -1));
-        mesh->indices.push_back(CCFace(i, 0, -1));
+        mesh->indices.emplace_back(CCFace(line_start_pos + i + 1, 0, -1));
+        mesh->indices.emplace_back(CCFace(line_start_pos + i, 0, -1));
+        mesh->indices.emplace_back(CCFace(i, 0, -1));
     }
     for (int j = 0; j < sphereSegmentY - 1; j++) {
         line_start_pos = (j + 1) * vertices_line_count;
         for (int i = 0; i < sphereSegmentX; i++) {
 
-            mesh->indices.push_back(CCFace(line_start_pos + i, 0, -1));
-            mesh->indices.push_back(CCFace(line_start_pos + i + vertices_line_count + 1, 0, -1));
-            mesh->indices.push_back(CCFace(line_start_pos + i + vertices_line_count, 0, -1));
+            mesh->indices.emplace_back(CCFace(line_start_pos + i, 0, -1));
+            mesh->indices.emplace_back(CCFace(line_start_pos + i + vertices_line_count + 1, 0, -1));
+            mesh->indices.emplace_back(CCFace(line_start_pos + i + vertices_line_count, 0, -1));
 
-            mesh->indices.push_back(CCFace(line_start_pos + i + vertices_line_count + 1, 0, -1));
-            mesh->indices.push_back(CCFace(line_start_pos + i, 0, -1));
-            mesh->indices.push_back(CCFace(line_start_pos + i + 1, 0, -1));
+            mesh->indices.emplace_back(CCFace(line_start_pos + i + vertices_line_count + 1, 0, -1));
+            mesh->indices.emplace_back(CCFace(line_start_pos + i, 0, -1));
+            mesh->indices.emplace_back(CCFace(line_start_pos + i + 1, 0, -1));
         }
     }
 
     line_start_pos = vertices_line_count * sphereSegmentY;
     for (int i = 0; i < sphereSegmentX; i++) {
-        mesh->indices.push_back(CCFace(line_start_pos + i, 0, -1));
-        mesh->indices.push_back(CCFace(line_start_pos + i + 1, 0, -1));
-        mesh->indices.push_back(CCFace(line_start_pos + i + vertices_line_count, 0, -1));
+        mesh->indices.emplace_back(CCFace(line_start_pos + i, 0, -1));
+        mesh->indices.emplace_back(CCFace(line_start_pos + i + 1, 0, -1));
+        mesh->indices.emplace_back(CCFace(line_start_pos + i + vertices_line_count, 0, -1));
     }
 
     //创建缓冲区
     mesh->GenerateBuffer();
 }
-glm::vec3 CCPanoramaRenderer::CreateFullModelSphereMesh(ChunkModel* info, int segXStart, int segYStart, int segX, int segY) {
+glm::vec3 CCPanoramaRenderer::CreateFullModelSphereMesh(ChunkModel* info, int segXStart, int segYStart, int segX, int segY) const {
 
     CCMesh* mesh = info->model->Mesh.GetPtr();
 
     float r = 0.99f;
-    float ustep = 1.0f / sphereFullSegmentX, vstep = 1.0f / sphereFullSegmentY;
+    float ustep = 1.0f / (float)sphereFullSegmentX, vstep = 1.0f / (float)sphereFullSegmentY;
     float u, v, cu, cv = 0;
 
     int segXEnd = segXStart + segX;
     int segYEnd = segYStart + segY;
 
-    float u_start = segXStart * ustep, v_start = segYStart * vstep;
-    float custep = 1.0f / (segXEnd - segXStart), cvstep = 1.0f / (segYEnd - segYStart);
+    float u_start = (float)segXStart * ustep, v_start = (float)segYStart * vstep;
+    float custep = 1.0f / (float)(segXEnd - segXStart), cvstep = 1.0f / (float)(segYEnd - segYStart);
     v = v_start;
 
     int skip = 0;
 
-    for (int j = segYStart; j <= segYEnd; j++, v += vstep, cv += cvstep) {
+    for (int j = segYStart; j <= segYEnd; j++) {
+        v += vstep;
+        cv += cvstep;
         if (j <= 2 || j >= sphereFullSegmentY - 4) {
             skip++;
             continue;
         }
         u = u_start;
         cu = 1.0f;
-        for (int i = segXStart; i <= segXEnd; i++, u += ustep, cu -= custep) {
+        for (int i = segXStart; i <= segXEnd; i++) {
+            u += ustep;
+            cu -= custep;
             mesh->positions.push_back(GetSpherePoint(u, v, r));
-            mesh->texCoords.push_back(glm::vec2(cu, cv));
+            mesh->texCoords.emplace_back(glm::vec2(cu, cv));
         }
     }
 
@@ -298,23 +313,23 @@ glm::vec3 CCPanoramaRenderer::CreateFullModelSphereMesh(ChunkModel* info, int se
         int line_start_pos = (j)*vertices_line_count;
         for (int i = 0; i < segXEnd - segXStart; i++) {
 
-            mesh->indices.push_back(CCFace(line_start_pos + i, 0, -1));
-            mesh->indices.push_back(CCFace(line_start_pos + i + vertices_line_count + 1, 0, -1));
-            mesh->indices.push_back(CCFace(line_start_pos + i + vertices_line_count, 0, -1));
+            mesh->indices.emplace_back(CCFace(line_start_pos + i, 0, -1));
+            mesh->indices.emplace_back(CCFace(line_start_pos + i + vertices_line_count + 1, 0, -1));
+            mesh->indices.emplace_back(CCFace(line_start_pos + i + vertices_line_count, 0, -1));
 
-            mesh->indices.push_back(CCFace(line_start_pos + i + vertices_line_count + 1, 0, -1));
-            mesh->indices.push_back(CCFace(line_start_pos + i, 0, -1));
-            mesh->indices.push_back(CCFace(line_start_pos + i + 1, 0, -1));
+            mesh->indices.emplace_back(CCFace(line_start_pos + i + vertices_line_count + 1, 0, -1));
+            mesh->indices.emplace_back(CCFace(line_start_pos + i, 0, -1));
+            mesh->indices.emplace_back(CCFace(line_start_pos + i + 1, 0, -1));
         }
     }
 
     //创建缓冲区
     mesh->GenerateBuffer();
 
-    float center_u = (u_start + ustep * ((segXEnd - segXStart) / 2.0f)),
-            center_v = (v_start + vstep * ((segYEnd - segYStart) / 2.0f)),
-            center_u_2 = (center_u - u_start) / 10.0f * 9.0f,
-            center_v_2 = (center_v - v_start) / 10.0f * 9.0f;
+    float center_u = (u_start + ustep * ((float)(segXEnd - segXStart) / 2.0f)),
+        center_v = (v_start + vstep * ((float)(segYEnd - segYStart) / 2.0f)),
+        center_u_2 = (center_u - u_start) / 10.0f * 9.0f,
+        center_v_2 = (center_v - v_start) / 10.0f * 9.0f;
 
     info->pointA = GetSpherePoint(center_u - center_u_2, center_v - center_v_2, r);
     info->pointB = GetSpherePoint(center_u + center_u_2, center_v - center_v_2, r);
@@ -349,12 +364,9 @@ void CCPanoramaRenderer::LoadBuiltInResources() {
 }
 void CCPanoramaRenderer::ReleaseTexPool() {
     renderPanoramaFull = false;
-    if (panoramaTexPool.size() > 0) {
-        std::vector<CCTexture*>::iterator it;
-        for (it = panoramaTexPool.begin(); it != panoramaTexPool.end(); it++) {
-            CCTexture* tex = *it;
-            delete tex;
-        }
+    if (!panoramaTexPool.empty()) {
+        for (auto & it : panoramaTexPool)
+            it.ForceRelease();
         panoramaTexPool.clear();
     }
     panoramaThumbnailTex = nullptr;
@@ -364,7 +376,7 @@ void CCPanoramaRenderer::ReleaseTexPool() {
 
 void CCPanoramaRenderer::ReleaseFullModel()
 {
-    if (fullModels.size() > 0) {
+    if (!fullModels.empty()) {
         std::vector<ChunkModel*>::iterator it;
         for (it = fullModels.begin(); it != fullModels.end(); it++) {
             ChunkModel* m = *it;
@@ -382,10 +394,10 @@ void CCPanoramaRenderer::GenerateFullModel(int chunkW, int chunkH)
     int segX = (int)floor((float)sphereFullSegmentX / (float)chunkW);
     int segY = (int)floor((float)sphereFullSegmentY / (float)chunkH);
 
-    float chunkWf = 1.0f / chunkW, chunkHf = 1.0f / chunkH;
+    float chunkWf = 1.0f / (float)chunkW, chunkHf = 1.0f / (float)chunkH;
     for (int i = 0; i < chunkW; i++) {
         for (int j = 0; j < chunkH; j++) {
-            ChunkModel* pChunkModel = new ChunkModel();
+            auto* pChunkModel = new ChunkModel();
             pChunkModel->model = new CCModel();
             pChunkModel->model->Visible = false;
             pChunkModel->model->Mesh = new CCMesh();
@@ -398,8 +410,8 @@ void CCPanoramaRenderer::GenerateFullModel(int chunkW, int chunkH)
             pChunkModel->chunkXv = pChunkModel->chunkXv + chunkWf;
             pChunkModel->chunkYv = pChunkModel->chunkYv + chunkHf;
             pChunkModel->pointCenter = CreateFullModelSphereMesh(pChunkModel,
-                                                                 i * segX, j * segY,
-                                                                 segX + ((i == chunkW - 1 && chunkW % 2 != 0) ? 1 : 0), segY);
+                i * segX, j * segY,
+                segX + ((i == chunkW - 1 && chunkW % 2 != 0) ? 1 : 0), segY);
             fullModels.push_back(pChunkModel);
         }
     }
@@ -407,7 +419,7 @@ void CCPanoramaRenderer::GenerateFullModel(int chunkW, int chunkH)
 
 //模型控制
 
-void CCPanoramaRenderer::ResetModel()
+void CCPanoramaRenderer::ResetModel() const
 {
     mainModel->Reset();
     mainFlatModel->Material->offest.x = 0.0f;
@@ -428,7 +440,7 @@ void CCPanoramaRenderer::RotateModelForce(float y, float z)
 
     UpdateFullChunksVisible();
 }
-void CCPanoramaRenderer::MoveModel(float xoffset, float yoffset)
+void CCPanoramaRenderer::MoveModel(float xoffset, float yoffset) const
 {
     if (renderPanoramaFlatXLoop) {
         float v = mainFlatModel->Material->offest.x + xoffset;
@@ -446,7 +458,7 @@ void CCPanoramaRenderer::MoveModel(float xoffset, float yoffset)
     if (mainModel->Position.y < FlatModelMin.y) mainModel->Position.y = FlatModelMin.y;
     if (mainModel->Position.y > FlatModelMax.y) mainModel->Position.y = FlatModelMax.y;
 }
-void CCPanoramaRenderer::MoveModelForce(float x, float y)
+void CCPanoramaRenderer::MoveModelForce(float x, float y) const
 {
     if (renderPanoramaFlatXLoop) {
         float v = mainFlatModel->Material->offest.x + x;
@@ -470,35 +482,41 @@ void CCPanoramaRenderer::UpdateMercatorControl() {
     CCMesh* mesh = mainFlatModel->Mesh.GetPtr();
     mesh->texCoords.clear();
 
-    float ustep = 1.0f / sphereSegmentX, vstep = 1.0f / sphereSegmentY;
+    float ustep = 1.0f / (float)sphereSegmentX, vstep = 1.0f / (float)sphereSegmentY;
     float u, v = 0;
 
-    for (int j = 0; j <= sphereSegmentY; j++, v += vstep) {
+    for (int j = 0; j <= sphereSegmentY; j++) {
+        v += vstep;
         u = 0;
-        for (int i = 0; i <= sphereSegmentX; i++, u += ustep)
+        for (int i = 0; i <= sphereSegmentX; i++) {
+            u += ustep;
             mesh->texCoords.push_back(GetMercatorUVPoint(1.0f - u, v));
+        }
     }
 
     mesh->ReBufferData();
 }
-void CCPanoramaRenderer::ResetMercatorControl() {
+void CCPanoramaRenderer::ResetMercatorControl() const {
     CCMesh* mesh = mainFlatModel->Mesh.GetPtr();
     mesh->texCoords.clear();
 
-    float ustep = 1.0f / sphereSegmentX, vstep = 1.0f / sphereSegmentY;
+    float ustep = 1.0f / (float)sphereSegmentX, vstep = 1.0f / (float)sphereSegmentY;
     float u, v = 0;
 
-    for (int j = 0; j <= sphereSegmentY; j++, v += vstep) {
+    for (int j = 0; j <= sphereSegmentY; j++) {
+        v += vstep;
         u = 0;
-        for (int i = 0; i <= sphereSegmentX; i++, u += ustep)
-            mesh->texCoords.push_back(glm::vec2(1.0 - u, v));
+        for (int i = 0; i <= sphereSegmentX; i++) {
+            u += ustep;
+            mesh->texCoords.emplace_back(1.0 - u, v);
+        }
     }
     mesh->ReBufferData();
 }
 
 //渲染
 
-void CCPanoramaRenderer::RenderThumbnail()
+void CCPanoramaRenderer::RenderThumbnail() const
 {
     mainModel->Render();
 }
@@ -516,20 +534,19 @@ void CCPanoramaRenderer::RenderFullChunks(float deltaTime)
         fullModels[renderPanoramaFullTestIndex]->model->Render();
     }
     else {
-        for (int i = 0, c = fullModels.size(); i < c; i++) {
-            ChunkModel* m = fullModels[i];
+        for (auto m : fullModels) {
             if (m->model->Visible)  //渲染区块
                 m->model->Render();
         }
     }
 }
-void CCPanoramaRenderer::RenderFlat() {
+void CCPanoramaRenderer::RenderFlat() const {
     mainFlatModel->Render();
 }
 
 //更新
 
-void CCPanoramaRenderer::UpdateMainModelTex()
+void CCPanoramaRenderer::UpdateMainModelTex() const
 {
     if (!panoramaThumbnailTex.IsNullptr()) {
         mainModel->Material->diffuse = panoramaThumbnailTex;
@@ -547,8 +564,7 @@ void CCPanoramaRenderer::UpdateMainModelTex()
 void CCPanoramaRenderer::UpdateFullChunksVisible() {
     if (renderPanoramaFull || renderPanoramaFullTest) {
         float fov = Renderer->View->Camera->FiledOfView;
-        for (auto it = fullModels.begin(); it != fullModels.end(); it++) {
-            ChunkModel* m = *it;
+        for (auto m : fullModels) {
             if (fov > 50)
                 m->model->Visible = IsInView(m->pointCenter);
             else
@@ -559,13 +575,13 @@ void CCPanoramaRenderer::UpdateFullChunksVisible() {
 
                     logger->Log(_vstr("Star load chunk %d, %d"), m->chunkX, m->chunkY);
 
-                    CCTexture* tex = new CCTexture();
+                    auto* tex = new CCTexture();
                     tex->wrapS = GL_MIRRORED_REPEAT;
                     tex->wrapT = GL_MIRRORED_REPEAT;
                     m->model->Material->diffuse = tex;
                     m->model->Material->tilling = glm::vec2(1.0f, 1.0f);
                     Renderer->AddTextureToQueue(tex, m->chunkX, m->chunkY, m->chunkY * m->chunkX + m->chunkX);//MainTex
-                    panoramaTexPool.push_back(tex);
+                    panoramaTexPool.emplace_back(tex);
                 }
             }
         }
@@ -586,25 +602,23 @@ bool CCPanoramaRenderer::IsInView(glm::vec3 worldPos)
     //glm::vec3 dir = glm::normalize(worldPos - cam->Position);
     //float dot = glm::dot(cam->Front, dir);     //判断物体是否在相机前面  
 
-    if (/*dot > 0 && */viewPos.x >= 0 && viewPos.x <= Renderer->View->Width && viewPos.y >= 0 && viewPos.y <= Renderer->View->Height)
-        return true;
-    else
-        return false;
+    return viewPos.x >= 0 && viewPos.x <= (float)Renderer->View->Width && viewPos.y >= 0 &&
+           viewPos.y <= (float)Renderer->View->Height;
 }
 glm::vec2 CCPanoramaRenderer::GetSphereUVPoint(float u, float v, short i) {
     return glm::vec2(u, v);
 }
 glm::vec3 CCPanoramaRenderer::GetSpherePoint(float u, float v, float r)
 {
-    constexpr float PI = glm::pi<float>();
+    constexpr auto PI = glm::pi<float>();
     float x = r * glm::sin(PI * v) * glm::sin(PI * u * 2);
     float y = r * glm::cos(PI * v);
     float z = r * glm::sin(PI * v) * glm::cos(PI * u * 2);
     return glm::vec3(x, y, z);
 }
-glm::vec2 CCPanoramaRenderer::GetMercatorUVPoint(float u, float v)
+glm::vec2 CCPanoramaRenderer::GetMercatorUVPoint(float u, float v) const
 {
-    constexpr float PI = glm::pi<float>();
+    constexpr auto PI = glm::pi<float>();
 
     float λ0 = MercatorControlPoint0.x * PI;
     float  λ = u * PI;
@@ -630,7 +644,7 @@ glm::vec2 CCPanoramaRenderer::GetMercatorUVPoint(float u, float v)
     */
 }
 void CCPanoramaRenderer::PrecalcMercator() {
-    constexpr float PI = glm::pi<float>();
+    constexpr auto PI = glm::pi<float>();
 
     float λ0 = MercatorControlPoint0.x * PI;
     float λ1 = MercatorControlPoint1.x * PI;
@@ -639,10 +653,10 @@ void CCPanoramaRenderer::PrecalcMercator() {
     float ф2 = MercatorControlPoint2.y * PI;
 
     Mercator_λp = glm::atan(
-            (glm::cos(ф1) * glm::sin(ф2) * glm::cos(λ1) - glm::sin(ф1) * glm::cos(ф2) * glm::cos(λ2)) /
-            (glm::sin(ф1) * glm::cos(ф2) * glm::sin(λ2) - glm::cos(ф1) * glm::sin(ф2) * glm::sin(λ1))
+        (glm::cos(ф1) * glm::sin(ф2) * glm::cos(λ1) - glm::sin(ф1) * glm::cos(ф2) * glm::cos(λ2)) /
+        (glm::sin(ф1) * glm::cos(ф2) * glm::sin(λ2) - glm::cos(ф1) * glm::sin(ф2) * glm::sin(λ1))
     );
     Mercator_фp = glm::atan(
-            -((glm::cos(Mercator_λp - λ1)) / glm::tan(ф1))
+        -((glm::cos(Mercator_λp - λ1)) / glm::tan(ф1))
     );
 }
