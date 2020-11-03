@@ -30,17 +30,21 @@ void CCPanoramaRenderer::Init()
 {
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
-    glEnable(GL_ALPHA_TEST);
     glDisable(GL_DITHER);
-    glDisable(GL_LIGHTING);
     glDisable(GL_DEPTH_TEST);
+#ifndef VR720_USE_GLES
+    glEnable(GL_ALPHA_TEST);
+    glDisable(GL_LIGHTING);
     glEnableClientState(GL_VERTEX_ARRAY);
-
+#endif
     LoadBuiltInResources();
 
-    shader = new CCShader(
-        CCAssetsManager::GetResourcePath(_vstr("shader"), _vstr("Standard_vertex.glsl")).c_str(),
-        CCAssetsManager::GetResourcePath(_vstr("shader"), _vstr("Standard_fragment.glsl")).c_str());
+    vstring vshaderPath = CCAssetsManager::GetResourcePath(_vstr("shader"), _vstr("Standard_vertex.glsl"));
+    vstring fshaderPath = CCAssetsManager::GetResourcePath(_vstr("shader"), _vstr("Standard_fragment.glsl"));
+    vstring vshaderCode = CCAssetsManager::LoadStringResource(vshaderPath.c_str());
+    vstring fshaderCode = CCAssetsManager::LoadStringResource(fshaderPath.c_str());
+
+    shader = new CCShader(vshaderCode.c_str(), fshaderCode.c_str());
 
     CreateMainModel();
 
@@ -339,12 +343,14 @@ glm::vec3 CCPanoramaRenderer::CreateFullModelSphereMesh(ChunkModel* info, int se
     return GetSpherePoint(center_u, center_v, r);
 }
 void CCPanoramaRenderer::LoadBuiltInResources() {
-    panoramaCheckTex = new CCTexture();
-    if (!panoramaCheckTex->Load(CCAssetsManager::GetResourcePath(_vstr("textures"), _vstr("checker.jpg")).c_str()))
+    panoramaCheckTex =
+            CCAssetsManager::LoadTexture(
+                    CCAssetsManager::GetResourcePath(_vstr("textures"), _vstr("checker.jpg")).c_str());
+    if(!panoramaCheckTex->Loaded())
         panoramaCheckTex = nullptr;
 
-    panoramaRedCheckTex = new CCTexture();
-    panoramaRedCheckTex->Load(CCAssetsManager::GetResourcePath(_vstr("textures"), _vstr("red_checker.jpg")).c_str());
+    panoramaRedCheckTex = CCAssetsManager::LoadTexture(
+            CCAssetsManager::GetResourcePath(_vstr("textures"), _vstr("red_checker.jpg")).c_str());
 
 #if defined(VR720_WINDOWS) || defined(VR720_LINUX)
 
@@ -580,7 +586,7 @@ void CCPanoramaRenderer::UpdateFullChunksVisible() {
                     tex->wrapT = GL_MIRRORED_REPEAT;
                     m->model->Material->diffuse = tex;
                     m->model->Material->tilling = glm::vec2(1.0f, 1.0f);
-                    Renderer->AddTextureToQueue(tex, m->chunkX, m->chunkY, m->chunkY * m->chunkX + m->chunkX);//MainTex
+                    Renderer->                                                                                                                                             AddTextureToQueue(tex, m->chunkX, m->chunkY, m->chunkY * m->chunkX + m->chunkX);//MainTex
                     panoramaTexPool.emplace_back(tex);
                 }
             }

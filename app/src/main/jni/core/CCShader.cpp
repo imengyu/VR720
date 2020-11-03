@@ -5,73 +5,14 @@
 #include <sstream>
 #include <iostream>
 
-CCShader::CCShader(const vchar* vertexPath, const vchar* fragmentPath)
+CCShader::CCShader(const char* vShaderCode, const char* fShaderCode)
 {
-    // 1. retrieve the vertex/fragment source code from filePath
-    vstring vertexCode;
-    vstring fragmentCode;
-#if WCHAR_API
-    std::wifstream vShaderFile;
-    std::wifstream fShaderFile;
-    // ensure ifstream objects can throw exceptions:
-    vShaderFile.exceptions(std::wifstream::failbit | std::wifstream::badbit);
-    fShaderFile.exceptions(std::wifstream::failbit | std::wifstream::badbit);
-    try
-    {
-        // open files
-        vShaderFile.open(vertexPath);
-        fShaderFile.open(fragmentPath);
-        std::wstringstream vShaderStream, fShaderStream;
-        // read file's buffer contents into streams
-        vShaderStream << vShaderFile.rdbuf();
-        fShaderStream << fShaderFile.rdbuf();
-        // close file handlers
-        vShaderFile.close();
-        fShaderFile.close();
-        // convert stream into string
-        vertexCode = vShaderStream.str();
-        fragmentCode = fShaderStream.str();
-    }
-    catch (std::wifstream::failure e)
-    {
-        LOGEF(_vstr("[CCShader] Read shader file failed! %s (%d)"), e.code().message().c_str(), e.code().value());
-    }
-    const char* vShaderCode = CStringHlp::UnicodeToAnsi(vertexCode).c_str();
-    const char* fShaderCode = CStringHlp::UnicodeToAnsi(fragmentCode).c_str();
-#else
-    std::ifstream vShaderFile;
-    std::ifstream fShaderFile;
-    // ensure ifstream objects can throw exceptions:
-    vShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    fShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    try
-    {
-        // open files
-        vShaderFile.open(vertexPath);
-        fShaderFile.open(fragmentPath);
-        std::stringstream vShaderStream, fShaderStream;
-        // read file's buffer contents into streams
-        vShaderStream << vShaderFile.rdbuf();
-        fShaderStream << fShaderFile.rdbuf();
-        // close file handlers
-        vShaderFile.close();
-        fShaderFile.close();
-        // convert stream into string
-        vertexCode = vShaderStream.str();
-        fragmentCode = fShaderStream.str();
-    }
-    catch (std::ifstream::failure e)
-    {
-        LOGEF(_vstr("[CCShader] Read shader file failed! %s (%d)"), e.code().message().c_str(), e.code().value());
-    }
-    const char* vShaderCode = vertexCode.c_str();
-    const char* fShaderCode = fragmentCode.c_str();
-#endif
-
-    // 2. compile shaders
     unsigned int vertex, fragment;
     int success;
     char infoLog[512];
+
+    //LOGIF("vShaderCode : \n%s", vShaderCode);
+    //LOGIF("fShaderCode : \n%s", fShaderCode);
 
     // vertex Shader
     vertex = glCreateShader(GL_VERTEX_SHADER);

@@ -5,13 +5,6 @@
 #define AltDirectorySeparatorChar  '/'
 #define VolumeSeparatorChar  ':'
 
-Path::Path()
-{
-}
-Path::~Path()
-{
-}
-
 bool Path::RemoveQuotes(char *pathBuffer, size_t bufferSize)
 {
 	if (pathBuffer[0] == L'\"')
@@ -37,7 +30,7 @@ bool Path::IsValidateFolderFileName(std::string path)
 	wchar_t u8CtrlCharBegin = 0x0, u8CtrlCharEnd = 0x31;
 
 	char* pName = (char*)path.c_str();
-	if (pName == NULL)
+	if (pName == nullptr)
 		ret = false;
 	else
 	{
@@ -46,13 +39,14 @@ bool Path::IsValidateFolderFileName(std::string path)
 			ret = false;
 	}
 
-	for (u32Index = 0; (u32Index < u32Length) && (ret == 0);
-		u32Index++)
-	{
-		if (u8CtrlCharBegin <= pName[u32Index] && pName[u32Index] <= u8CtrlCharEnd)
-			ret = false;
-		else if (wcschr(u8SpecialChar, pName[u32Index]) != NULL)
-			ret = false;
+	if(pName) {
+		for (u32Index = 0; (u32Index < u32Length) && (ret == 0);
+			 u32Index++) {
+			if (u8CtrlCharBegin <= pName[u32Index] && pName[u32Index] <= u8CtrlCharEnd)
+				ret = false;
+			else if (wcschr(u8SpecialChar, pName[u32Index]) != nullptr)
+				ret = false;
+		}
 	}
 	return ret;
 }
@@ -149,7 +143,7 @@ std::string Path::GetFileName(std::string path)
 	}
 	return path;
 }
-std::string Path::GetDirectoryName(std::string path)
+std::string Path::GetDirectoryName(const std::string& path)
 {
 	if (!path.empty()) {
 		char exeFullPath[MAX_PATH];
@@ -177,9 +171,10 @@ bool Path::Exists(char* path)
 {
 	return access(path, 0) == 0;
 }
-bool Path::Exists(std::string path)
+bool Path::Exists(const std::string& path)
 {
-	return Exists(path.c_str());
+	int ret = access(path.c_str(), 0);
+	return ret == 0;
 }
 
 bool Path::HasExtension(char* path)

@@ -31,25 +31,25 @@ public:
 	 * @param szStr Ô´×Ö·û´®
 	 * @return
 	 */
-	static std::string UnicodeToAnsi(std::wstring szStr);
+	static std::string UnicodeToAnsi(const std::wstring& szStr);
 	/**
 	 * ¿í×Ö·û Unicode ×ª UTF8
 	 * @param unicode Ô´×Ö·û´®
 	 * @return
 	 */
-	static std::string UnicodeToUtf8(std::wstring unicode);
+	static std::string UnicodeToUtf8(const std::wstring& unicode);
 	/**
 	 * Char ×ª¿í×Ö·û Unicode
 	 * @param szStr Ô´×Ö·û´®
 	 * @return
 	 */
-	static std::wstring AnsiToUnicode(std::string szStr);
+	static std::wstring AnsiToUnicode(const std::string& szStr);
 	/**
 	 * UTF8 ×Ö·û´®×ª Unicode¿í×Ö·û
 	 * @param szU8 Ô´×Ö·û´®
 	 * @return
 	 */
-	static std::wstring Utf8ToUnicode(std::string szU8);
+	static std::wstring Utf8ToUnicode(const std::string& szU8);
 
 #ifdef VR720_ANDROID
 

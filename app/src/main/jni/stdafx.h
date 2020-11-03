@@ -53,10 +53,8 @@
 
 #elif defined(VR720_ANDROID) //VR720_WINDOWS
 
-	#include <GLES2/gl2.h>
-    #include <GLES2/gl2ext.h>
-	#include <GLES/gl.h>
-    #include <GLES/glext.h>
+	#include <GLES3/gl31.h>
+    #include <GLES3/gl3ext.h>
 
 #endif //VR720_ANDROID
 

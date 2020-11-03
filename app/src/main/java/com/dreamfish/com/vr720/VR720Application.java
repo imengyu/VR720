@@ -8,10 +8,6 @@ import com.dreamfish.com.vr720.core.NativeVR720;
  */
 public class VR720Application extends Application {
 
-    static {
-        System.loadLibrary("vr720");
-    }
-
     @Override
     public void onCreate() {
         super.onCreate();

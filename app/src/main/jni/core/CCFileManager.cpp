@@ -33,18 +33,18 @@ bool CCFileManager::OpenFile(const vchar* path) {
         return false;
     }
 
-    LOGI("Open file \"%s\" type: %d", path, CurrenImageType);
+    LOGIF("Open file \"%s\" type: %d", path, CurrenImageType);
 
     glm::vec2 size = CurrentFileLoader->GetImageSize();
     if (size.x > 65536 || size.y > 32768) {
-        LOGE("Image size too big : %dx%d > 65536x32768", (int)size.x, (int)size.y);
+        LOGEF("Image size too big : %dx%d > 65536x32768", (int)size.x, (int)size.y);
         lastErr = "我们暂时无法打开非常大的图像（图像大小超过65536x32768）";
         CloseFile();
         return false;
     }
 
     if (CurrenImageType != ImageType::JPG && (size.x > 4096 || size.y > 2048)) {
-        LOGE("Image size too big (not jpeg) : %dx%d > 4096x2048", (int)size.x, (int)size.y);
+        LOGEF("Image size too big (not jpeg) : %dx%d > 4096x2048", (int)size.x, (int)size.y);
         lastErr = "大图像请转为JPEG格式打开（图像大小超过4096x2048）";
         CloseFile();
         return false;

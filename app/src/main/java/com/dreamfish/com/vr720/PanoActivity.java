@@ -3,15 +3,10 @@ package com.dreamfish.com.vr720;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
-
-import androidx.core.content.res.ResourcesCompat;
-import androidx.exifinterface.media.ExifInterface;
-
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.opengl.GLSurfaceView;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -26,19 +21,20 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.res.ResourcesCompat;
+import androidx.exifinterface.media.ExifInterface;
 
 import com.dreamfish.com.vr720.config.MainMessages;
+import com.dreamfish.com.vr720.core.NativeVR720;
 import com.dreamfish.com.vr720.core.NativeVR720GLSurfaceView;
 import com.dreamfish.com.vr720.core.NativeVR720Renderer;
 import com.dreamfish.com.vr720.dialog.CommonDialog;
-import com.dreamfish.com.vr720.core.NativeVR720;
 import com.dreamfish.com.vr720.utils.DateUtils;
 import com.dreamfish.com.vr720.utils.FileSizeUtil;
 import com.dreamfish.com.vr720.utils.FileUtils;
 import com.dreamfish.com.vr720.utils.StatusBarUtils;
 import com.dreamfish.com.vr720.widget.MyTitleBar;
 import com.dreamfish.com.vr720.widget.ToolbarButton;
-
 
 import java.io.File;
 import java.io.IOException;
@@ -92,6 +88,11 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
     private Drawable iconModeSource;
     private Drawable iconModeVideoBall;
 
+    private boolean closeMarked = false;
+    private boolean initialized = false;
+    private boolean vrEnabled = false;
+    private boolean gryoEnabled = false;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -112,8 +113,9 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
 
         initResources();
 
+        NativeVR720.updateAssetManagerPtr(getAssets());
         //初始化内核
-        if(!NativeVR720Renderer.checkSupportsEs2(this)) {
+        if(!NativeVR720Renderer.checkSupportsEs3(this)) {
             showErr(getString(R.string.text_your_device_dosnot_support_es20));
             return;
         }
@@ -122,6 +124,9 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
         initControls();
         initButtons();
         initSensor();
+
+        initialized = true;
+        onResume();
 
         //加载图片基础信息
         loadImageInfo();
@@ -206,6 +211,16 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
         button_vr = findViewById(R.id.button_vr);
         button_mode = findViewById(R.id.button_mode);
         button_mode.setOnClickListener(v -> changeMode());
+        button_vr.setOnClickListener(v -> {
+            vrEnabled = !vrEnabled;
+            renderer.setVREnable(vrEnabled);
+            button_vr.setChecked(vrEnabled);
+        });
+        button_gryo.setOnClickListener(v -> {
+            gryoEnabled = !gryoEnabled;
+            renderer.setGryoEnable(gryoEnabled);
+            button_gryo.setChecked(gryoEnabled);
+        });
 
         glSurfaceView.setOnClickListener(v -> switchToolBar());
         myTitleBar.setLeftIconOnClickListener(v -> finish());
@@ -216,6 +231,7 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
         findViewById(R.id.action_delete_file).setOnClickListener(v -> deleteFile());
         findViewById(R.id.action_openwith_text).setOnClickListener(v -> openWithOtherApp());
         findViewById(R.id.action_back_main).setOnClickListener(v -> closeImage());
+        findViewById(R.id.button_back).setOnClickListener(v -> closeImage());
     }
     private void startUpdateThread() {
         if(pool == null) {
@@ -283,7 +299,7 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
                 button_mode.setCompoundDrawables(null, iconModeRectiliner, null, null);
                 break;
             case NativeVR720Renderer.PanoramaMode_PanoramaFullOrginal:
-                button_mode.setText(getString(R.string.text_mode_rectilinear));
+                button_mode.setText(getString(R.string.text_mode_source));
                 button_mode.setCompoundDrawables(null, iconModeSource, null, null);
                 break;
         }
@@ -299,7 +315,7 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
             pano_menu.startAnimation(AnimationUtils.loadAnimation(PanoActivity.this, R.anim.bottom_up));
             pano_menu.setVisibility(View.VISIBLE);
         } else {
-            pano_menu.startAnimation(AnimationUtils.loadAnimation(PanoActivity.this, R.anim.buttom_down));
+            pano_menu.startAnimation(AnimationUtils.loadAnimation(PanoActivity.this, R.anim.fade_hide));
             pano_menu.setVisibility(View.GONE);
         }
     }
@@ -374,7 +390,7 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
     }
     private void disableToolBar() {
         pano_bar.setVisibility(View.GONE);
-        disableToolbar=false;
+        disableToolbar = true;
     }
     private void switchToolBar(){
         if(!disableToolbar) {
@@ -443,15 +459,23 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
         Log.d(TAG, "Renderer is ok");
         Log.d(TAG, "Load image file : " + filePath);
 
+        renderer.setPanoramaMode(NativeVR720Renderer.PanoramaMode_PanoramaSphere);
+
         myTitleBar.setTitle(FileUtils.getFileName(filePath));
+        myTitleBar.setVisibility(View.VISIBLE);
         pano_loading.setVisibility(View.GONE);
+        pano_bar.setVisibility(View.VISIBLE);
         pano_menu.setVisibility(View.VISIBLE);
+        pano_tools.setVisibility(View.VISIBLE);
     }
     private void onRendererMessage(int msg) {
         switch (msg) {
             case NativeVR720Renderer.MobileGameUIEvent_FileClosed:
                 disableToolBar();
-                finish();
+                if(closeMarked) {
+                    renderer.destroy();
+                    finish();
+                }
                 break;
             case NativeVR720Renderer.MobileGameUIEvent_MarkLoadFailed:
                 myTitleBar.setVisibility(View.VISIBLE);
@@ -476,6 +500,7 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
         super.onPause();
 
         stopUpdateThread();
+        sensorManager.unregisterListener(this);
 
         if (rendererSet) {
             glSurfaceView.onPause();
@@ -486,17 +511,20 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
     protected void onResume() {
         super.onResume();
 
-        startUpdateThread();
+        if(initialized) {
 
-        if (rendererSet) {
-            glSurfaceView.onResume();
+            initSensor();
+            startUpdateThread();
+
+            if (rendererSet) {
+                glSurfaceView.onResume();
+            }
         }
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        sensorManager.unregisterListener(this);
     }
 
     @Override
@@ -520,12 +548,15 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
                 float angley = (float) Math.toDegrees(angle[1]);
                 float anglez = (float) Math.toDegrees(angle[2]);
 
+                /*
                 System.out.println("anglex------------>" + anglex);
                 System.out.println("angley------------>" + angley);
                 System.out.println("anglez------------>" + anglez);
 
                 System.out.println("gyroscopeSensor.getMinDelay()----------->" +
                         gyroscopeSensor.getMinDelay());
+                */
+                renderer.updateGryoValue(anglex, angley, anglez);
             }
             //将当前时间赋值给timestamp
             timestamp = event.timestamp;
@@ -566,7 +597,10 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
         }).start();
     }
     private void loadImage() { renderer.openFile(filePath); }
-    private void closeImage() { renderer.closeFile(); }
+    private void closeImage() {
+        closeMarked = true;
+        renderer.closeFile();
+    }
 
     //陀螺仪控制
     //**********************
@@ -578,15 +612,17 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
     // 将纳秒转化为秒
     private static final float NS2S = 1.0f / 1000000000.0f;
     private float timestamp;
-    private float angle[] = new float[3];
+    private final float[] angle = new float[3];
 
     private void initSensor() {
         sensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
-        magneticSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
-        accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        gyroscopeSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
-        sensorManager.registerListener(this, gyroscopeSensor, SensorManager.SENSOR_DELAY_NORMAL);
-        sensorManager.registerListener(this, magneticSensor, SensorManager.SENSOR_DELAY_NORMAL);
-        sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        if (sensorManager != null) {
+            magneticSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+            accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+            gyroscopeSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+            sensorManager.registerListener(this, gyroscopeSensor, SensorManager.SENSOR_DELAY_NORMAL);
+            sensorManager.registerListener(this, magneticSensor, SensorManager.SENSOR_DELAY_NORMAL);
+            sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        }
     }
 }

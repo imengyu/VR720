@@ -11,29 +11,36 @@ bool CMobileOpenGLView::Init() {
         LOGE(_vstr("OpenGLRenderer init failed!"));
         return false;
     }
+    reday = true;
     return true;
 }
 void CMobileOpenGLView::Destroy() {
-    if (OpenGLRenderer) {
-        OpenGLRenderer->Destroy();
-        OpenGLRenderer = nullptr;
+    if(reday) {
+        reday = false;
+        if (OpenGLRenderer) {
+            OpenGLRenderer->Destroy();
+            OpenGLRenderer = nullptr;
+        }
+        if (Camera) {
+            delete Camera;
+            Camera = nullptr;
+        }
+        COpenGLView::Destroy();
     }
-    if (Camera) {
-        delete Camera;
-        Camera = nullptr;
-    }
-    COpenGLView::Destroy();
 }
 
 void CMobileOpenGLView::Update() {
-    if(OpenGLRenderer)
+    if(reday && OpenGLRenderer)
         OpenGLRenderer->Update();
 }
 
 void CMobileOpenGLView::RenderUI() {
-    if (OpenGLRenderer) OpenGLRenderer->RenderUI();
+    if (reday && OpenGLRenderer) OpenGLRenderer->RenderUI();
 }
 void CMobileOpenGLView::Render() {
+    if(!reday)
+        return;
+
     //绘制
     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -55,16 +62,21 @@ void CMobileOpenGLView::Resize(int w, int h) {
 }
 
 void CMobileOpenGLView::ProcessKeyEvent(int key, bool down) {
+    if(!reday) return;
     if(down) HandleDownKey(key);
     else HandleUpKey(key);
 }
 void CMobileOpenGLView::ProcessMouseEvent(ViewMouseEventType event, float x, float y) {
-    if(mouseCallback) mouseCallback(this, x, y, 0, event);
+    if(reday && mouseCallback) mouseCallback(this, x, y, 0, event);
 }
 void CMobileOpenGLView::ProcessZoomEvent(float v) {
-    if(scrollCallback) scrollCallback(this, v, v, 0, ViewMouseEventType::ViewMouseMouseWhell);
+    if(reday && scrollCallback) scrollCallback(this, v, v, 0, ViewMouseEventType::ViewMouseMouseWhell);
 }
 
 CMobileOpenGLView::CMobileOpenGLView(COpenGLRenderer *renderer) : COpenGLView(renderer) {
 
+}
+
+void CMobileOpenGLView::ManualDestroy() {
+    Destroy();
 }

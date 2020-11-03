@@ -1,9 +1,9 @@
 package com.dreamfish.com.vr720.core;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.opengl.GLSurfaceView;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 
@@ -12,10 +12,15 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.egl.EGLContext;
+import javax.microedition.khronos.egl.EGLDisplay;
 import javax.microedition.khronos.opengles.GL10;
 
 public class NativeVR720GLSurfaceView extends GLSurfaceView {
+
+    private static final String TAG = "VR720GLSurfaceView";
 
     public NativeVR720GLSurfaceView(Context context) {
         super(context);
@@ -27,6 +32,8 @@ public class NativeVR720GLSurfaceView extends GLSurfaceView {
     }
     private void init(Context context) {
         this.context = context;
+
+
     }
 
     private NativeVR720Renderer nativeVR720Renderer = null;
@@ -42,6 +49,7 @@ public class NativeVR720GLSurfaceView extends GLSurfaceView {
             nativeVR720Renderer = nativeRenderer;
             renderer = new RendererWrapper(this, nativeVR720Renderer);
 
+            setEGLContextFactory(new ContextFactory());
             setRenderer(renderer);
             setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
         }
@@ -63,6 +71,29 @@ public class NativeVR720GLSurfaceView extends GLSurfaceView {
 
     private int frameExecuteTime = 1000 / 30;
     private ScheduledExecutorService pool = null;
+
+    //context
+
+    private static class ContextFactory implements GLSurfaceView.EGLContextFactory {
+
+        public EGLContext createContext(
+                EGL10 egl, EGLDisplay display, EGLConfig eglConfig) {
+
+            double glVersion = 3.0;
+            Log.w(TAG, "creating OpenGL ES " + glVersion + " context");
+            int EGL_CONTEXT_CLIENT_VERSION = 0x3098;
+            int[] attrib_list = {EGL_CONTEXT_CLIENT_VERSION, (int) glVersion,
+                    EGL10.EGL_NONE };
+            // attempt to create a OpenGL ES 3.0 context
+            return egl.eglCreateContext(display, eglConfig, EGL10.EGL_NO_CONTEXT, attrib_list); // returns null if 3.0 is not supported;
+        }
+
+        @Override
+        public void destroyContext(EGL10 egl, EGLDisplay eglDisplay, EGLContext eglContext) {
+            egl.eglDestroyContext(eglDisplay, eglContext);
+        }
+    }
+
 
     //帧率计算
     private double framesPerSecond;
@@ -130,9 +161,10 @@ public class NativeVR720GLSurfaceView extends GLSurfaceView {
         private final NativeVR720Renderer nativeVR720Renderer;
 
         @Override
-        public void onSurfaceCreated(GL10 gl10, EGLConfig eglConfig) {
+        public void onSurfaceCreated(GL10 gl10, javax.microedition.khronos.egl.EGLConfig eglConfig) {
             nativeVR720Renderer.onSurfaceCreated();
         }
+
         @Override
         public void onSurfaceChanged(GL10 gl10, int w, int h) {
             nativeVR720Renderer.onSurfaceChanged(w, h);
@@ -141,6 +173,7 @@ public class NativeVR720GLSurfaceView extends GLSurfaceView {
         public void onDrawFrame(GL10 gl10) {
             nativeVR720Renderer.onDrawFrame();
             nativeVR720GLSurfaceView.calculateFrameRate();
+            nativeVR720Renderer.onUpdateFps((float) nativeVR720GLSurfaceView.framesPerSecond);
         }
     }
 

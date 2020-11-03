@@ -43,6 +43,14 @@ public:
     static BYTE* LoadResource(const vchar* path, size_t *bufferLength);
 
     /**
+     * 加载字符串资源到内存
+     * @param path 资源完整路径
+     * @param bufferLength 用来存放缓冲区大小
+     * @return 返回数据缓冲区
+     */
+    static vstring LoadStringResource(const vchar* path);
+
+    /**
      * 从文件加载贴图
      * @param path 贴图路径
      * @return 返回贴图，如果加载失败返回nullptr

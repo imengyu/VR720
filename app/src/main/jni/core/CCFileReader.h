@@ -67,10 +67,10 @@ public:
 	 */
 	virtual BYTE* ReadAllByte(size_t *size);
 
-private:
-
-	FILE* file = nullptr;
+protected:
 	size_t len = 0;
+private:
+	FILE* file = nullptr;
 
 	void CloseFileHandle();
 };

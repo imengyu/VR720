@@ -14,6 +14,7 @@ import com.dreamfish.com.vr720.R;
 import java.io.File;
 
 public class FileUtils {
+
     public static String getFileName(String pathandname) {
         int start = pathandname.lastIndexOf("/");
         int end = pathandname.lastIndexOf(".");
@@ -54,13 +55,16 @@ public class FileUtils {
 
     public static void shareFile(Context context, String file) {
 
-        Uri imgUri = Uri.parse("file:///" + file);
-
         Intent shareIntent = new Intent();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            shareIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            Uri contentUri = FileProvider.getUriForFile(context, BuildConfig.APPLICATION_ID + ".fileProvider", new File(file));
+            shareIntent.setDataAndType(contentUri, MapTable.getMIMEType(file));
+        } else {
+            shareIntent.setDataAndType(Uri.fromFile(new File(file)), MapTable.getMIMEType(file));
+        }
         shareIntent.setAction(Intent.ACTION_SEND);
-        shareIntent.putExtra(Intent.EXTRA_STREAM, imgUri);
         shareIntent.setType("image/*");
-        //切记需要使用Intent.createChooser，否则会出现别样的应用选择框，您可以试试
         shareIntent = Intent.createChooser(shareIntent, context.getString(R.string.text_share_image_title));
         context.startActivity(shareIntent);
     }

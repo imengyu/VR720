@@ -11,7 +11,7 @@ public:
     unsigned int ID;
 
     // constructor reads and builds the shader
-    CCShader(const vchar* vertexPath, const vchar* fragmentPath);
+    CCShader(const char* vertexCode, const char* fragmentCode);
     ~CCShader();
 
     // use/activate the shader

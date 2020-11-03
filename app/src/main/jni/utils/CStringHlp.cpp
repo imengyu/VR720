@@ -3,7 +3,7 @@
 std::string & CStringHlp::FormatString(std::string & _str, const char * format, ...) {
 	std::string tmp;
 
-	va_list marker = nullptr;
+	va_list marker;
 	va_start(marker, format);
 
 #ifdef _MSC_VER
@@ -22,12 +22,14 @@ std::string & CStringHlp::FormatString(std::string & _str, const char * format, 
 
 	va_end(marker);
 
-	_str = tmp.c_str();
+	_str = tmp;
 	return _str;
 }
 std::wstring & CStringHlp::FormatString(std::wstring & _str, const wchar_t * format, ...) {
+
 	std::wstring tmp;
-	va_list marker = NULL;
+
+	va_list marker;
 	va_start(marker, format);
 #ifdef _MSC_VER
 	size_t num_of_chars = _vscwprintf(format, marker);
@@ -44,7 +46,8 @@ std::wstring & CStringHlp::FormatString(std::wstring & _str, const wchar_t * for
 #endif
 
 	va_end(marker);
-	_str = tmp.c_str();
+
+	_str = tmp;
 	return _str;
 }
 std::wstring CStringHlp::FormatString(const wchar_t * format, va_list marker)
@@ -63,8 +66,8 @@ std::wstring CStringHlp::FormatString(const wchar_t * format, va_list marker)
 #else
 	vswprintf((wchar_t *)tmp.data(), tmp.capacity(), format, marker);
 #endif
-	std::wstring  _str = tmp.c_str();
-	return _str;
+
+	return tmp;
 }
 std::string CStringHlp::FormatString(const char * format, va_list marker)
 {
@@ -72,7 +75,7 @@ std::string CStringHlp::FormatString(const char * format, va_list marker)
 #ifdef _MSC_VER
 	size_t num_of_chars = _vscprintf(format, marker);
 #else
-	size_t num_of_chars = vsprintf(nullptr, format, marker);
+	size_t num_of_chars = vsnprintf(nullptr, 0, format, marker);;
 #endif
 	if (num_of_chars > tmp.capacity()) {
 		tmp.resize(num_of_chars + 1);
@@ -81,15 +84,14 @@ std::string CStringHlp::FormatString(const char * format, va_list marker)
 #if defined(_MSC_VER) && _MSC_VER > 1600
 	vsprintf_s((char *)tmp.data(), tmp.capacity(), format, marker);
 #else
-	vsprintf(nullptr, format, marker);
+	vsprintf((char *)tmp.data(), format, marker);
 #endif
-	std::string _str = tmp.c_str();
-	return _str;
+	return tmp;
 }
 std::wstring CStringHlp::FormatString(const wchar_t * format, ...)
 {
 	std::wstring tmp;
-	va_list marker = NULL;
+	va_list marker;
 	va_start(marker, format);
 #ifdef _MSC_VER
 	size_t num_of_chars = _vscwprintf(format, marker);
@@ -106,20 +108,20 @@ std::wstring CStringHlp::FormatString(const wchar_t * format, ...)
 	vswprintf((wchar_t *)tmp.data(), tmp.capacity(), format, marker);
 #endif
 	va_end(marker);
-	std::wstring  _str = tmp.c_str();
-	return _str;
+
+	return tmp;
 }
 std::string CStringHlp::FormatString(const char * format, ...)
 {
 	std::string tmp;
 
-	va_list marker = NULL;
+	va_list marker;
 	va_start(marker, format);
 
 #ifdef _MSC_VER
 	size_t num_of_chars = _vscprintf(format, marker);
 #else
-	size_t num_of_chars = vsprintf(nullptr, format, marker);
+	size_t num_of_chars = vsnprintf(nullptr, 0, format, marker);
 #endif
 	if (num_of_chars > tmp.capacity()) {
 		tmp.resize(num_of_chars + 1);
@@ -128,34 +130,33 @@ std::string CStringHlp::FormatString(const char * format, ...)
 #if defined(_MSC_VER) && _MSC_VER > 1600
 	vsprintf_s((char *)tmp.data(), tmp.capacity(), format, marker);
 #else
-	vsprintf(nullptr, format, marker);
+	vsprintf((char *)tmp.data(), format, marker);
 #endif
 
 	va_end(marker);
 
-	std::string _str = tmp.c_str();
-	return _str;
+	return tmp;
 }
 
 std::string CStringHlp::GetFileSizeStringAuto(long long byteSize) {
 	std::string sizeStr;
 	double size;
 	if (byteSize >= 1073741824) {
-		size = round(byteSize / 1073741824 * 100.0f) / 100.0f;
+		size = round(((float)byteSize / (float)1073741824) * 100.0f) / 100.0f;
 		sizeStr = FormatString("%.2fG", size);
 	}
 	else if (byteSize >= 1048576) {
-		size = round(byteSize / 1048576 * 100.0f) / 100.0f;
+		size = round(((float)byteSize / 1048576) * 100.0f) / 100.0f;
 		sizeStr = FormatString("%.2fM", size);
 	}
 	else {
-		size = round(byteSize / 1024 * 100.0f) / 100.0f;
+		size = round(((float)byteSize / 1024) * 100.0f) / 100.0f;
 		sizeStr = FormatString("%.2fK", size);
 	}
 	return sizeStr;
 }
 
-std::string CStringHlp::UnicodeToAnsi(std::wstring szStr)
+std::string CStringHlp::UnicodeToAnsi(const std::wstring& szStr)
 {
 #ifdef VR720_WINDOWS
 	int nLen = WideCharToMultiByte(CP_ACP, 0, szStr.c_str(), -1, NULL, 0, NULL, NULL);
@@ -178,7 +179,7 @@ std::string CStringHlp::UnicodeToAnsi(std::wstring szStr)
 	return pResult;
 #endif
 }
-std::string CStringHlp::UnicodeToUtf8(std::wstring unicode)
+std::string CStringHlp::UnicodeToUtf8(const std::wstring& unicode)
 {
 #ifdef VR720_WINDOWS
 	int len;
@@ -192,7 +193,7 @@ std::string CStringHlp::UnicodeToUtf8(std::wstring unicode)
     return std::string();
 #endif
 }
-std::wstring CStringHlp::AnsiToUnicode(std::string szStr)
+std::wstring CStringHlp::AnsiToUnicode(const std::string& szStr)
 {
 #ifdef VR720_WINDOWS
 	int nLen = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, szStr.c_str(), -1, NULL, 0);
@@ -213,7 +214,7 @@ std::wstring CStringHlp::AnsiToUnicode(std::string szStr)
 	return pResult;
 #endif
 }
-std::wstring CStringHlp::Utf8ToUnicode(std::string szU8)
+std::wstring CStringHlp::Utf8ToUnicode(const std::string& szU8)
 {
 #ifdef VR720_WINDOWS
 	int wcsLen = ::MultiByteToWideChar(CP_UTF8, NULL, szU8.c_str(), szU8.size(), NULL, 0);
@@ -229,26 +230,23 @@ std::wstring CStringHlp::Utf8ToUnicode(std::string szU8)
 
 #ifdef VR720_ANDROID
 
-jstring CStringHlp::charTojstring(JNIEnv* env, const char* pat) {
-	//定义java String类 strClass
-	jclass strClass = (env)->FindClass("java/lang/String");
-	//获取String(byte[],String)的构造器,用于将本地byte[]数组转换为一个新String
-	jmethodID ctorID = (env)->GetMethodID(strClass, "<init>", "([BLjava/lang/String;)V");
-	//建立byte数组
-	jbyteArray bytes = (env)->NewByteArray(strlen(pat));
-	//将char* 转换为byte数组
-	(env)->SetByteArrayRegion(bytes, 0, strlen(pat), (jbyte*) pat);
-	// 设置String, 保存语言类型,用于byte数组转换至String时的参数
-	jstring encoding = (env)->NewStringUTF("GB2312");
-	//将byte数组转换为java String,并输出
-	return (jstring) (env)->NewObject(strClass, ctorID, bytes, encoding);
+jstring CStringHlp::charTojstring(JNIEnv* env, const char* pStr) {
+	int        strLen    = strlen(pStr);
+	jclass     jstrObj   = env->FindClass("java/lang/String");
+	jmethodID  methodId  = env->GetMethodID(jstrObj, "<init>", "([BLjava/lang/String;)V");
+	jbyteArray byteArray = env->NewByteArray(strLen);
+	jstring    encode    = env->NewStringUTF("utf-8");
+
+	env->SetByteArrayRegion(byteArray, 0, strLen, (jbyte*)pStr);
+
+	return (jstring)env->NewObject(jstrObj, methodId, byteArray, encode);
 }
 char* CStringHlp::jstringToChar(JNIEnv* env, jstring jstr) {
-	char* rtn = NULL;
+	char* rtn = nullptr;
 	jclass clsstring = env->FindClass("java/lang/String");
-	jstring strencode = env->NewStringUTF("GB2312");
+	jstring strencode = env->NewStringUTF("utf-8");
 	jmethodID mid = env->GetMethodID(clsstring, "getBytes", "(Ljava/lang/String;)[B");
-	jbyteArray barr = (jbyteArray) env->CallObjectMethod(jstr, mid, strencode);
+	auto barr = (jbyteArray) env->CallObjectMethod(jstr, mid, strencode);
 	jsize alen = env->GetArrayLength(barr);
 	jbyte* ba = env->GetByteArrayElements(barr, JNI_FALSE);
 	if (alen > 0) {

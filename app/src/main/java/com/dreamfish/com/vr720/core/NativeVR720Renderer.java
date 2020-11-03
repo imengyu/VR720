@@ -30,11 +30,11 @@ public class NativeVR720Renderer {
      * @param context 上下文
      * @return 是否支持
      */
-    public static boolean checkSupportsEs2(Context context) {
+    public static boolean checkSupportsEs3(Context context) {
         ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
         assert activityManager != null;
         ConfigurationInfo configurationInfo = activityManager.getDeviceConfigurationInfo();
-        return configurationInfo.reqGlEsVersion >= 0x20000 || isProbablyEmulator();
+        return configurationInfo.reqGlEsVersion >= 0x30000 || isProbablyEmulator();
     }
 
     /**
@@ -84,7 +84,11 @@ public class NativeVR720Renderer {
     public void onDrawFrame() { onDrawFrame(mainNativePtr); }
     public void onMainThread() { onMainThread(mainNativePtr); }
     public void onDestroy() { onDestroy(mainNativePtr); }
+    public void onUpdateFps(float fps) { onUpdateFps(mainNativePtr, fps); }
+    public void destroy() { destroy(mainNativePtr); }
 
+    private native void destroy(long nativePtr);
+    private native void onUpdateFps(long nativePtr, float fps);
     private native void onSurfaceCreated(long nativePtr);
     private native void onSurfaceChanged(long nativePtr, int width, int height);
     private native void onDrawFrame(long nativePtr);

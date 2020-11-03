@@ -36,7 +36,7 @@ const std::wstring CCAssetsManager::GetDirResourcePath(const wchar_t* dirName, c
 #include <android/asset_manager.h>
 #include <android/asset_manager_jni.h>
 
-static AAssetManager * gAssetMgr = NULL;
+static AAssetManager * gAssetMgr = nullptr;
 
 #endif //VR720_ANDROID
 
@@ -44,12 +44,12 @@ std::string CCAssetsManager::GetResourcePath(const char* typeName, const char* n
 {
 #ifdef VR720_WINDOWS
     std::string str(CApp::Instance->GetCurrentDirA());
+    str += "//resources//";
 #else
-    std::string str;
+    std::string str = "resources/";
 #endif
-    str += "\\resources\\";
     str += typeName;
-    str += "\\";
+    str += "/";
     str += name;
     return str;
 }
@@ -57,12 +57,12 @@ std::string CCAssetsManager::GetDirResourcePath(const char* dirName, const char*
 {
 #ifdef VR720_WINDOWS
     std::string str(CApp::Instance->GetCurrentDirA());
-#else
-    std::string str;
-#endif
-    str += "\\";
+    str += "/";
     str += dirName;
-    str += "\\";
+#else
+    std::string str = dirName;
+#endif
+    str += "/";
     str += name;
     return str;
 }
@@ -84,8 +84,10 @@ CCTexture *CCAssetsManager::LoadTexture(const vchar *path) {
     auto * tex = new CCTexture();
     BYTE *buffer = nullptr;
     size_t bufferLength = 0;
-    if (Android_LoadAsset(path, &buffer, &bufferLength))
+    if (Android_LoadAsset(path, &buffer, &bufferLength)) {
         tex->Load(buffer, bufferLength);
+        free(buffer);
+    }
 #else
     auto * tex = new CCTexture();
     tex->Load(path);
@@ -99,19 +101,37 @@ CCMesh *CCAssetsManager::LoadMesh(const vchar *path) {
 #if defined(VR720_ANDROID)
         BYTE *buffer = nullptr;
         size_t bufferLength = 0;
-        if (Android_LoadAsset(path, &buffer, &bufferLength))
+        if (Android_LoadAsset(path, &buffer, &bufferLength)) {
             meshLoader->Load(buffer, bufferLength, mesh);
+            free(buffer);
+        }
 #else
         meshLoader->Load(path, mesh);
 #endif
     }
     return mesh;
 }
+vstring CCAssetsManager::LoadStringResource(const vchar *path) {
+    vstring str;
+    size_t bufferLength = 0;
+    BYTE *buffer = LoadResource(path, &bufferLength);
+    if(buffer) {
+        bufferLength = bufferLength / sizeof(vchar) + 1;
+        str.resize(bufferLength);
+#if WCHAR_API
+        wcsncpy((wchar_t*)str.data(), (wchar_t*)buffer, bufferLength);
+#else
+        strncpy((char *) str.data(), (char *) buffer, bufferLength);
+#endif
+        free(buffer);
+    } else
+        LOGEF(_vstr("LoadStringResource %s failed !"), path);
+    return str;
+}
 
 #ifdef VR720_ANDROID
 
 void CCAssetsManager::Android_InitFromJni(JNIEnv *env, jobject assetManager) {
-    LOGI(_vstr("CCAssetsManager::InitFromJni"));
     gAssetMgr = AAssetManager_fromJava(env, assetManager);
 }
 bool CCAssetsManager::Android_LoadAsset(const char *path, BYTE **buffer, size_t *bufferLength) {
@@ -123,10 +143,12 @@ bool CCAssetsManager::Android_LoadAsset(const char *path, BYTE **buffer, size_t 
     /*获取文件大小*/
     off_t bufferSize = AAsset_getLength(asset);
     *bufferLength = bufferSize;
-    *buffer=(BYTE*)malloc(bufferSize + 1);
-    AAsset_read(asset, buffer, bufferSize);
+    *buffer = (BYTE*)malloc(bufferSize + 1);
+    AAsset_read(asset, *buffer, bufferSize);
     /*关闭文件*/
     AAsset_close(asset);
+
+    LOGIF(_vstr("[CCAssetsManager] Assets: %s loaded."), path);
     return true;
 }
 

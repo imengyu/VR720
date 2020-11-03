@@ -1,2 +1,1 @@
-[armeabi-v7a] Compile++ thumb: vr720 <= vr720.cpp
-[armeabi-v7a] Compile++ thumb: vr720 <= StringHlp.cpp
+make: Nothing to be done for 'vr720'.

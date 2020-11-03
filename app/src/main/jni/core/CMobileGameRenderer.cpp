@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "CMobileGameRenderer.h"
 #include "COpenGLView.h"
 #include "CImageLoader.h"
@@ -37,6 +38,12 @@ void CMobileGameRenderer::DoOpenFile()
         last_image_error = vstring(fileManager->GetLastError());
         ShowErrorDialog();
     }
+}
+void CMobileGameRenderer::MarkCloseFile() {
+    if(file_opened)
+        should_close_file = true;
+    else
+        uiEventDistributor->SendEvent(CCMobileGameUIEvent::FileClosed);
 }
 void CMobileGameRenderer::ShowErrorDialog() {
     file_opened = false;
@@ -79,6 +86,68 @@ void CMobileGameRenderer::TestSplitImageAndLoadTexture() {
     SwitchMode(mode);
 }
 
+
+GLuint d_glprogram;
+
+void CreateTestglprogram() {
+    //init gl
+    GLuint glProgram;
+    GLuint vertexShader;
+    GLuint fragmentShader;
+
+    //shader code
+    const char *shader_vertex = "uniform mediump mat4 MODELVIEWPROJECTIONMATRIX;\n"
+                                "attribute vec4 POSITION;\n"
+                                "void main(){\n"
+                                "  gl_Position = POSITION;\n"
+                                "}";
+    const char *shader_fragment = "precision mediump float;\n"
+                                  "void main(){\n"
+                                  "   gl_FragColor = vec4(0,0,1,1);\n"
+                                  "}";
+    glProgram = glCreateProgram();
+
+
+    if(glProgram == 0){
+        LOGE("init glProgram error!");
+        return ;
+    }
+
+    d_glprogram = glProgram;
+
+//    glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+    glClearColor ( 1.0f, 1.0f, 1.0f, 0.0f );
+
+    //vertexShader
+    vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader,1,&shader_vertex,NULL);
+
+    //fragmentShader
+    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader,1,&shader_fragment,NULL);
+    glCompileShader(vertexShader);
+    glCompileShader(fragmentShader);
+
+    glAttachShader(glProgram,vertexShader);
+    glAttachShader(glProgram,fragmentShader);
+
+    glLinkProgram(glProgram);
+}
+void RenderTest() {
+    glClear(GL_DEPTH_BUFFER_BIT|GL_COLOR_BUFFER_BIT);
+    GLfloat vertexs[] = {
+            0.0f, 1.0f, 0.0f,
+            -1.0f, -1.0f, 0.0f,
+            1.0f, -1.0f, 0.0f
+    };
+
+    glUseProgram(d_glprogram);
+    glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,0,vertexs);
+    glEnableVertexAttribArray(0);
+
+    glDrawArrays(GL_TRIANGLES,0,3);
+}
+
 bool CMobileGameRenderer::Init()
 {
     camera = new CCPanoramaCamera();
@@ -100,6 +169,8 @@ bool CMobileGameRenderer::Init()
     View->SetZoomViewCallback(ScrollCallback);
 
     SwitchMode(mode);
+
+    //CreateTestglprogram();
 
     //renderer->renderPanoramaFullTest = true;
     //renderer->renderPanoramaFullRollTest = true;
@@ -180,7 +251,7 @@ void CMobileGameRenderer::MouseCallback(COpenGLView* view, float xpos, float ypo
     }
 }
 void CMobileGameRenderer::ScrollCallback(COpenGLView* view, float x, float yoffset, int button, int type) {
-    CMobileGameRenderer* renderer = (CMobileGameRenderer*)view->GetRenderer();
+    auto* renderer = (CMobileGameRenderer*)view->GetRenderer();
     renderer->camera->ProcessMouseScroll(yoffset);
 }
 void CMobileGameRenderer::KeyMoveCallback(CCameraMovement move) {
@@ -234,13 +305,18 @@ void CMobileGameRenderer::Render(float FrameTime)
     //渲染
     //===========================
 
+#ifndef VR720_USE_GLES
     glLoadIdentity();
+#endif
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
 
+    //RenderTest();
     renderer->Render(View->GetDeltaTime());
 
+#ifndef VR720_USE_GLES
     glLoadIdentity();
+#endif
 
     //在渲染线程中加载贴图
     //===========================
@@ -274,7 +350,8 @@ void CMobileGameRenderer::Update()
     //加载队列处理
     //===========================
 
-    texLoadQueue->ResolveMain();
+    if(texLoadQueue)
+        texLoadQueue->ResolveMain();
 
     //加检测按键
     //===========================
@@ -347,6 +424,7 @@ TextureLoadQueueDataResult* CMobileGameRenderer::LoadTexCallback(TextureLoadQueu
         ptr->logger->Log(_vstr("Load tex buffer: w: %d h: %d (%d)  Buffer Size: %d"), (int)size.x, (int)size.y, result->compoents, result->size);
         ptr->uiInfo->currentImageLoading = false;
         ptr->uiEventDistributor->SendEvent(CCMobileGameUIEvent::UiInfoChanged);
+        ptr->uiEventDistributor->SendEvent(CCMobileGameUIEvent::MarkLoadingEnd);
 
         return result;
     }
@@ -475,8 +553,9 @@ void CMobileGameRenderer::SwitchMode(PanoramaMode panoramaMode)
     }
 }
 
-void CMobileGameRenderer::UpdsteGryoValue(float x, float y, float z) {
+void CMobileGameRenderer::UpdateGryoValue(float x, float y, float z) const {
     if(gryoEnabled) {
         
     }
 }
+

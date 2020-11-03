@@ -90,7 +90,7 @@ void CCPanoramaCamera::ProcessMouseMovement(float xoffset, float yoffset, bool c
 		updateCameraVectors();
 		break;
 	}
-	case CCPanoramaCameraMode::Static:
+	default:
 		break;
 	}
 }

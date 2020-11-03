@@ -10,7 +10,7 @@ void jpeg_error_exit(j_common_ptr cinfo) {
 void jpeg_output_message(j_common_ptr cinfo) {
     char buffer[JMSG_LENGTH_MAX];
     (*cinfo->err->format_message) (cinfo, buffer);
-    LOGE("[JPEG Error] %s", buffer);
+    LOGEF("[JPEG Error] %s", buffer);
     strcpy(jpeg_last_err, buffer);
 }
 
@@ -217,45 +217,43 @@ BYTE* CJpgLoader::GetImageChunkData(int x, int y, int chunkW, int chunkH)
     return nullptr;
 }
 
-bool CJpgLoader::Load(const char* path)
-{
+bool CJpgLoader::Load(const char* path) {
+
     decodeSuccess = false;
+
     this->path = path;
 
     FILE *file = fopen(path, "rb");
     struct jpeg_decompress_struct cinfo;
     struct jpeg_error_mgr jerr;
-    if (file == nullptr) {
-        if (file) {
-            fseek(file, 0, SEEK_SET);
-            jpeg_create_decompress(&cinfo);
-            cinfo.err = jpeg_std_error(&jerr);
-            jerr.error_exit = jpeg_error_exit;
-            jerr.output_message = jpeg_output_message;
-            jpeg_stdio_src(&cinfo, file);
-            if (jpeg_read_header(&cinfo, TRUE) != JPEG_HEADER_OK) {
-                SetLastError(jpeg_last_err);
-                fclose(file);
-                return false;
-            }
-
-            width = cinfo.image_width;
-            height = cinfo.image_height;
-            depth = cinfo.num_components;
-
-            if (width <= 0 || height <= 0)
-            {
-                SetLastError("Bad image size");
-                fclose(file);
-                return false;
-            }
-
-            jpeg_destroy_decompress(&cinfo);
-
-            decodeSuccess = true;
+    if (file) {
+        fseek(file, 0, SEEK_SET);
+        jpeg_create_decompress(&cinfo);
+        cinfo.err = jpeg_std_error(&jerr);
+        jerr.error_exit = jpeg_error_exit;
+        jerr.output_message = jpeg_output_message;
+        jpeg_stdio_src(&cinfo, file);
+        if (jpeg_read_header(&cinfo, TRUE) != JPEG_HEADER_OK) {
+            SetLastError(jpeg_last_err);
             fclose(file);
-            return true;
+            return false;
         }
+
+        width = cinfo.image_width;
+        height = cinfo.image_height;
+        depth = cinfo.num_components;
+
+        if (width <= 0 || height <= 0) {
+            SetLastError("Bad image size");
+            fclose(file);
+            return false;
+        }
+
+        jpeg_destroy_decompress(&cinfo);
+
+        decodeSuccess = true;
+        fclose(file);
+        return true;
     }
     return false;
 }

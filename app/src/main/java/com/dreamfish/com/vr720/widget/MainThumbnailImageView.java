@@ -130,6 +130,7 @@ public class MainThumbnailImageView extends AppCompatImageView {
                 //在按下事件中设置滤镜
                 setFilter();
                 break;
+            case MotionEvent.ACTION_CANCEL:
             case MotionEvent.ACTION_UP:
                 //在CANCEL和UP事件中清除滤镜
                 removeFilter();

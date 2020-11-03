@@ -60,8 +60,9 @@ BYTE CCFileReader::ReadByte()
 }
 BYTE* CCFileReader::ReadAllByte(size_t* size) {
 	BYTE* buffer = (BYTE*)malloc(len);
-	fseek(file, 0, SEEK_SET);
+	Seek(0, SEEK_SET);
 	Read(buffer, 0, len);
+	*size = len;
 	return buffer;
 }
 

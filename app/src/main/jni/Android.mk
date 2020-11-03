@@ -3,7 +3,7 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
 LOCAL_MODULE := vr720
-LOCAL_LDLIBS := -llog -landroid -lGLESv2 -lz
+LOCAL_LDLIBS := -llog -landroid -lGLESv3 -lz
 LOCAL_CPP_FEATURES += exceptions
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/libjpeg/ \

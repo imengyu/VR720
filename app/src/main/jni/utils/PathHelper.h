@@ -7,16 +7,13 @@
 class Path
 {
 public:
-	Path();
-	~Path();
-
 	static std::string GetFileNameWithoutExtension(std::string path);
 	static std::string GetExtension(std::string path);
 	static bool IsPathRooted(std::string path1);
 	static bool HasExtension(std::string path);
 	static bool CheckInvalidPathChars(std::string path);
 	static std::string GetFileName(std::string path);
-	static std::string GetDirectoryName(std::string path);
+	static std::string GetDirectoryName(const std::string& path);
 	static bool IsValidateFolderFileName(std::string path);
 	static bool RemoveQuotes(char* pathBuffer, size_t bufferSize);
 
@@ -28,5 +25,5 @@ public:
 	static std::string GetFileName(char* path);
 	static std::string GetDirectoryName(char* path);
 	static bool Exists(char* path1);
-	static bool Exists(std::string path1);
+	static bool Exists(const std::string& path1);
 };

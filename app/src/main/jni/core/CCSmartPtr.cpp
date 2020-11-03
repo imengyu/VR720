@@ -2,8 +2,8 @@
 
 CCUPtr::CCUPtr(void* ptr) : p(ptr), count(1) { }
 CCUPtr::~CCUPtr() { 
-	if(p) 
-		delete p; 
+	if(p != nullptr)
+		delete (int*)p;
 	p = nullptr;
 }
 
@@ -16,7 +16,7 @@ CCPtrPool* CCPtrPool::GetStaticPool()
 void CCPtrPool::InitPool()
 {
 	globalPool = new CCPtrPool();
-	globalPool->pool[0] = new CCUPtr(nullptr);
+	globalPool->pool[nullptr] = new CCUPtr(nullptr);
 }
 void CCPtrPool::ReleasePool()
 {
@@ -71,7 +71,7 @@ void CCPtrPool::ReleasePtr(void* ptr)
 }
 void CCPtrPool::ClearUnUsedPtr()
 {
-	for (std::unordered_map<void*, CCUPtr*>::iterator it = pool.begin(); it != pool.end(); ++it) 
-		delete (*it).second;
+	for (auto & it : pool)
+		delete it.second;
 	pool.clear();
 }

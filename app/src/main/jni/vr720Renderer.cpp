@@ -20,7 +20,7 @@ extern "C" JNIEXPORT void JNICALL Java_com_dreamfish_com_vr720_core_NativeVR720R
     auto* gameRenderer = new CMobileGameRenderer();
     auto* gameUIEventDistributor = new CMobileGameUIEventDistributor(env, thiz);
     auto* newView = new CMobileOpenGLView(gameRenderer);
-    jlong newViewPtr = (jlong)newView;
+    auto newViewPtr = (jlong)newView;
 
     //nativeSetNativePtr
     jclass clazz = env->FindClass("com/dreamfish/com/vr720/core/NativeVR720Renderer");
@@ -29,6 +29,8 @@ extern "C" JNIEXPORT void JNICALL Java_com_dreamfish_com_vr720_core_NativeVR720R
     env->DeleteLocalRef(clazz);
 
     gameRenderer->SetUiEventDistributor(gameUIEventDistributor);
+
+    LOGIF(_vstr("NativeVR720Renderer.onCreate: View ptr : 0x%xl"), newViewPtr);
 }
 extern "C" JNIEXPORT void JNICALL Java_com_dreamfish_com_vr720_core_NativeVR720Renderer_onSurfaceCreated(JNIEnv *env, jobject thiz, jlong native_ptr) {
     auto* view = (CMobileOpenGLView*)native_ptr;
@@ -47,6 +49,8 @@ extern "C" JNIEXPORT void JNICALL Java_com_dreamfish_com_vr720_core_NativeVR720R
     view->Update();
 }
 extern "C" JNIEXPORT void JNICALL Java_com_dreamfish_com_vr720_core_NativeVR720Renderer_onDestroy(JNIEnv *env, jobject thiz, jlong native_ptr) {
+    LOGI(_vstr("NativeVR720Renderer.onDestroy"));
+
     auto* view = (CMobileOpenGLView*)native_ptr;
     view->Destroy();
     delete view;
@@ -87,7 +91,7 @@ extern "C" JNIEXPORT jstring JNICALL Java_com_dreamfish_com_vr720_core_NativeVR7
 extern "C" JNIEXPORT void JNICALL Java_com_dreamfish_com_vr720_core_NativeVR720Renderer_closeFile(JNIEnv *env, jobject thiz, jlong native_ptr) {
     auto* view = (CMobileOpenGLView*)native_ptr;
     auto* gameRenderer = (CMobileGameRenderer*)view->GetRenderer();
-    gameRenderer->MarkCloseFile(true);
+    gameRenderer->MarkCloseFile();
 }
 extern "C" JNIEXPORT void JNICALL Java_com_dreamfish_com_vr720_core_NativeVR720Renderer_setPanoramaMode(JNIEnv *env, jobject thiz, jlong native_ptr, jint mode) {
     auto* view = (CMobileOpenGLView*)native_ptr;
@@ -102,14 +106,23 @@ extern "C" JNIEXPORT jint JNICALL Java_com_dreamfish_com_vr720_core_NativeVR720R
 extern "C" JNIEXPORT void JNICALL Java_com_dreamfish_com_vr720_core_NativeVR720Renderer_updateGryoValue(JNIEnv *env, jobject thiz, jlong native_ptr, jfloat x, jfloat y, jfloat z) {
     auto* view = (CMobileOpenGLView*)native_ptr;
     auto* gameRenderer = (CMobileGameRenderer*)view->GetRenderer();
-
+    gameRenderer->UpdateGryoValue(x,y,z);
 }
 extern "C" JNIEXPORT void JNICALL Java_com_dreamfish_com_vr720_core_NativeVR720Renderer_setVREnable(JNIEnv *env, jobject thiz, jlong native_ptr, jboolean enable) {
     auto* view = (CMobileOpenGLView*)native_ptr;
     auto* gameRenderer = (CMobileGameRenderer*)view->GetRenderer();
+    gameRenderer->SetVREnabled(enable);
 }
 extern "C" JNIEXPORT void JNICALL Java_com_dreamfish_com_vr720_core_NativeVR720Renderer_setGryoEnable(JNIEnv *env, jobject thiz, jlong native_ptr, jboolean enable) {
     auto* view = (CMobileOpenGLView*)native_ptr;
     auto* gameRenderer = (CMobileGameRenderer*)view->GetRenderer();
-
+    gameRenderer->SetGryoEnabled(enable);
+}
+extern "C" JNIEXPORT void JNICALL Java_com_dreamfish_com_vr720_core_NativeVR720Renderer_onUpdateFps(JNIEnv *env, jobject thiz, jlong native_ptr, jfloat fps) {
+    auto* view = (CMobileOpenGLView*)native_ptr;
+    view->SetCurrentFPS(fps);
+}
+extern "C" JNIEXPORT void JNICALL Java_com_dreamfish_com_vr720_core_NativeVR720Renderer_destroy(JNIEnv *env, jobject thiz, jlong native_ptr) {
+    auto* view = (CMobileOpenGLView*)native_ptr;
+    view->ManualDestroy();
 }

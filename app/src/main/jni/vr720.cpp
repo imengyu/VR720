@@ -21,6 +21,9 @@ extern "C" JNIEXPORT void JNICALL Java_com_dreamfish_com_vr720_core_NativeVR720_
   CCPtrPool::ReleasePool();
   Logger::DestroyConst();
 }
+extern "C" JNIEXPORT void JNICALL Java_com_dreamfish_com_vr720_core_NativeVR720_updateAssetManagerPtr(JNIEnv *env, jclass clazz, jobject asset_manager) {
+  CCAssetsManager::Android_InitFromJni(env, asset_manager);
+}
 extern "C" JNIEXPORT jstring JNICALL Java_com_dreamfish_com_vr720_core_NativeVR720_getNativeVersion(JNIEnv *env, jclass) {
   return env->NewStringUTF("1.0.2.DEV-3");
 }

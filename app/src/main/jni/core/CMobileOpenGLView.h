@@ -29,8 +29,11 @@ public:
     void ProcessKeyEvent(int key, bool down);
     void ProcessZoomEvent(float v);
 
+    void ManualDestroy();
+
 private:
     float currentFps = 0;
+    bool reday = false;
 };
 
 

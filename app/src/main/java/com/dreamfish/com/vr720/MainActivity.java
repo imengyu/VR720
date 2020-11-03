@@ -156,7 +156,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 AnimationSet animationSet = (AnimationSet) AnimationUtils.loadAnimation(this, R.anim.buttom_down);
                 footerSelection.startAnimation(animationSet);
                 footerSelection.setVisibility(View.GONE);
-                toolbar.setTitle("");
+                toolbar.setTitle(getString(R.string.title_activity_main));
                 toolbar.setLeftButtonIconResource(R.drawable.ic_menu);
                 toolbar.setRightButtonIconResource(R.drawable.ic_more);
             }

@@ -27,7 +27,7 @@ CCTextureLoadQueue::~CCTextureLoadQueue()
 CCTexture* CCTextureLoadQueue::Push(CCTexture* texture, int x, int y, int id)
 {
 	if (texture && !texture->Loaded()) {
-		TextureLoadQueueInfo* info = new TextureLoadQueueInfo();
+		auto* info = new TextureLoadQueueInfo();
 		info->texture = texture;
 		info->x = x;
 		info->y = y;
@@ -43,7 +43,7 @@ void CCTextureLoadQueue::SetLoadHandle(CCTextureLoadQueueLoadHandle handle, void
 }
 void CCTextureLoadQueue::ResolveMain()
 {
-	if (pendingTexture == nullptr && queue.size() > 0) {
+	if (pendingTexture == nullptr && !queue.empty()) {
 		pendingTexture = queue.front();
 		queue.pop_front();
 

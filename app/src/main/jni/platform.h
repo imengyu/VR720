@@ -41,10 +41,11 @@
 #define VR720_KEY_F11 VK_F11
 #define VR720_KEY_F10 VK_F10
 #elif defined(VR720_ANDROID)
-#define VR720_KEY_LEFT 0
-#define VR720_KEY_UP 1
-#define VR720_KEY_RIGHT 2
-#define VR720_KEY_DOWN 3
+#define VR720_KEY_LEFT 22
+#define VR720_KEY_UP 21
+#define VR720_KEY_RIGHT 19
+#define VR720_KEY_DOWN 20
+#define VR720_KEY_ESCAPE 111
 #endif
 
 #endif // !PLATFORM_H

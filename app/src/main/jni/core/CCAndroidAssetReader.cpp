@@ -13,7 +13,8 @@ BYTE CCAndroidAssetReader::ReadByte() {
     return CCFileReader::ReadByte();
 }
 void CCAndroidAssetReader::Read(BYTE *arr, size_t offset, size_t count) {
-    Seek(offset, SEEK_CUR);
+    if(offset != 0)
+        Seek(offset, SEEK_CUR);
     AAsset_read(asset, arr, count);
 }
 void CCAndroidAssetReader::Seek(size_t i, int seekType) {
@@ -42,6 +43,7 @@ CCAndroidAssetReader::CCAndroidAssetReader(std::string &path, AAssetManager *ass
     if(asset != nullptr) {
         /*获取文件大小*/
         assetSize = AAsset_getLength(asset);
+        len = assetSize;
     }
 }
 

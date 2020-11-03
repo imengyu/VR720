@@ -34,14 +34,12 @@ public:
 	void SetOpenFilePath(const char* path);
 	void DoOpenFile();
 	void MarkShouldOpenFile() { should_open_file = true; }
-	void MarkCloseFile(bool delete_after_close) {
-		should_close_file = true; 
-		this->delete_after_close = delete_after_close;
-	}
+	void MarkCloseFile();
 	void SwitchMode(PanoramaMode mode);
 	void SetGryoEnabled(bool enable) { gryoEnabled = enable; }
 	void SetVREnabled(bool enable) { vREnabled = enable; }
-	void UpdsteGryoValue(float x, float y, float z);
+	void UpdateGryoValue(float x, float y, float z) const;
+    void AddTextureToQueue(CCTexture* tex, int x, int y, int id);
 
 	PanoramaMode GetMode() { return mode; }
 	const char* GetImageOpenError() { return last_image_error.c_str(); }
@@ -52,7 +50,6 @@ private:
 	Logger* logger;
 
 	std::string currentOpenFilePath;
-	bool fileOpened = false;
 
 	bool Init() override;
 	void Render(float FrameTime) override;
@@ -68,8 +65,8 @@ private:
 	CCFileManager*fileManager = nullptr;
 	CCTextureLoadQueue*texLoadQueue = nullptr;
 
-	gryoEnabled = false;
-	vREnabled = false;
+	bool gryoEnabled = false;
+    bool vREnabled = false;
 
 	void ShowErrorDialog();
 
@@ -103,7 +100,6 @@ private:
 
 	bool SplitFullImage = true;
 
-	void AddTextureToQueue(CCTexture* tex, int x, int y, int id);
 
 	static void MouseCallback(COpenGLView* view, float x, float y, int button, int type);
 	static void ScrollCallback(COpenGLView* view, float x, float y, int button, int type);

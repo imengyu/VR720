@@ -176,6 +176,8 @@ void Logger::LogInternalWithCodeAndLine(LogLevel logLevel, const vchar* str, con
 }
 void Logger::LogInternal(LogLevel logLevel, const vchar* str, va_list arg)
 {
+
+#if !defined(VR720_ANDROID)
 	const vchar* levelStr;
 	switch (logLevel)
 	{
@@ -185,16 +187,23 @@ void Logger::LogInternal(LogLevel logLevel, const vchar* str, va_list arg)
 		case LogLevelText: levelStr = _vstr("T"); break;
 		default: levelStr = _vstr(""); break;
 	}
-	time_t time_log = time(NULL);
+	time_t time_log = time(nullptr);
+
 #if defined(_MSC_VER) && _MSC_VER > 1600
 	struct tm tm_log;
 	localtime_s(&tm_log, &time_log);
-	vstring format1 = CStringHlp::FormatString(_vstr("[%02d:%02d:%02d] [%s] %s\n"), tm_log.tm_hour, tm_log.tm_min, tm_log.tm_sec, levelStr, str);
+	vstring fmt = CStringHlp::FormatString(_vstr("[%02d:%02d:%02d] [%s] %s\n"), tm_log.tm_hour, tm_log.tm_min, tm_log.tm_sec, levelStr, str);
 #else
 	tm* tm_log = localtime(&time_log);
-	vstring format1 = CStringHlp::FormatString(_vstr("%s/%s:%02d:%02d:%02d %s\n"), logTag.c_str(), levelStr, tm_log->tm_hour, tm_log->tm_min, tm_log->tm_sec, str);
-#endif
-	vstring out = CStringHlp::FormatString(format1.c_str(), arg);
+#endif//_MSC_VER
+
+	vstring fmt = CStringHlp::FormatString(_vstr("%s/%s:%02d:%02d:%02d %s\n"),
+			logTag.c_str(),
+			levelStr, tm_log->tm_hour, tm_log->tm_min, tm_log->tm_sec, str);
+	vstring out = CStringHlp::FormatString(fmt.c_str(), arg);
+#else
+	vstring out = CStringHlp::FormatString(str, arg);
+#endif//VR720_ANDROID
 	LogOutput(logLevel, out.c_str(), str, out.size());
 }
 void Logger::LogOutput(LogLevel logLevel, const vchar* str, const vchar* srcStr, size_t len)
@@ -216,14 +225,14 @@ void Logger::LogOutput(LogLevel logLevel, const vchar* str, const vchar* srcStr,
 #elif defined(VR720_ANDROID)
 		switch (logLevel)
 		{
-			case LogLevelInfo: __android_log_print(ANDROID_LOG_INFO, logTag.c_str(), "%s", srcStr); break;
-			case LogLevelWarn: __android_log_print(ANDROID_LOG_WARN, logTag.c_str(), "%s", srcStr);  break;
-			case LogLevelError: __android_log_print(ANDROID_LOG_ERROR, logTag.c_str(), "%s", srcStr);  break;
-			case LogLevelText: __android_log_print(ANDROID_LOG_VERBOSE, logTag.c_str(), "%s", srcStr);  break;
-			default: __android_log_print(ANDROID_LOG_DEBUG, logTag.c_str(), "%s", srcStr);  break;
+			case LogLevelInfo: __android_log_print(ANDROID_LOG_INFO, logTag.c_str(), "%s", str); break;
+			case LogLevelWarn: __android_log_print(ANDROID_LOG_WARN, logTag.c_str(), "%s", str);  break;
+			case LogLevelError: __android_log_print(ANDROID_LOG_ERROR, logTag.c_str(), "%s", str);  break;
+			case LogLevelText: __android_log_print(ANDROID_LOG_VERBOSE, logTag.c_str(), "%s", str);  break;
+			default: __android_log_print(ANDROID_LOG_DEBUG, logTag.c_str(), "%s", str);  break;
 		}
 #else
-		printf(_vstr("%s"), str);
+		printf(str);
 #endif
 	}
 	else if (outPut == LogOutPutCallback && callBack)

@@ -98,7 +98,9 @@ void CCTexture::Destroy()
 void CCTexture::Use() const
 {
 	glBindTexture(GL_TEXTURE_2D, texture);
+#ifndef VR720_USE_GLES
 	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, (alpha ? GL_REPLACE : GL_MODULATE));
+#endif
 }
 void CCTexture::UnUse()
 {
