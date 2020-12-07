@@ -13,6 +13,6 @@
 
     <color name="colorTextBgStart">#01000000</color>
     <color name="colorTextBgEnd">#81000000</color>
-    <color name="colorBottomBorder">#CECECE</color>
+    <color name="colorBottomBorder">#3EDFDFDF</color>
 
 </resources>

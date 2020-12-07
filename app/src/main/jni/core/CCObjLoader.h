@@ -12,7 +12,7 @@ class CCObjLoader : public CCMeshLoader
 	 * @param mesh 要被加载的Mesh
 	 * @return 返回是否成功
 	 */
-	bool Load(const vchar* path, CCMesh* mesh) override;
+	bool Load(const char* path, CCMesh* mesh) override;
 	/**
 	 * 从内存数据加载Mesh
 	 * @param buffer mesh数据内存

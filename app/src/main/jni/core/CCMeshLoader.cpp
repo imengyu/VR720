@@ -16,9 +16,9 @@ CCMeshLoader* CCMeshLoader::GetMeshLoaderByType(CCMeshType type)
 	}
 	return nullptr;
 }
-CCMeshLoader *CCMeshLoader::GetMeshLoaderByFilePath(const vchar *path) {
-	vstring ext = Path::GetExtension(path);
-	if(ext == _vstr("obj"))
+CCMeshLoader *CCMeshLoader::GetMeshLoaderByFilePath(const char *path) {
+	std::string ext = Path::GetExtension(path);
+	if(ext == "obj")
 		return objLoader;
 	return nullptr;
 }
@@ -31,18 +31,18 @@ void CCMeshLoader::Destroy()
 {
 	delete objLoader;
 }
-bool CCMeshLoader::Load(const vchar* path, CCMesh* mesh)
+bool CCMeshLoader::Load(const char* path, CCMesh* mesh)
 {
 	return false;
 }
 bool CCMeshLoader::Load(BYTE *buffer, size_t bufferSize, CCMesh *mesh) {
 	return false;
 }
-const vchar* CCMeshLoader::GetLastError()
+const char* CCMeshLoader::GetLastError()
 {
 	return lastErr.c_str();
 }
-void CCMeshLoader::SetLastError(const vchar* err)
+void CCMeshLoader::SetLastError(const char* err)
 {
 	lastErr = err;
 }

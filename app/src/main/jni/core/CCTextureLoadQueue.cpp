@@ -10,7 +10,7 @@ CCTextureLoadQueue::~CCTextureLoadQueue()
 {
 	if (queue.size() > 0) {
 
-		logger->Log(_vstr("[CCTextureLoadQueue] Destroy not load Textures, count : %d"), queue.size());
+		logger->Log("[CCTextureLoadQueue] Destroy not load Textures, count : %d", queue.size());
 
 		std::list<TextureLoadQueueInfo*>::iterator it;
 		for (it = queue.begin(); it != queue.end(); it++)
@@ -47,7 +47,7 @@ void CCTextureLoadQueue::ResolveMain()
 		pendingTexture = queue.front();
 		queue.pop_front();
 
-		logger->Log(_vstr("[CCTextureLoadQueue] Load Texture %d"), pendingTexture->id);
+		logger->Log("[CCTextureLoadQueue] Load Texture %d", pendingTexture->id);
 
 		TextureLoadQueueDataResult *result = nullptr;
 		if (loadHandle)
@@ -67,7 +67,7 @@ void CCTextureLoadQueue::ResolveRender()
 	if (pendingLoadDataTexture != nullptr) {
 		auto result = pendingLoadDataTexture->pendingResult;
 		if (result) {
-			logger->Log(_vstr("[CCTextureLoadQueue:Render] Load Texture Data %d"), pendingTexture->id);
+			logger->Log("[CCTextureLoadQueue:Render] Load Texture Data %d", pendingTexture->id);
 			switch (result->compoents)
 			{
 			case 3:

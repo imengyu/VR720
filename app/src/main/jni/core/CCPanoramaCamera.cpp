@@ -1,6 +1,5 @@
 #include "CCPanoramaCamera.h"
 
-
 // 处理从任何类似键盘的输入系统接收的输入，以摄像机定义的ENUM形式接受输入参数（从窗口系统中抽象出来）
 void CCPanoramaCamera::ProcessKeyboard(CCameraMovement direction, float deltaTime)
 {
@@ -95,6 +94,30 @@ void CCPanoramaCamera::ProcessMouseMovement(float xoffset, float yoffset, bool c
 	}
 }
 
+void CCPanoramaCamera::ProcessZoomChange(float precent) {
+	switch (Mode) {
+		case CCPanoramaCameraMode::CenterRoate: {
+			FiledOfView = (precent * (FovMax - FovMin)) + FovMin;
+			if (fovChangedCallback)
+				fovChangedCallback(fovChangedCallbackData, FiledOfView);
+			break;
+		}
+		case CCPanoramaCameraMode::OutRoataround: {
+			Position.z -= (precent * (RoateFarMax - RoateNearMax)) + RoateNearMax;
+			break;
+		}
+		case CCPanoramaCameraMode::OrthoZoom: {
+
+			OrthographicSize = (precent * (OrthoSizeMax - OrthoSizeMin)) + OrthoSizeMin;
+			if (orthoSizeChangedCallback)
+				orthoSizeChangedCallback(orthoSizeChangedCallbackData, OrthographicSize);
+			break;
+		}
+		case CCPanoramaCameraMode::Static:
+			break;
+	}
+}
+
 // 处理从鼠标滚轮事件接收的输入
 void CCPanoramaCamera::ProcessMouseScroll(float yoffset)
 {
@@ -115,7 +138,7 @@ void CCPanoramaCamera::ProcessMouseScroll(float yoffset)
 		if (Position.z > RoateFarMax) Position.z = RoateFarMax;
 		break;
 	}
-	case CCPanoramaCameraMode::OrthoZoom:
+	case CCPanoramaCameraMode::OrthoZoom: {
 		if (OrthographicSize >= OrthoSizeMin && OrthographicSize <= OrthoSizeMax)
 			OrthographicSize -= yoffset * OrthoSizeZoomSpeed;
 		if (OrthographicSize <= OrthoSizeMin) OrthographicSize = OrthoSizeMin;
@@ -123,6 +146,7 @@ void CCPanoramaCamera::ProcessMouseScroll(float yoffset)
 		if (orthoSizeChangedCallback)
 			orthoSizeChangedCallback(orthoSizeChangedCallbackData, OrthographicSize);
 		break;
+	}
 	case CCPanoramaCameraMode::Static:
 		break;
 	}

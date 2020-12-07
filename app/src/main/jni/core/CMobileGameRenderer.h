@@ -35,9 +35,11 @@ public:
 	void DoOpenFile();
 	void MarkShouldOpenFile() { should_open_file = true; }
 	void MarkCloseFile();
+	void MarkDestroy() override { should_destroy = true; }
 	void SwitchMode(PanoramaMode mode);
-	void SetGryoEnabled(bool enable) { gryoEnabled = enable; }
-	void SetVREnabled(bool enable) { vREnabled = enable; }
+	void SetGryoEnabled(bool enable);
+	void SetEnableFullChunkLoad(bool enable);
+	void SetVREnabled(bool enable);
 	void UpdateGryoValue(float x, float y, float z) const;
     void AddTextureToQueue(CCTexture* tex, int x, int y, int id);
 
@@ -51,6 +53,7 @@ private:
 
 	std::string currentOpenFilePath;
 
+	bool ReInit() override;
 	bool Init() override;
 	void Render(float FrameTime) override;
 	void Update() override;
@@ -67,6 +70,7 @@ private:
 
 	bool gryoEnabled = false;
     bool vREnabled = false;
+	bool fullChunkLoadEnabled = false;
 
 	void ShowErrorDialog();
 
@@ -74,17 +78,15 @@ private:
     CCGUInfo* uiInfo = nullptr;
 	bool file_opened = false;
 
-	vstring last_image_error;
+	std::string last_image_error;
 
 	bool render_init_finish = false;
 	bool should_open_file = false;
 	bool should_close_file = false;
-	bool delete_after_close = false;
+	bool should_destroy = false;
 	bool destroying = false;
 	bool needTestImageAndSplit = false;
-	bool firstMouse = true;
 	float lastX = 0, lastY = 0, xoffset = 0, yoffset = 0;
-	float loopCount = 0;
 
 	void TestSplitImageAndLoadTexture();
 
@@ -100,6 +102,7 @@ private:
 
 	bool SplitFullImage = true;
 
+	void ReBufferAllData();
 
 	static void MouseCallback(COpenGLView* view, float x, float y, int button, int type);
 	static void ScrollCallback(COpenGLView* view, float x, float y, int button, int type);

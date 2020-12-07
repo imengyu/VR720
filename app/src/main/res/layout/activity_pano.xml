@@ -8,7 +8,7 @@
     android:padding="0dp"
     tools:context=".PanoActivity">
 
-    <com.dreamfish.com.vr720.core.NativeVR720GLSurfaceView
+    <com.imengyu.vr720.core.NativeVR720GLSurfaceView
         android:id="@+id/pano_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
@@ -32,7 +32,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <com.dreamfish.com.vr720.widget.MyTitleBar
+    <com.imengyu.vr720.widget.MyTitleBar
         android:id="@+id/myTitleBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

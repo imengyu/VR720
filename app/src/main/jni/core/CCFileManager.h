@@ -16,19 +16,12 @@ public:
 
     CCFileManager(COpenGLRenderer *render);
 
-#if defined(VR720_WINDOWS)
-    bool DoOpenFile(const vchar* path);
-	void DeleteCurrentFile();
-	void OpenCurrentFileAs();
-	void OpenFile();
-#else
 	/**
 	 *
 	 * @param path
 	 * @return
 	 */
-    bool OpenFile(const vchar* path);
-#endif
+    bool OpenFile(const char* path);
     /**
      *
      */
@@ -37,7 +30,7 @@ public:
      *
      * @return
      */
-    vstring GetCurrentFileName() const ;
+    std::string GetCurrentFileName() const ;
 
     CImageLoader* CurrentFileLoader = nullptr;
     ImageType CurrenImageType = ImageType::Unknow;
@@ -56,11 +49,11 @@ public:
      *
      * @return
      */
-    const vchar* GetLastError();
+    const char* GetLastError();
 private:
     Logger* logger = nullptr;
 
-    vstring lastErr;
+    std::string lastErr;
     COpenGLRenderer* Render = nullptr;
 
     CCFileManagerOnCloseCallback onCloseCallback = nullptr;

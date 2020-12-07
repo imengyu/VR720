@@ -33,3 +33,9 @@ void COpenGLRenderer::Resize(int Width, int Height)
 void COpenGLRenderer::Destroy()
 {
 }
+void COpenGLRenderer::MarkDestroy()
+{
+}
+bool COpenGLRenderer::ReInit() {
+	return false;
+}

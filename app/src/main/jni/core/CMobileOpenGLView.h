@@ -19,6 +19,9 @@ public:
 
     void Update();
 
+    void Pause() override;
+    void Resume() override;
+
     bool Init() override;
     void Destroy() override;
 
@@ -33,7 +36,8 @@ public:
 
 private:
     float currentFps = 0;
-    bool reday = false;
+    bool ready = false;
+    bool destroyWithForce = false;
 };
 
 

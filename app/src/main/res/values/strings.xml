@@ -2,6 +2,7 @@
     <string name="app_name">720全景图查看器</string>
     <string name="app_itroduction">一款简单易用的全景图浏览软件</string>
 
+    <!-- titles -->
     <string name="navigation_drawer_open">开启侧边栏</string>
     <string name="navigation_drawer_close">关闭侧边栏</string>
     <string name="nav_header_title">一款精简的 720 全景图浏览软件</string>
@@ -13,14 +14,14 @@
     <string name="title_activity_settings">设置</string>
     <string name="title_activity_about">关于 VR720</string>
     <string name="title_activity_pano">全景图浏览</string>
+    <string name="title_activity_feedback">提交软件反馈</string>
+    <string name="title_activity_help">VR720 帮助文档</string>
+    <string name="title_reminder">温馨提示</string>
 
     <string name="version_code">1</string>
     <string name="version_name">BULID.DEV.10–1</string>
 
-
-    <string name="pref_header_general">通用</string>
-
-
+    <!-- actions -->
     <string name="action_import_pano">导入全景图</string>
     <string name="action_settings">设置</string>
     <string name="action_about">关于本软件</string>
@@ -43,7 +44,9 @@
     <string name="action_delete_file">删除文件</string>
     <string name="action_back_main">返回主界面</string>
     <string name="action_open_now">立即开启</string>
+    <string name="action_help">帮助文档</string>
 
+    <!-- small texts -->
     <string name="text_tip">提示</string>
     <string name="text_placeholder">文字占位符</string>
     <string name="text_return">返回</string>
@@ -54,6 +57,10 @@
     <string name="text_your_device_dosnot_support_es20">抱歉，你的设备不支持最基础的 OpenGL ES 2.0, 本程序无法继续进行渲染</string>
     <string name="text_title">标题</string>
     <string name="text_core_ver">内核版本：</string>
+    <string name="text_copyright">
+        © 2020 By 梦欤 All rights reserved. 
+        <br /> https://imengyu.top
+    </string>
 
     <string name="text_vr_mode">VR模式</string>
     <string name="text_more">更多</string>
@@ -71,8 +78,10 @@
     <string name="text_press_once_more_to_quit">再按一次退出程序</string>
     <string name="text_would_you_want_clear_list">是否要清空列表？</string>
     <string name="text_all_list_wiil_be_clear">所有列表将会被清空</string>
+    <string name="text_file_delete_count">成功删除 %d 个文件</string>
 
     <string name="text_more_actions">更多操作</string>
+    <string name="text_i_new">我知道了</string>
 
     <string name="text_delete_success">删除成功</string>
     <string name="text_delete_failed">文件删除失败</string>
@@ -102,21 +111,50 @@
     <string name="text_storage_permission_open_intro">请在-应用设置-权限-中，允许本程序使用存储权限来允许本程序读取本地文件</string>
 
     <string name="text_logo">标题Logo</string>
+    <string name="text_soft_version">当前软件版本：</string>
 
-    <!-- Preference Titles -->
-    <string name="messages_header">Messages</string>
-    <string name="sync_header">Sync</string>
+    <string name="settings_header_common">通用</string>
+    <string name="settings_header_panorama">全景图浏览</string>
+    <string name="settings_header_others">其他</string>
+    <string name="settings_header_about">关于</string>
 
-    <!-- Messages Preferences -->
-    <string name="signature_title">Your signature</string>
-    <string name="reply_title">Default reply action</string>
-
-    <!-- Sync Preferences -->
-    <string name="sync_title">Sync email periodically</string>
-    <string name="attachment_title">Download incoming attachments</string>
-    <string name="attachment_summary_on">Automatically download attachments for incoming emails
+    <string name="settings_key_enable_full_chunks">启用完整全景图浏览</string>
+    <string name="settings_summary_enable_full_chunks">
+        在浏览较大全景图（打样4096x2048）时不会压缩而是以文件最高清晰度显示，
+        虽然能有更好的效果，但这可能会增加硬件的负担。
     </string>
-    <string name="attachment_summary_off">Only download attachments when manually requested</string>
+    <string name="settings_key_about">关于软件</string>
+    <string name="settings_key_check_update">检查更新</string>
+    <string name="settings_key_auto_update">自动更新软件</string>
+    <string name="settings_key_privacy_policy">隐私政策以及许可协议</string>
+
+    <!-- agreement -->
+    <string name="text_agreement_base_welecome">
+        欢迎使用 720全景图查看器 ！
+        \n我们非常重视您的隐私和个人信息保护。
+        \n在您使用 720全景图查看器 前，请认真阅读 <a href="https://imengyu.top/linkJump?to=vr720_argeement">《用户协议》</a> 及 <a href="https://imengyu.top/linkJump?to=privacy_policy">《隐私政策》</a> ，您同意并接受全部条款后方可开始使用“720全景图查看器”。
+        \n另外为了更好地使用产品功能，需征求您的允许，获得以下权限：
+    </string>
+    <string name="text_agreement_base"><a href="https://imengyu.top/linkJump?to=vr720_argeement">《用户协议》</a>\n<a href="https://imengyu.top/linkJump?to=privacy_policy">《隐私政策》</a>
+        \n\n为了更好地使用产品功能，应用还征求您的允许获得以下权限：
+    </string>
+
+    <string name="text_agreement_devinfo">设备信息</string>
+    <string name="text_agreement_devinfo_sub">包括设备ID/屏幕尺寸/操作系统/设备型号/网络连接模式/移动国家代码/屏幕分辨率及系统语言；用于根据不同的设备及系统版本来提供不同的功能和体验，获取产品的使用情况及Bug信息，帮助我们不断改进产品功能和体验。</string>
+
+    <string name="text_agreement_interenet">网络</string>
+    <string name="text_agreement_interenet_sub">
+        包括IP地址；我们需要联网下载计算数据；以及帮助我们统计产品使用情况、反馈产品BUG，帮助我们不断改进产品功能和体验。
+    </string>
+
+    <string name="text_agreement_write_storage">读写存储</string>
+    <string name="text_agreement_write_storage_sub">
+        我们需要临时写入程序数据、程序计算缓存等等。
+    </string>
+
+    <string name="text_agreement_lost">如果您不同意或拒绝授予这些权限，您将无法使用 App 的部分或全部功能。</string>
+    <string name="text_agreement_allow">同意并继续</string>
+    <string name="text_agreement_not_allow">不同意并退出</string>
 
 
 </resources>

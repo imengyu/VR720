@@ -260,7 +260,7 @@
         android:layout_height="wrap_content"
         android:gravity="center_horizontal">
 
-        <com.dreamfish.com.vr720.widget.ToolbarButton
+        <com.imengyu.vr720.widget.ToolbarButton
             android:id="@+id/button_vr"
             style="@style/Widget.AppCompat.Button.Borderless"
             android:layout_width="wrap_content"
@@ -275,7 +275,7 @@
             app:normalColor="@android:color/white"
             app:normalIcon="@drawable/ic_bar_vr" />
 
-        <com.dreamfish.com.vr720.widget.ToolbarButton
+        <com.imengyu.vr720.widget.ToolbarButton
             android:id="@+id/button_gryo"
             style="@style/Widget.AppCompat.Button.Borderless"
             android:layout_width="wrap_content"
@@ -289,7 +289,7 @@
             app:normalColor="@android:color/white"
             app:normalIcon="@drawable/ic_bar_gryo" />
 
-        <com.dreamfish.com.vr720.widget.ToolbarButton
+        <com.imengyu.vr720.widget.ToolbarButton
             android:id="@+id/button_mode"
             style="@style/Widget.AppCompat.Button.Borderless"
             android:layout_width="wrap_content"
@@ -303,7 +303,7 @@
             app:hoverColor="@color/colorPrimary"
             app:normalColor="@android:color/white" />
 
-        <com.dreamfish.com.vr720.widget.ToolbarButton
+        <com.imengyu.vr720.widget.ToolbarButton
             android:id="@+id/button_more"
             style="@style/Widget.AppCompat.Button.Borderless"
             android:layout_width="wrap_content"

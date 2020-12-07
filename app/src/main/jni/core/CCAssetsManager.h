@@ -15,10 +15,6 @@ class CCTexture;
 class CCAssetsManager {
 
 public:
-#ifdef VR720_WINDOWS
-    static const std::wstring GetResourcePath(const wchar_t* typeName, const wchar_t* name);
-    static const std::wstring GetDirResourcePath(const wchar_t* dirName, const wchar_t* name);
-#endif
     /**
      * 获取资源路径
      * @param typeName 类型文件夹
@@ -40,7 +36,7 @@ public:
      * @param bufferLength 用来存放缓冲区大小
      * @return 返回数据缓冲区
      */
-    static BYTE* LoadResource(const vchar* path, size_t *bufferLength);
+    static BYTE* LoadResource(const char* path, size_t *bufferLength);
 
     /**
      * 加载字符串资源到内存
@@ -48,23 +44,22 @@ public:
      * @param bufferLength 用来存放缓冲区大小
      * @return 返回数据缓冲区
      */
-    static vstring LoadStringResource(const vchar* path);
+    static std::string LoadStringResource(const char* path);
 
     /**
      * 从文件加载贴图
      * @param path 贴图路径
      * @return 返回贴图，如果加载失败返回nullptr
      */
-    static CCTexture* LoadTexture(const vchar* path);
+    static CCTexture* LoadTexture(const char* path);
 
     /**
      * 从文件加载网格
      * @param path 网格路径
      * @return 返回网格，如果加载失败返回nullptr
      */
-    static CCMesh* LoadMesh(const vchar* path);
+    static CCMesh* LoadMesh(const char* path);
 
-#ifdef VR720_ANDROID
     /**
      * 资源管理从JNI初始化
      * @param env JNIEnv
@@ -80,7 +75,6 @@ public:
      */
     static bool Android_LoadAsset(const char* path, BYTE **buffer, size_t *bufferLength);
 
-#endif
 };
 
 

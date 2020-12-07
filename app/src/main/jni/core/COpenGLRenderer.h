@@ -17,6 +17,11 @@ public:
 	~COpenGLRenderer();
 
 	/**
+	 * 重新初始化
+	 * @return 返回初始化是否成功
+	 */
+	virtual bool ReInit();
+	/**
 	 * 初始化
 	 * @return 返回初始化是否成功
 	 */
@@ -44,6 +49,10 @@ public:
 	 * 释放
 	 */
 	virtual void Destroy();
+	/**
+	 * 延迟释放
+	 */
+	virtual void MarkDestroy();
 
 	COpenGLView * View;
 };

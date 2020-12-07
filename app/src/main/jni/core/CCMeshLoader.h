@@ -25,7 +25,7 @@ public:
 	 * @param path 网格文件路径
 	 * @return 返回加载器
 	 */
-	static CCMeshLoader* GetMeshLoaderByFilePath(const vchar* path);
+	static CCMeshLoader* GetMeshLoaderByFilePath(const char* path);
 	/**
 	 * 全局初始化
 	 */
@@ -41,7 +41,7 @@ public:
 	 * @param mesh 要被加载的Mesh
 	 * @return 返回是否成功
 	 */
-	virtual bool Load(const vchar * path, CCMesh *mesh);
+	virtual bool Load(const char * path, CCMesh *mesh);
 	/**
 	 * 从内存数据加载Mesh
 	 * @param buffer mesh数据内存
@@ -54,16 +54,16 @@ public:
 	 * 获取上一次加载发生的错误
 	 * @return 加载错误
 	 */
-	virtual const vchar* GetLastError();
+	virtual const char* GetLastError();
 
 protected:
 	/**
 	 * 设置加载错误
 	 * @param err 加载错误
 	 */
-	void SetLastError(const vchar* err);
+	void SetLastError(const char* err);
 private:
-	vstring lastErr;
+	std::string lastErr;
 };
 
 #endif

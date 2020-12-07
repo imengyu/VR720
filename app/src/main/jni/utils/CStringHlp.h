@@ -51,12 +51,8 @@ public:
 	 */
 	static std::wstring Utf8ToUnicode(const std::string& szU8);
 
-#ifdef VR720_ANDROID
-
 	static jstring charTojstring(JNIEnv* env, const char* pat);
 	static char* jstringToChar(JNIEnv* env, jstring jstr);
-
-#endif
 };
 
 #endif

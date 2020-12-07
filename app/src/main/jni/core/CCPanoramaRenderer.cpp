@@ -7,7 +7,6 @@
 #include "CCMeshLoader.h"
 #include "CCMaterial.h"
 #include "CCRenderGlobal.h"
-#if defined(VR720_ANDROID)
 #include "CMobileGameRenderer.h"
 
 CCPanoramaRenderer::CCPanoramaRenderer(CMobileGameRenderer* renderer)
@@ -16,54 +15,48 @@ CCPanoramaRenderer::CCPanoramaRenderer(CMobileGameRenderer* renderer)
     logger = Logger::GetStaticInstance();
 }
 
-#elif defined(VR720_WINDOWS)
-#include "CWindowsGameRenderer.h"
+void CCPanoramaRenderer::ReInit() {
 
-CCPanoramaRenderer::CCPanoramaRenderer(CWindowsGameRenderer* renderer)
-{
-    Renderer = renderer;
-    logger = Logger::GetStaticInstance();
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_BLEND);
+    glDisable(GL_DITHER);
+    glDisable(GL_DEPTH_TEST);
+
+    //Re create shader
+    if(shader != nullptr) delete shader;
+    InitShader();
+
+    //reload resources
+    ReleaseBuiltInResources();
+    LoadBuiltInResources();
+
+    //Re buffer all data
+    ReBufferAllData();
 }
-#endif
-
 void CCPanoramaRenderer::Init()
 {
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
     glDisable(GL_DITHER);
     glDisable(GL_DEPTH_TEST);
-#ifndef VR720_USE_GLES
-    glEnable(GL_ALPHA_TEST);
-    glDisable(GL_LIGHTING);
-    glEnableClientState(GL_VERTEX_ARRAY);
-#endif
+
     LoadBuiltInResources();
 
-    vstring vshaderPath = CCAssetsManager::GetResourcePath(_vstr("shader"), _vstr("Standard_vertex.glsl"));
-    vstring fshaderPath = CCAssetsManager::GetResourcePath(_vstr("shader"), _vstr("Standard_fragment.glsl"));
-    vstring vshaderCode = CCAssetsManager::LoadStringResource(vshaderPath.c_str());
-    vstring fshaderCode = CCAssetsManager::LoadStringResource(fshaderPath.c_str());
-
-    shader = new CCShader(vshaderCode.c_str(), fshaderCode.c_str());
-
-    CreateMainModel();
+    std::string vshaderPath = CCAssetsManager::GetResourcePath("shader", "Standard_vertex.glsl");
+    std::string fshaderPath = CCAssetsManager::GetResourcePath("shader", "Standard_fragment.glsl");
 
     globalRenderInfo = new CCRenderGlobal();
+
+    vshaderCode = CCAssetsManager::LoadStringResource(vshaderPath.c_str());
+    fshaderCode = CCAssetsManager::LoadStringResource(fshaderPath.c_str());
+
+    InitShader();
+    CreateMainModel();
 
     globalRenderInfo->glVendor = (GLubyte*)glGetString(GL_VENDOR);            //返回负责当前OpenGL实现厂商的名字
     globalRenderInfo->glRenderer = (GLubyte*)glGetString(GL_RENDERER);    //返回一个渲染器标识符，通常是个硬件平台
     globalRenderInfo->glVersion = (GLubyte*)glGetString(GL_VERSION);    //返回当前OpenGL实现的版本号
     globalRenderInfo->glslVersion = (GLubyte*)glGetString(GL_SHADING_LANGUAGE_VERSION);//返回着色预压编译器版本号
-
-    globalRenderInfo->viewLoc = shader->GetUniformLocation("view");
-    globalRenderInfo->projectionLoc = shader->GetUniformLocation("projection");
-    globalRenderInfo->modelLoc = shader->GetUniformLocation("model");
-    globalRenderInfo->ourTextrueLoc = shader->GetUniformLocation("ourTexture");
-    globalRenderInfo->useColorLoc = shader->GetUniformLocation("useColor");
-    globalRenderInfo->ourColorLoc = shader->GetUniformLocation("ourColor");
-    globalRenderInfo->texOffest = shader->GetUniformLocation("texOffest");
-    globalRenderInfo->texTilling = shader->GetUniformLocation("texTilling");
-
 }
 void CCPanoramaRenderer::Destroy()
 {
@@ -81,7 +74,22 @@ void CCPanoramaRenderer::Destroy()
         delete mainFlatModel;
         mainFlatModel = nullptr;
     }
+
+    ReleaseBuiltInResources();
     ReleaseTexPool();
+}
+void CCPanoramaRenderer::InitShader() {
+
+    shader = new CCShader(vshaderCode.c_str(), fshaderCode.c_str());
+
+    globalRenderInfo->viewLoc = shader->GetUniformLocation("view");
+    globalRenderInfo->projectionLoc = shader->GetUniformLocation("projection");
+    globalRenderInfo->modelLoc = shader->GetUniformLocation("model");
+    globalRenderInfo->ourTextrueLoc = shader->GetUniformLocation("ourTexture");
+    globalRenderInfo->useColorLoc = shader->GetUniformLocation("useColor");
+    globalRenderInfo->ourColorLoc = shader->GetUniformLocation("ourColor");
+    globalRenderInfo->texOffest = shader->GetUniformLocation("texOffest");
+    globalRenderInfo->texTilling = shader->GetUniformLocation("texTilling");
 }
 
 void CCPanoramaRenderer::Render(float deltaTime)
@@ -97,11 +105,6 @@ void CCPanoramaRenderer::Render(float deltaTime)
     model = mainModel->GetMatrix();
     glUniformMatrix4fv(globalRenderInfo->modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
-#if !VR720_USE_GLES
-    glPolygonMode(GL_FRONT, GL_FILL);
-    glPolygonMode(GL_BACK, GL_LINE);
-#endif
-
     //完整绘制
     glUniform1i(globalRenderInfo->useColorLoc, 0);
     if (renderOn) {
@@ -116,57 +119,6 @@ void CCPanoramaRenderer::Render(float deltaTime)
             RenderFlat();
     }
 
-#if !(VR720_USE_GLES && VR720_ANDROID)
-    //绘制测试
-    if (renderPanoramaFullTest) {
-        glPolygonMode(GL_FRONT, GL_LINE);
-        glPolygonMode(GL_BACK, GL_LINE);
-        glUniform1i(globalRenderInfo->useColorLoc, 1);
-        glUniform3f(globalRenderInfo->ourColorLoc, wireframeColor2.r, wireframeColor2.g, wireframeColor2.b);
-        glColor3f(wireframeColor2.r, wireframeColor2.g, wireframeColor2.b);
-        RenderFullChunks(deltaTime);
-    }
-
-    //绘制调试线框
-    if (renderDebugWireframe) {
-
-        glPolygonMode(GL_FRONT, GL_LINE);
-        glPolygonMode(GL_BACK, GL_LINE);
-        glUniform1i(globalRenderInfo->useColorLoc, 1);
-        glUniform3f(globalRenderInfo->ourColorLoc, wireframeColor.r, wireframeColor.g, wireframeColor.b);
-
-        if (renderPanoramaFlat)
-            RenderFlat();
-        else
-            RenderThumbnail();
-    }
-    //绘制向量标线
-    if (renderDebugVector) {
-
-        glBindTexture(GL_TEXTURE_2D, 0);
-        glUniform1i(globalRenderInfo->useColorLoc, 1);
-
-        glUniform3f(globalRenderInfo->ourColorLoc, 0.0f, 1.0f, 0.0f);
-        glBegin(GL_LINES);
-        glVertex3f(0.0f, 0.0f, 0.0f);
-        glVertex3f(0.0f, 0.05f, 0.0f);
-        glEnd();
-
-        glUniform3f(globalRenderInfo->ourColorLoc, 0.0f, 0.0f, 1.0f);
-
-        glBegin(GL_LINES);
-        glVertex3f(0.0f, 0.0f, 0.0f);
-        glVertex3f(0.0f, 0.0f, 0.05f);
-        glEnd();
-
-        glUniform3f(globalRenderInfo->ourColorLoc, 1.0f, 0.0f, 0.0f);
-
-        glBegin(GL_LINES);
-        glVertex3f(0.0f, 0.0f, 0.0f);
-        glVertex3f(0.05f, 0.0f, 0.0f);
-        glEnd();
-    }
-#endif
 }
 
 void CCPanoramaRenderer::CreateMainModel() {
@@ -200,8 +152,8 @@ void CCPanoramaRenderer::CreateMainModelFlatMesh(CCMesh* mesh) const {
         u = 0;
         for (int i = 0; i <= sphereSegmentX; i++) {
             u += ustep;
-            mesh->positions.emplace_back(glm::vec3(0.5f - u, (0.5f - v) / 2.0f, 0.0f));
-            mesh->texCoords.emplace_back(glm::vec2(1.0f - u, v));
+            mesh->positions.push_back(glm::vec3(0.5f - u, (0.5f - v) / 2.0f, 0.0f));
+            mesh->texCoords.push_back(glm::vec2(1.0f - u, v));
         }
     }
 
@@ -211,13 +163,13 @@ void CCPanoramaRenderer::CreateMainModelFlatMesh(CCMesh* mesh) const {
         int line_start_pos = (j)*vertices_line_count;
         for (int i = 0; i < sphereSegmentX; i++) {
 
-            mesh->indices.emplace_back(CCFace(line_start_pos + i, 0, -1));
-            mesh->indices.emplace_back(CCFace(line_start_pos + i + vertices_line_count + 1, 0, -1));
-            mesh->indices.emplace_back(CCFace(line_start_pos + i + vertices_line_count, 0, -1));
+            mesh->indices.push_back(CCFace(line_start_pos + i, 0, -1));
+            mesh->indices.push_back(CCFace(line_start_pos + i + vertices_line_count + 1, 0, -1));
+            mesh->indices.push_back(CCFace(line_start_pos + i + vertices_line_count, 0, -1));
 
-            mesh->indices.emplace_back(CCFace(line_start_pos + i + vertices_line_count + 1, 0, -1));
-            mesh->indices.emplace_back(CCFace(line_start_pos + i, 0, -1));
-            mesh->indices.emplace_back(CCFace(line_start_pos + i + 1, 0, -1));
+            mesh->indices.push_back(CCFace(line_start_pos + i + vertices_line_count + 1, 0, -1));
+            mesh->indices.push_back(CCFace(line_start_pos + i, 0, -1));
+            mesh->indices.push_back(CCFace(line_start_pos + i + 1, 0, -1));
         }
     }
 
@@ -228,51 +180,51 @@ void CCPanoramaRenderer::CreateMainModelSphereMesh(CCMesh* mesh) const {
 
     float r = 1.0f;
     float ustep = 1.0f / (float)sphereSegmentX, vstep = 1.0f / (float)sphereSegmentY;
-    float u, v = 0;
+    float u = 0, v = 0;
 
     //顶点
     //=======================================================
 
     for (int j = 0; j <= sphereSegmentY; j++) {
-        v += vstep;
         u = 0;
         for (int i = 0; i <= sphereSegmentX; i++) {
-            u += ustep;
             mesh->positions.push_back(GetSpherePoint(u, v, r));
-            mesh->texCoords.emplace_back(glm::vec2(1.0f - u, v));
+            mesh->texCoords.push_back(glm::vec2(1.0f - u, v));
+            u += ustep;
         }
+        v += vstep;
     }
 
     //顶点索引
     //=======================================================
 
     int vertices_line_count = sphereSegmentX + 1;
-    int line_start_pos = vertices_line_count;
+    int line_start_pos = 0;
 
     for (int i = 0; i < sphereSegmentX; i++) {
-        mesh->indices.emplace_back(CCFace(line_start_pos + i + 1, 0, -1));
-        mesh->indices.emplace_back(CCFace(line_start_pos + i, 0, -1));
-        mesh->indices.emplace_back(CCFace(i, 0, -1));
+        mesh->indices.push_back(CCFace(line_start_pos + i + 1 + vertices_line_count));
+        mesh->indices.push_back(CCFace(line_start_pos + i + vertices_line_count));
+        mesh->indices.push_back(CCFace(line_start_pos + i));
     }
-    for (int j = 0; j < sphereSegmentY - 1; j++) {
-        line_start_pos = (j + 1) * vertices_line_count;
+    for (int j = 1; j < sphereSegmentY - 1; j++) {
+        line_start_pos = j * vertices_line_count;
         for (int i = 0; i < sphereSegmentX; i++) {
 
-            mesh->indices.emplace_back(CCFace(line_start_pos + i, 0, -1));
-            mesh->indices.emplace_back(CCFace(line_start_pos + i + vertices_line_count + 1, 0, -1));
-            mesh->indices.emplace_back(CCFace(line_start_pos + i + vertices_line_count, 0, -1));
+            mesh->indices.push_back(CCFace(line_start_pos + i));
+            mesh->indices.push_back(CCFace(line_start_pos + i + vertices_line_count + 1));
+            mesh->indices.push_back(CCFace(line_start_pos + i + vertices_line_count));
 
-            mesh->indices.emplace_back(CCFace(line_start_pos + i + vertices_line_count + 1, 0, -1));
-            mesh->indices.emplace_back(CCFace(line_start_pos + i, 0, -1));
-            mesh->indices.emplace_back(CCFace(line_start_pos + i + 1, 0, -1));
+            mesh->indices.push_back(CCFace(line_start_pos + i + vertices_line_count + 1));
+            mesh->indices.push_back(CCFace(line_start_pos + i));
+            mesh->indices.push_back(CCFace(line_start_pos + i + 1));
         }
     }
 
-    line_start_pos = vertices_line_count * sphereSegmentY;
+    line_start_pos = (sphereSegmentY - 1) * vertices_line_count;
     for (int i = 0; i < sphereSegmentX; i++) {
-        mesh->indices.emplace_back(CCFace(line_start_pos + i, 0, -1));
-        mesh->indices.emplace_back(CCFace(line_start_pos + i + 1, 0, -1));
-        mesh->indices.emplace_back(CCFace(line_start_pos + i + vertices_line_count, 0, -1));
+        mesh->indices.push_back(CCFace(line_start_pos + i));
+        mesh->indices.push_back(CCFace(line_start_pos + i + 1));
+        mesh->indices.push_back(CCFace(line_start_pos + i + vertices_line_count));
     }
 
     //创建缓冲区
@@ -296,8 +248,6 @@ glm::vec3 CCPanoramaRenderer::CreateFullModelSphereMesh(ChunkModel* info, int se
     int skip = 0;
 
     for (int j = segYStart; j <= segYEnd; j++) {
-        v += vstep;
-        cv += cvstep;
         if (j <= 2 || j >= sphereFullSegmentY - 4) {
             skip++;
             continue;
@@ -305,11 +255,13 @@ glm::vec3 CCPanoramaRenderer::CreateFullModelSphereMesh(ChunkModel* info, int se
         u = u_start;
         cu = 1.0f;
         for (int i = segXStart; i <= segXEnd; i++) {
+            mesh->positions.push_back(GetSpherePoint(u, v, r));
+            mesh->texCoords.push_back(glm::vec2(cu, cv));
             u += ustep;
             cu -= custep;
-            mesh->positions.push_back(GetSpherePoint(u, v, r));
-            mesh->texCoords.emplace_back(glm::vec2(cu, cv));
         }
+        v += vstep;
+        cv += cvstep;
     }
 
     int vertices_line_count = segXEnd - segXStart + 1;
@@ -317,13 +269,13 @@ glm::vec3 CCPanoramaRenderer::CreateFullModelSphereMesh(ChunkModel* info, int se
         int line_start_pos = (j)*vertices_line_count;
         for (int i = 0; i < segXEnd - segXStart; i++) {
 
-            mesh->indices.emplace_back(CCFace(line_start_pos + i, 0, -1));
-            mesh->indices.emplace_back(CCFace(line_start_pos + i + vertices_line_count + 1, 0, -1));
-            mesh->indices.emplace_back(CCFace(line_start_pos + i + vertices_line_count, 0, -1));
+            mesh->indices.push_back(CCFace(line_start_pos + i, 0, -1));
+            mesh->indices.push_back(CCFace(line_start_pos + i + vertices_line_count + 1, 0, -1));
+            mesh->indices.push_back(CCFace(line_start_pos + i + vertices_line_count, 0, -1));
 
-            mesh->indices.emplace_back(CCFace(line_start_pos + i + vertices_line_count + 1, 0, -1));
-            mesh->indices.emplace_back(CCFace(line_start_pos + i, 0, -1));
-            mesh->indices.emplace_back(CCFace(line_start_pos + i + 1, 0, -1));
+            mesh->indices.push_back(CCFace(line_start_pos + i + vertices_line_count + 1, 0, -1));
+            mesh->indices.push_back(CCFace(line_start_pos + i, 0, -1));
+            mesh->indices.push_back(CCFace(line_start_pos + i + 1, 0, -1));
         }
     }
 
@@ -331,9 +283,9 @@ glm::vec3 CCPanoramaRenderer::CreateFullModelSphereMesh(ChunkModel* info, int se
     mesh->GenerateBuffer();
 
     float center_u = (u_start + ustep * ((float)(segXEnd - segXStart) / 2.0f)),
-        center_v = (v_start + vstep * ((float)(segYEnd - segYStart) / 2.0f)),
-        center_u_2 = (center_u - u_start) / 10.0f * 9.0f,
-        center_v_2 = (center_v - v_start) / 10.0f * 9.0f;
+            center_v = (v_start + vstep * ((float)(segYEnd - segYStart) / 2.0f)),
+            center_u_2 = (center_u - u_start) / 10.0f * 9.0f,
+            center_v_2 = (center_v - v_start) / 10.0f * 9.0f;
 
     info->pointA = GetSpherePoint(center_u - center_u_2, center_v - center_v_2, r);
     info->pointB = GetSpherePoint(center_u + center_u_2, center_v - center_v_2, r);
@@ -345,28 +297,19 @@ glm::vec3 CCPanoramaRenderer::CreateFullModelSphereMesh(ChunkModel* info, int se
 void CCPanoramaRenderer::LoadBuiltInResources() {
     panoramaCheckTex =
             CCAssetsManager::LoadTexture(
-                    CCAssetsManager::GetResourcePath(_vstr("textures"), _vstr("checker.jpg")).c_str());
+                    CCAssetsManager::GetResourcePath("textures", "checker.jpg").c_str());
     if(!panoramaCheckTex->Loaded())
         panoramaCheckTex = nullptr;
 
     panoramaRedCheckTex = CCAssetsManager::LoadTexture(
-            CCAssetsManager::GetResourcePath(_vstr("textures"), _vstr("red_checker.jpg")).c_str());
+            CCAssetsManager::GetResourcePath("textures", "red_checker.jpg").c_str());
 
-#if defined(VR720_WINDOWS) || defined(VR720_LINUX)
-
-    uiLogoTex = new CCTexture();
-    uiLogoTex->Load(CCAssetsManager::GetResourcePath(_vstr("textures"), _vstr("logo.png")).c_str());
-
-    uiFailedTex = new CCTexture();
-    uiFailedTex->Load(CCAssetsManager::GetResourcePath(_vstr("textures"), _vstr("icon_image_error.jpg")).c_str());
-
-    uiOpenButtonTex = new CCTexture();
-    uiOpenButtonTex->Load(CCAssetsManager::GetResourcePath(_vstr("textures"), _vstr("open_file.jpg")).c_str());
-
-    uiTitleTex = new CCTexture();
-    uiTitleTex->Load(CCAssetsManager::GetResourcePath(_vstr("textures"), _vstr("title.png")).c_str());
-
-#endif
+}
+void CCPanoramaRenderer::ReleaseBuiltInResources() {
+    if(!panoramaCheckTex.IsNullptr())
+        panoramaCheckTex = nullptr;
+    if(!panoramaCheckTex.IsNullptr())
+        panoramaCheckTex = nullptr;
 }
 void CCPanoramaRenderer::ReleaseTexPool() {
     renderPanoramaFull = false;
@@ -416,8 +359,8 @@ void CCPanoramaRenderer::GenerateFullModel(int chunkW, int chunkH)
             pChunkModel->chunkXv = pChunkModel->chunkXv + chunkWf;
             pChunkModel->chunkYv = pChunkModel->chunkYv + chunkHf;
             pChunkModel->pointCenter = CreateFullModelSphereMesh(pChunkModel,
-                i * segX, j * segY,
-                segX + ((i == chunkW - 1 && chunkW % 2 != 0) ? 1 : 0), segY);
+                                                                 i * segX, j * segY,
+                                                                 segX + ((i == chunkW - 1 && chunkW % 2 != 0) ? 1 : 0), segY);
             fullModels.push_back(pChunkModel);
         }
     }
@@ -442,6 +385,22 @@ void CCPanoramaRenderer::RotateModelForce(float y, float z)
 {
     mainModel->Rotation.y += y;
     mainModel->Rotation.z += z;
+    mainModel->UpdateVectors();
+
+    UpdateFullChunksVisible();
+}
+void CCPanoramaRenderer::RotateXYZModelForce(float x, float y, float z) {
+    mainModel->Rotation.y = y;
+    mainModel->Rotation.z = z;
+    mainModel->Rotation.x = x;
+    mainModel->UpdateVectors();
+
+    UpdateFullChunksVisible();
+}
+void CCPanoramaRenderer::RotateXYZModelIncrement(float x, float y, float z) {
+    mainModel->Rotation.y += y;
+    mainModel->Rotation.z += z;
+    mainModel->Rotation.x += x;
     mainModel->UpdateVectors();
 
     UpdateFullChunksVisible();
@@ -579,14 +538,13 @@ void CCPanoramaRenderer::UpdateFullChunksVisible() {
                 if (!m->loadMarked && !renderPanoramaFullTest) {//加载贴图
                     m->loadMarked = true;
 
-                    logger->Log(_vstr("Star load chunk %d, %d"), m->chunkX, m->chunkY);
+                    logger->Log("Star load chunk %d, %d", m->chunkX, m->chunkY);
 
                     auto* tex = new CCTexture();
                     tex->wrapS = GL_MIRRORED_REPEAT;
                     tex->wrapT = GL_MIRRORED_REPEAT;
                     m->model->Material->diffuse = tex;
                     m->model->Material->tilling = glm::vec2(1.0f, 1.0f);
-                    Renderer->                                                                                                                                             AddTextureToQueue(tex, m->chunkX, m->chunkY, m->chunkY * m->chunkX + m->chunkX);//MainTex
                     panoramaTexPool.emplace_back(tex);
                 }
             }
@@ -666,3 +624,17 @@ void CCPanoramaRenderer::PrecalcMercator() {
         -((glm::cos(Mercator_λp - λ1)) / glm::tan(ф1))
     );
 }
+
+void CCPanoramaRenderer::ReBufferAllData() {
+    mainModel->ReBufferData();
+    if(!fullModels.empty())
+        for (auto m : fullModels) {
+            m->model->ReBufferData();
+        }
+    if(!panoramaTexPool.empty())
+        for (const auto& m : panoramaTexPool) {
+            if(!m.IsNullptr())
+                m->ReBufferData();
+        }
+}
+

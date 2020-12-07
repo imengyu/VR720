@@ -21,8 +21,12 @@
                 android:icon="@drawable/ic_menu_about"
                 android:title="@string/action_about" />
             <item
+                android:id="@+id/nav_help"
+                android:icon="@drawable/ic_menu_help"
+                android:title="@string/action_help" />
+            <item
                 android:id="@+id/nav_send"
-                android:icon="@drawable/ic_menu_send"
+                android:icon="@drawable/ic_menu_add_reaction"
                 android:title="@string/action_send_feed_back" />
             <item
                 android:id="@+id/nav_quit"

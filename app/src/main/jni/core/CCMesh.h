@@ -34,7 +34,6 @@ public:
 	 * 释放网格缓冲区
 	 */
 	void ReleaseBuffer();
-
 	/**
 	 * 渲染Mesh
 	 */
@@ -43,7 +42,7 @@ public:
 	 * 从obj文件加载
 	 * @param path obj文件路径
 	 */
-	void LoadFromObj(const vchar* path);
+	void LoadFromObj(const char* path);
 	/**
 	 * 清空已加载的数据和缓冲区
 	 */

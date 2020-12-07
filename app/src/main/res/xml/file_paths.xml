@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-    <external-path path="Android/data/com.dreamfish.com.vr720/files/" name="files_root" />
+    <external-path path="Android/data/com.imengyu.vr720/files/" name="files_root" />
     <external-path path="." name="external_storage_root" />
     <!-- 这个是保存拍照图片的路径,必须配置。 -->
-    <external-path name="images" path="Android/data/com.dreamfish.com.vr720/files/images" />
+    <external-path name="images" path="Android/data/com.imengyu.vr720/files/images" />
 </paths>

@@ -70,7 +70,7 @@ void CCMesh::RenderMesh() const
 	}
 }
 
-void CCMesh::LoadFromObj(const vchar* path)
+void CCMesh::LoadFromObj(const char* path)
 {
 	CCMeshLoader::GetMeshLoaderByType(CCMeshType::MeshTypeObj)->Load(path, this);
 }

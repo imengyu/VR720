@@ -6,8 +6,6 @@
 COpenGLView::COpenGLView(COpenGLRenderer* renderer) {
 	OpenGLRenderer = renderer;
 	OpenGLRenderer->View = this;
-	memset(DownedKeys, 0, sizeof(DownedKeys));
-	memset(UpedKeys, 0, sizeof(UpedKeys));
 }
 COpenGLView::~COpenGLView() = default;
 
@@ -57,7 +55,6 @@ void COpenGLView::CalcMainCameraProjection(CCShader * shader) const {
 //用户事件处理
 //*******************************
 
-#if defined(VR720_ANDROID)
 void COpenGLView::Resize(int w, int h) {
 	Width = w;
 	Height = h;
@@ -68,25 +65,6 @@ void COpenGLView::SetMouseCallback(ViewMouseCallback mouseCallback) {
 void COpenGLView::SetZoomViewCallback(ViewMouseCallback callback) {
 	this->scrollCallback = callback;
 }
-#elif defined(VR720_WINDOWS) || defined(VR720_LINUX)
-void COpenGLView::Resize(int w, int h, bool moveToCenter)
-{
-	Width = w;
-	Height = h;
-}
-void COpenGLView::SetBeforeQuitCallback(BeforeQuitCallback beforeQuitCallback)
-{
-	this->beforeQuitCallback = beforeQuitCallback;
-}
-void COpenGLView::SetMouseCallback(ViewMouseCallback mouseCallback)
-{
-	this->mouseCallback = mouseCallback;
-}
-void COpenGLView::SetScrollCallback(ViewMouseCallback mouseCallback)
-{
-	this->scrollCallback = mouseCallback;
-}
-#endif
 
 //按键事件处理
 //*******************************

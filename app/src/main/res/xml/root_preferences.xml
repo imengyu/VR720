@@ -20,42 +20,54 @@
 
     <PreferenceCategory
         app:iconSpaceReserved="false"
-        app:title="@string/messages_header">
-
-        <EditTextPreference
-            app:iconSpaceReserved="false"
-            app:key="signature"
-            app:title="@string/signature_title"
-            app:useSimpleSummaryProvider="true" />
-
-        <ListPreference
-            app:defaultValue="reply"
-            app:entries="@array/reply_entries"
-            app:entryValues="@array/reply_values"
-            app:iconSpaceReserved="false"
-            app:key="reply"
-            app:title="@string/reply_title"
-            app:useSimpleSummaryProvider="true" />
+        app:title="@string/settings_header_common">
 
     </PreferenceCategory>
 
     <PreferenceCategory
         app:iconSpaceReserved="false"
-        app:title="@string/sync_header">
+        app:title="@string/settings_header_panorama">
 
         <SwitchPreferenceCompat
             app:iconSpaceReserved="false"
-            app:key="sync"
-            app:title="@string/sync_title" />
-
-        <SwitchPreferenceCompat
-            app:dependency="sync"
-            app:iconSpaceReserved="false"
-            app:key="attachment"
-            app:summaryOff="@string/attachment_summary_off"
-            app:summaryOn="@string/attachment_summary_on"
-            app:title="@string/attachment_title" />
+            app:key="enable_full_chunks"
+            app:title="@string/settings_key_enable_full_chunks"
+            app:summary="@string/settings_summary_enable_full_chunks" />
 
     </PreferenceCategory>
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="@string/settings_header_others">
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="@string/settings_header_about">
+
+        <Preference
+            app:title="@string/settings_key_about"
+            app:iconSpaceReserved="false"
+            app:key="app_about" />
+
+        <Preference
+            app:title="@string/settings_key_check_update"
+            app:iconSpaceReserved="false"
+            app:key="app_check_update" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:iconSpaceReserved="false"
+            app:key="calc_auto_update"
+            app:title="@string/settings_key_auto_update" />
+
+        <Preference
+            app:title="@string/settings_key_privacy_policy"
+            app:iconSpaceReserved="false"
+            app:key="app_privacy_policy" />
+
+    </PreferenceCategory>
+
 
 </PreferenceScreen>

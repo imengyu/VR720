@@ -12,9 +12,9 @@ void CCModel::UpdateVectors()
 {
     // 计算新的前向量
     glm::vec3 front;
-    front.x = cos(glm::radians(Rotation.y)) * cos(glm::radians(Rotation.x));
-    front.y = sin(glm::radians(Rotation.x));
-    front.z = sin(glm::radians(Rotation.y)) * cos(glm::radians(Rotation.x));
+    front.x = glm::cos(glm::radians(Rotation.y)) * glm::cos(glm::radians(Rotation.x));
+    front.y = glm::sin(glm::radians(Rotation.x));
+    front.z = glm::sin(glm::radians(Rotation.y)) * glm::cos(glm::radians(Rotation.x));
     Front = glm::normalize(front);
     // 再计算右向量和上向量
     Right = glm::normalize(glm::cross(Front, WorldUp));  // 标准化
@@ -40,4 +40,8 @@ void CCModel::Render() const
     if (!Visible) return;
     if (!Material.IsNullptr()) Material->Use();
     if (!Mesh.IsNullptr()) Mesh->RenderMesh();
+}
+
+void CCModel::ReBufferData() const {
+    if (!Mesh.IsNullptr()) Mesh->ReBufferData();
 }

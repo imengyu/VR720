@@ -38,6 +38,8 @@ public:
 	void ProcessMouseMovement(float xoffset, float yoffset, bool constrainPitch);
 	// 处理从鼠标滚轮事件接收的输入
 	void ProcessMouseScroll(float yoffset);
+	//缩放事件
+	void ProcessZoomChange(float precent);
 	//设置模式
 	void SetMode(CCPanoramaCameraMode mode);
 	//设置旋转回调

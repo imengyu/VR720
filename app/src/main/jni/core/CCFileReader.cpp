@@ -2,13 +2,9 @@
 
 
 CCFileReader::CCFileReader() = default;
-CCFileReader::CCFileReader(vstring& path)
+CCFileReader::CCFileReader(std::string& path)
 {
-#if defined(_MSC_VER) && _MSC_VER > 1600
-	_v_fopen_s(&file, path.c_str(), _vstr("r"));
-#else
-	file = _v_fopen(path.c_str(), _vstr("r"));
-#endif
+	file = fopen(path.c_str(), "r");
 	if (file) {
 		fseek(file, 0, SEEK_END);
 		len = ftell(file);

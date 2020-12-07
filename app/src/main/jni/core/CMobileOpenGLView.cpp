@@ -7,38 +7,57 @@
 #include "COpenGLRenderer.h"
 
 bool CMobileOpenGLView::Init() {
-    if (OpenGLRenderer && !OpenGLRenderer->Init()) {
-        LOGE(_vstr("OpenGLRenderer init failed!"));
-        return false;
+    if(!ready) {
+        LOGI("[OpenGLView] Init!");
+        if (OpenGLRenderer && !OpenGLRenderer->Init()) {
+            LOGE("[OpenGLView] OpenGLRenderer init failed!");
+            return false;
+        }
+        ready = true;
+    } else {
+        LOGI("[OpenGLView] ReInit!");
+
+        if (OpenGLRenderer && !OpenGLRenderer->ReInit()) {
+            LOGE("[OpenGLView] OpenGLRenderer reinit failed!");
+            return false;
+        }
     }
-    reday = true;
     return true;
 }
 void CMobileOpenGLView::Destroy() {
-    if(reday) {
-        reday = false;
+    if(ready) {
+        ready = false;
+        LOGI("[OpenGLView] destroy!");
         if (OpenGLRenderer) {
-            OpenGLRenderer->Destroy();
+            if(destroyWithForce)
+                OpenGLRenderer->Destroy();
+            else
+                OpenGLRenderer->MarkDestroy();
             OpenGLRenderer = nullptr;
         }
         if (Camera) {
             delete Camera;
             Camera = nullptr;
         }
-        COpenGLView::Destroy();
     }
+}
+void CMobileOpenGLView::Pause() {
+    LOGI("[OpenGLView] Pause!");
+}
+void CMobileOpenGLView::Resume() {
+    LOGI("[OpenGLView] Resume!");
 }
 
 void CMobileOpenGLView::Update() {
-    if(reday && OpenGLRenderer)
+    if(ready && OpenGLRenderer)
         OpenGLRenderer->Update();
 }
 
 void CMobileOpenGLView::RenderUI() {
-    if (reday && OpenGLRenderer) OpenGLRenderer->RenderUI();
+    if (ready && OpenGLRenderer) OpenGLRenderer->RenderUI();
 }
 void CMobileOpenGLView::Render() {
-    if(!reday)
+    if(!ready)
         return;
 
     //绘制
@@ -62,15 +81,15 @@ void CMobileOpenGLView::Resize(int w, int h) {
 }
 
 void CMobileOpenGLView::ProcessKeyEvent(int key, bool down) {
-    if(!reday) return;
+    if(!ready) return;
     if(down) HandleDownKey(key);
     else HandleUpKey(key);
 }
 void CMobileOpenGLView::ProcessMouseEvent(ViewMouseEventType event, float x, float y) {
-    if(reday && mouseCallback) mouseCallback(this, x, y, 0, event);
+    if(ready && mouseCallback) mouseCallback(this, x, y, 0, event);
 }
 void CMobileOpenGLView::ProcessZoomEvent(float v) {
-    if(reday && scrollCallback) scrollCallback(this, v, v, 0, ViewMouseEventType::ViewMouseMouseWhell);
+    if(ready && scrollCallback) scrollCallback(this, v, v, 0, ViewMouseEventType::ViewMouseMouseWhell);
 }
 
 CMobileOpenGLView::CMobileOpenGLView(COpenGLRenderer *renderer) : COpenGLView(renderer) {
@@ -78,5 +97,8 @@ CMobileOpenGLView::CMobileOpenGLView(COpenGLRenderer *renderer) : COpenGLView(re
 }
 
 void CMobileOpenGLView::ManualDestroy() {
+    destroyWithForce = true;
     Destroy();
 }
+
+

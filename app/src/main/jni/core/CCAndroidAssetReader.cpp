@@ -4,8 +4,6 @@
 
 #include "CCAndroidAssetReader.h"
 
-#if defined(VR720_ANDROID)
-
 BYTE *CCAndroidAssetReader::ReadAllByte(size_t *size) {
     return CCFileReader::ReadAllByte(size);
 }
@@ -53,7 +51,5 @@ void CCAndroidAssetReader::CloseFileHandle() {
         asset = nullptr;
     }
 }
-
-#endif
 
 

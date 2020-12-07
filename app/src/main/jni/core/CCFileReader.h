@@ -11,7 +11,7 @@ public:
 	 * 创建简易文件读取器
 	 * @param path 目标文件路径
 	 */
-	CCFileReader(vstring & path);
+	CCFileReader(std::string & path);
 	CCFileReader();
 	virtual ~CCFileReader();
 

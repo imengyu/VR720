@@ -13,7 +13,7 @@ public:
 	 * @param path 贴图文件路径
 	 * @return
 	 */
-	bool Load(const vchar* path);
+	bool Load(const char* path);
 	/**
 	 * 从内存自动加载贴图数据
 	 * @param buffer 数据
@@ -42,6 +42,8 @@ public:
 	 * @param type 自定义数据类型（GL_RGB/GL_RGBA/GL_BGR）
 	 */
 	void LoadBytes(BYTE* data, int width, int height, GLenum type);
+
+
 	/**
 	 * 销毁贴图
 	 */
@@ -60,6 +62,8 @@ public:
 	 */
 	bool Loaded() const;
 
+	//设置是否缓存
+	bool backupData = false;
 	//获取是否有透明通道
 	bool alpha = false;
 	//获取贴图宽度
@@ -72,5 +76,15 @@ public:
 	GLuint wrapS = GL_REPEAT;
 	//获取或设置贴图纵轴重复类型
 	GLuint wrapT = GL_REPEAT;
+
+	void ReBufferData();
+
+protected:
+	BYTE* backupDataPtr = nullptr;
+	size_t backupDataLength = 0;
+	GLenum backupType = 0;
+
+	void LoadToGl(BYTE* data, int width, int height, GLenum type);
+	void DoBackupBufferData(BYTE* data, int width, int height, GLenum type);
 };
 

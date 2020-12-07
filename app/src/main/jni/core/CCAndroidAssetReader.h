@@ -7,9 +7,6 @@
 
 #include "stdafx.h"
 #include "CCFileReader.h"
-
-#if defined(VR720_ANDROID)
-
 #include <android/asset_manager.h>
 #include <android/asset_manager_jni.h>
 
@@ -23,7 +20,7 @@ public:
      * @param path 目标文件路径
      * @param assetManager 安卓AssetManager对象
      */
-    CCAndroidAssetReader(vstring & path, AAssetManager *assetManager);
+    CCAndroidAssetReader(std::string & path, AAssetManager *assetManager);
     ~CCAndroidAssetReader();
 
     /**
@@ -80,7 +77,5 @@ private:
 
     void CloseFileHandle();
 };
-
-#endif
 
 #endif //VR720_CCANDROIDASSETREADER_H

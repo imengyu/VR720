@@ -24,37 +24,24 @@ struct ChunkModel {
 };
 
 class CCRenderGlobal;
-#if defined(VR720_ANDROID)
 class CMobileGameRenderer;
-#elif defined(VR720_WINDOWS)
-class CWindowsGameRenderer;
-#endif
 class CCPanoramaRenderer
 {
 public:
-#if defined(VR720_ANDROID)
     CCPanoramaRenderer(CMobileGameRenderer* renderer);
-
 private:
-
     CMobileGameRenderer* Renderer = nullptr;
-#elif defined(VR720_WINDOWS)
-    CCPanoramaRenderer(CWindowsGameRenderer* renderer);
-
-private:
-
-    CWindowsGameRenderer* Renderer = nullptr;
-#endif
 
 public:
     void Init();
+    void ReInit();
     void Destroy();
     void Render(float deltaTime);
 
-    CColor wireframeColor = CColor::FromString("#DC143C");
-    CColor wireframeColor2 = CColor::FromString("#0000FF");
-
     Logger* logger = nullptr;
+
+    std::string vshaderCode;
+    std::string fshaderCode;
 
     CCRenderGlobal* globalRenderInfo = nullptr;
     CCShader* shader = nullptr;
@@ -91,7 +78,7 @@ public:
 
     bool renderOn = false;
 
-    bool renderNoPanoramaSmall = true;
+    bool renderNoPanoramaSmall = false;
     bool renderPanoramaFull = false;
     bool renderPanoramaFlat = false;
 
@@ -113,11 +100,13 @@ public:
     void ResetModel() const;
     void RotateModel(float xoffset, float yoffset);
     void RotateModelForce(float y, float z);
+    void RotateXYZModelForce(float x, float y, float z);
+    void RotateXYZModelIncrement(float x, float y, float z);
     void MoveModel(float xoffset, float yoffset) const;
     void MoveModelForce(float x, float y) const;
     void UpdateMercatorControl();
     void ResetMercatorControl() const;
-
+    void ReBufferAllData();
 
     glm::vec2 FlatModelMax = glm::vec2(0.0f);
     glm::vec2 FlatModelMin = glm::vec2(0.0f);
@@ -156,6 +145,10 @@ private:
 
     float Mercator_фp = 0;
     float Mercator_λp = 0;
+
+    void ReleaseBuiltInResources();
+
+    void InitShader();
 };
 
 

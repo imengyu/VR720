@@ -35,7 +35,7 @@ void CMobileGameRenderer::DoOpenFile()
         uiEventDistributor->SendEvent(CCMobileGameUIEvent::UiInfoChanged);
     }
     else {
-        last_image_error = vstring(fileManager->GetLastError());
+        last_image_error = std::string(fileManager->GetLastError());
         ShowErrorDialog();
     }
 }
@@ -53,7 +53,6 @@ void CMobileGameRenderer::ShowErrorDialog() {
     uiEventDistributor->SendEvent(CCMobileGameUIEvent::MarkLoadingEnd);
     uiEventDistributor->SendEvent(CCMobileGameUIEvent::MarkLoadFailed);
 }
-
 void CMobileGameRenderer::TestSplitImageAndLoadTexture() {
     glm::vec2 size = fileManager->CurrentFileLoader->GetImageSize();
     SplitFullImage = size.x > 4096 || size.y > 2048;
@@ -63,7 +62,7 @@ void CMobileGameRenderer::TestSplitImageAndLoadTexture() {
         if (chunkW < 2) chunkW = 2;
         if (chunkH < 2) chunkH = 2;
         if (chunkW > 64 || chunkH > 32) {
-            logger->LogError2(_vstr("Too big image (%.2f, %.2f) that cant split chunks."), chunkW, chunkH);
+            logger->LogError2("Too big image (%.2f, %.2f) that cant split chunks.", chunkW, chunkH);
             SplitFullImage = false;
             return;
         }
@@ -73,10 +72,15 @@ void CMobileGameRenderer::TestSplitImageAndLoadTexture() {
         uiInfo->currentImageAllChunks = chunkWi * chunkHi;
         uiInfo->currentImageLoadChunks = 0;
         uiEventDistributor->SendEvent(CCMobileGameUIEvent::UiInfoChanged);
-        logger->Log(_vstr("Image use split mode , size: %d, %d"), chunkWi, chunkHi);
-        renderer->sphereFullSegmentX = renderer->sphereSegmentX + (renderer->sphereSegmentX % chunkWi);
-        renderer->sphereFullSegmentY = renderer->sphereSegmentY + (renderer->sphereSegmentY % chunkHi);
-        renderer->GenerateFullModel(chunkWi, chunkHi);
+
+        if(fullChunkLoadEnabled) {
+            logger->Log("Image use split mode , size: %d, %d", chunkWi, chunkHi);
+            renderer->sphereFullSegmentX =
+                    renderer->sphereSegmentX + (renderer->sphereSegmentX % chunkWi);
+            renderer->sphereFullSegmentY =
+                    renderer->sphereSegmentY + (renderer->sphereSegmentY % chunkHi);
+            renderer->GenerateFullModel(chunkWi, chunkHi);
+        }
     }
     else {
         uiInfo->currentImageAllChunks = 0;
@@ -86,10 +90,9 @@ void CMobileGameRenderer::TestSplitImageAndLoadTexture() {
     SwitchMode(mode);
 }
 
+GLuint d_glProgram;
 
-GLuint d_glprogram;
-
-void CreateTestglprogram() {
+void CreateTestGlProgram() {
     //init gl
     GLuint glProgram;
     GLuint vertexShader;
@@ -113,7 +116,7 @@ void CreateTestglprogram() {
         return ;
     }
 
-    d_glprogram = glProgram;
+    d_glProgram = glProgram;
 
 //    glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
     glClearColor ( 1.0f, 1.0f, 1.0f, 0.0f );
@@ -141,13 +144,21 @@ void RenderTest() {
             1.0f, -1.0f, 0.0f
     };
 
-    glUseProgram(d_glprogram);
+    glUseProgram(d_glProgram);
     glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,0,vertexs);
     glEnableVertexAttribArray(0);
 
     glDrawArrays(GL_TRIANGLES,0,3);
 }
 
+bool CMobileGameRenderer::ReInit() {
+    if (render_init_finish) {
+        ReBufferAllData();
+        renderer->ReInit();
+        return true;
+    }
+    return false;
+}
 bool CMobileGameRenderer::Init()
 {
     camera = new CCPanoramaCamera();
@@ -161,7 +172,7 @@ bool CMobileGameRenderer::Init()
     camera->SetMode(CCPanoramaCameraMode::CenterRoate);
     camera->SetFOVChangedCallback(CameraFOVChanged, this);
     camera->SetOrthoSizeChangedCallback(CameraOrthoSizeChanged, this);
-    camera->Background = CColor::FromString("#FFFFFF");
+    camera->Background = CColor::FromString("#000000");
     fileManager->SetOnCloseCallback(FileCloseCallback, this);
 
     View->SetCamera(camera);
@@ -170,7 +181,7 @@ bool CMobileGameRenderer::Init()
 
     SwitchMode(mode);
 
-    //CreateTestglprogram();
+    //CreateTestGlProgram();
 
     //renderer->renderPanoramaFullTest = true;
     //renderer->renderPanoramaFullRollTest = true;
@@ -227,8 +238,7 @@ void CMobileGameRenderer::MouseCallback(COpenGLView* view, float xpos, float ypo
     else  if (type == ViewMouseEventType::ViewMouseMouseMove) {
 
         renderer->xoffset = xpos - renderer->lastX;
-        renderer->yoffset =
-                renderer->lastY - ypos; // reversed since y-coordinates go from bottom to top
+        renderer->yoffset = renderer->lastY - ypos; // reversed since y-coordinates go from bottom to top
 
         renderer->lastX = xpos;
         renderer->lastY = ypos;
@@ -237,9 +247,10 @@ void CMobileGameRenderer::MouseCallback(COpenGLView* view, float xpos, float ypo
         if (renderer->mode <= PanoramaMode::PanoramaOuterBall) {
             float xoffset = -renderer->xoffset * renderer->MouseSensitivity;
             float yoffset = -renderer->yoffset * renderer->MouseSensitivity;
+
             renderer->renderer->RotateModel(xoffset, yoffset);
         }
-            //全景模式是更改U偏移和纬度偏移
+        //全景模式是更改U偏移和纬度偏移
         else if (renderer->mode == PanoramaMode::PanoramaMercator) {
 
         } else if (renderer->mode == PanoramaMode::PanoramaFull360
@@ -252,7 +263,10 @@ void CMobileGameRenderer::MouseCallback(COpenGLView* view, float xpos, float ypo
 }
 void CMobileGameRenderer::ScrollCallback(COpenGLView* view, float x, float yoffset, int button, int type) {
     auto* renderer = (CMobileGameRenderer*)view->GetRenderer();
-    renderer->camera->ProcessMouseScroll(yoffset);
+    if(type == ViewMouseEventType::ViewMouseMouseWhell)
+        renderer->camera->ProcessMouseScroll(yoffset);
+    else if(type == ViewMouseEventType::ViewZoomEvent)
+        renderer->camera->ProcessZoomChange(yoffset);
 }
 void CMobileGameRenderer::KeyMoveCallback(CCameraMovement move) {
     if (mode <= PanoramaMode::PanoramaOuterBall) {
@@ -302,21 +316,30 @@ void CMobileGameRenderer::KeyMoveCallback(CCameraMovement move) {
 
 void CMobileGameRenderer::Render(float FrameTime)
 {
+    //loop count
+    //===========================
+
+    if (should_close_file) {
+        should_close_file = false;
+        fileManager->CloseFile();
+    }
+
+    if (destroying)
+        return;
+
+    if (should_destroy) {
+        Destroy();
+        return;
+    }
+
     //渲染
     //===========================
 
-#ifndef VR720_USE_GLES
-    glLoadIdentity();
-#endif
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
 
     //RenderTest();
     renderer->Render(View->GetDeltaTime());
-
-#ifndef VR720_USE_GLES
-    glLoadIdentity();
-#endif
 
     //在渲染线程中加载贴图
     //===========================
@@ -331,14 +354,6 @@ void CMobileGameRenderer::Render(float FrameTime)
     if (needTestImageAndSplit) {
         needTestImageAndSplit = false;
         TestSplitImageAndLoadTexture();
-    }
-
-    //loop count
-    //===========================
-
-    if (should_close_file) {
-        should_close_file = false;
-        fileManager->CloseFile();
     }
 }
 void CMobileGameRenderer::RenderUI()
@@ -360,6 +375,9 @@ void CMobileGameRenderer::Update()
     if (View->GetKeyPress(VR720_KEY_UP)) KeyMoveCallback(CCameraMovement::ROATE_UP);
     if (View->GetKeyPress(VR720_KEY_RIGHT)) KeyMoveCallback(CCameraMovement::ROATE_RIGHT);
     if (View->GetKeyPress(VR720_KEY_DOWN)) KeyMoveCallback(CCameraMovement::ROATE_DOWN);
+}
+void CMobileGameRenderer::ReBufferAllData() {
+
 }
 
 //逻辑控制
@@ -399,7 +417,7 @@ TextureLoadQueueDataResult* CMobileGameRenderer::LoadTexCallback(TextureLoadQueu
     if (ptr->destroying)
         return nullptr;
     if (info->id == -1) {
-        ptr->logger->Log(_vstr("Load main tex: id: -1"));
+        ptr->logger->Log("Load main tex: id: -1");
         ptr->uiInfo->currentImageLoading = true;
         ptr->uiEventDistributor->SendEvent(CCMobileGameUIEvent::UiInfoChanged);
 
@@ -407,9 +425,9 @@ TextureLoadQueueDataResult* CMobileGameRenderer::LoadTexCallback(TextureLoadQueu
         auto* result = new TextureLoadQueueDataResult();
         result->buffer = ptr->fileManager->CurrentFileLoader->GetAllImageData();
         if (!result->buffer) {
-            ptr->last_image_error = vstring("图像可能已经损坏，错误信息：") + vstring(ptr->fileManager->CurrentFileLoader->GetLastError());
+            ptr->last_image_error = std::string("图像可能已经损坏，错误信息：") + std::string(ptr->fileManager->CurrentFileLoader->GetLastError());
             ptr->ShowErrorDialog();
-            ptr->logger->LogError2(_vstr("Load tex main buffer failed : %s"), ptr->fileManager->CurrentFileLoader->GetLastError());
+            ptr->logger->LogError2("Load tex main buffer failed : %s", ptr->fileManager->CurrentFileLoader->GetLastError());
             delete result;
             return nullptr;
         }
@@ -421,7 +439,7 @@ TextureLoadQueueDataResult* CMobileGameRenderer::LoadTexCallback(TextureLoadQueu
         result->height = (int)size.y;
         result->success = true;
 
-        ptr->logger->Log(_vstr("Load tex buffer: w: %d h: %d (%d)  Buffer Size: %d"), (int)size.x, (int)size.y, result->compoents, result->size);
+        ptr->logger->Log("Load tex buffer: w: %d h: %d (%d)  Buffer Size: %d", (int)size.x, (int)size.y, result->compoents, result->size);
         ptr->uiInfo->currentImageLoading = false;
         ptr->uiEventDistributor->SendEvent(CCMobileGameUIEvent::UiInfoChanged);
         ptr->uiEventDistributor->SendEvent(CCMobileGameUIEvent::MarkLoadingEnd);
@@ -429,7 +447,7 @@ TextureLoadQueueDataResult* CMobileGameRenderer::LoadTexCallback(TextureLoadQueu
         return result;
     }
     else {
-        ptr->logger->Log(_vstr("Load block tex : x: %d y: %d id: %d"), info->x, info->y, info->id);
+        ptr->logger->Log("Load block tex : x: %d y: %d id: %d", info->x, info->y, info->id);
         return ptr->LoadChunkTexCallback(info, texture);
     }
 }
@@ -449,8 +467,12 @@ void CMobileGameRenderer::FileCloseCallback(void* data) {
 void CMobileGameRenderer::CameraFOVChanged(void* data, float fov) {
     auto* ptr = (CMobileGameRenderer*)data;
     if (ptr->mode == PanoramaSphere || ptr->mode == PanoramaCylinder) {
-        ptr->renderer->renderPanoramaFull = ptr->SplitFullImage && fov < 40;
-        if(ptr->renderer->renderPanoramaFull) ptr->renderer->UpdateFullChunksVisible();
+
+        ptr->renderer->renderPanoramaFull =
+                ptr->fullChunkLoadEnabled && ptr->SplitFullImage && fov < 40;
+
+        if(ptr->renderer->renderPanoramaFull)
+            ptr->renderer->UpdateFullChunksVisible();
     }
 }
 void CMobileGameRenderer::CameraOrthoSizeChanged(void* data, float fov) {
@@ -519,7 +541,7 @@ void CMobileGameRenderer::SwitchMode(PanoramaMode panoramaMode)
         camera->FiledOfView = 70.0f;
         camera->FovMin = 5.0f;
         camera->FovMax = 120.0f;
-        renderer->renderPanoramaFull = SplitFullImage && camera->FiledOfView < 30;
+        renderer->renderPanoramaFull = fullChunkLoadEnabled && SplitFullImage && camera->FiledOfView < 30;
         renderer->renderNoPanoramaSmall = false;
         renderer->renderPanoramaFlat = false;
         MouseSensitivity = 0.1f;
@@ -531,7 +553,7 @@ void CMobileGameRenderer::SwitchMode(PanoramaMode panoramaMode)
         camera->FiledOfView = 50.0f;
         camera->FovMin = 5.0f;
         camera->FovMax = 75.0f;
-        renderer->renderPanoramaFull = SplitFullImage && camera->FiledOfView < 30;
+        renderer->renderPanoramaFull = fullChunkLoadEnabled && SplitFullImage && camera->FiledOfView < 30;
         renderer->renderNoPanoramaSmall = false;
         renderer->renderPanoramaFlat = false;
         MouseSensitivity = 0.1f;
@@ -541,8 +563,8 @@ void CMobileGameRenderer::SwitchMode(PanoramaMode panoramaMode)
         camera->SetMode(CCPanoramaCameraMode::CenterRoate);
         camera->FiledOfView = 90.0f;
         camera->Position.z = 1.5f;
-        camera->FovMin = 35.0f;
-        camera->FovMax = 90.0f;
+        camera->FovMin = 25.0f;
+        camera->FovMax = 130.0f;
         renderer->renderPanoramaFull = false;
         renderer->renderNoPanoramaSmall = false;
         renderer->renderPanoramaFlat = false;
@@ -554,8 +576,19 @@ void CMobileGameRenderer::SwitchMode(PanoramaMode panoramaMode)
 }
 
 void CMobileGameRenderer::UpdateGryoValue(float x, float y, float z) const {
-    if(gryoEnabled) {
-        
-    }
+    if(renderer && gryoEnabled
+        && mode != PanoramaMode::PanoramaFull360 && mode != PanoramaMode::PanoramaFullOrginal)
+            renderer->RotateXYZModelIncrement(z, y, x);
+}
+void CMobileGameRenderer::SetGryoEnabled(bool enable) {
+    gryoEnabled = enable;
+    if(renderer && !gryoEnabled)
+        renderer->ResetModel();
+}
+void CMobileGameRenderer::SetEnableFullChunkLoad(bool enable) {
+    fullChunkLoadEnabled = enable;
+}
+void CMobileGameRenderer::SetVREnabled(bool enable) {
+    vREnabled = enable;
 }
 

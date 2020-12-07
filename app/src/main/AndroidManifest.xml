@@ -1,25 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.dreamfish.com.vr720">
+    package="com.imengyu.vr720">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.CAMERA" />
-
-    <!-- Tell the system this app requires OpenGL ES 2.0. -->
-    <uses-feature android:glEsVersion="0x00020000" android:required="true" />
+    <uses-permission android:name="android.permission.CAMERA" /> <!-- Tell the system this app requires OpenGL ES 2.0. -->
+    <uses-feature
+        android:glEsVersion="0x00020000"
+        android:required="true" />
 
     <application
         android:name=".VR720Application"
         android:allowBackup="true"
+        android:configChanges="orientation|screenSize|screenLayout"
         android:fullBackupContent="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:requestLegacyExternalStorage="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme"
-        android:requestLegacyExternalStorage="true">
+        android:theme="@style/AppTheme">
 
         <activity
             android:name=".LunchActivity"
@@ -31,6 +32,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".FeedBackActivity"
+            android:label="@string/title_activity_feedback"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".HelpActivity"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:label="@string/title_activity_help" />
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name"
@@ -60,7 +69,7 @@
             android:theme="@style/Theme.AppCompat.Light.NoActionBar" /> <!-- Android 7.0 文件共享配置，必须配置 -->
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="com.dreamfish.com.vr720.fileProvider"
+            android:authorities="com.imengyu.vr720.fileProvider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data

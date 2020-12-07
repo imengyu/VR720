@@ -30,7 +30,7 @@ enum LogOutPut {
 	LogOutPutCallback,
 };
 
-typedef void(*LogCallBack)(const vchar *str, LogLevel level, void* lparam);
+typedef void(*LogCallBack)(const char *str, LogLevel level, void* lparam);
 
 //快速记录日志
 
@@ -50,38 +50,38 @@ class Logger
 public:
 
 	struct LOG_SLA {
-		vstring str;
+		std::string str;
 		LogLevel level;
 	};
-    Logger(const vchar * tag);
+    Logger(const char * tag);
     ~Logger();
 
     static void InitConst();
     static void DestroyConst();
     static Logger* GetStaticInstance();
 
-	void Log(const vchar * str, ...);
-	void LogWarn(const vchar * str, ...);
-	void LogError(const vchar * str, ...);
-	void LogInfo(const vchar * str, ...);
+	void Log(const char * str, ...);
+	void LogWarn(const char * str, ...);
+	void LogError(const char * str, ...);
+	void LogInfo(const char * str, ...);
 
-	void Log2(const vchar * str, const char* file, int line, const char* functon, ...);
-	void LogWarn2(const vchar * str, const  char* file, int line, const char* functon, ...);
-	void LogError2(const vchar * str, const char* file, int line, const char* functon, ...);
-	void LogInfo2(const vchar * str, const char* file, int line, const char* functon, ...);
+	void Log2(const char * str, const char* file, int line, const char* functon, ...);
+	void LogWarn2(const char * str, const  char* file, int line, const char* functon, ...);
+	void LogError2(const char * str, const char* file, int line, const char* functon, ...);
+	void LogInfo2(const char * str, const char* file, int line, const char* functon, ...);
 
 	LogLevel GetLogLevel();
 	void SetLogLevel(LogLevel logLevel);
 	void SetLogOutPut(LogOutPut output);
 	void SetLogOutPutCallback(LogCallBack callback, void* lparam);
-	void SetLogOutPutFile(const vchar *filePath);
+	void SetLogOutPutFile(const char *filePath);
 
 	void ResentNotCaputureLog();
 	void InitLogConsoleStdHandle();
 private:
     std::list<LOG_SLA> logPendingBuffer;
-    vstring logFilePath;
-    vstring logTag;
+    std::string logFilePath;
+    std::string logTag;
     FILE *logFile = nullptr;
     LogLevel level = LogLevelText;
     LogOutPut outPut = LogOutPutConsolne;
@@ -89,12 +89,12 @@ private:
     void* callBackData{};
     void* hOutput = NULL;
 
-	void LogOutputToStdHandle(LogLevel logLevel, const vchar* str, size_t len);
-	void WritePendingLog(const vchar *str, LogLevel logLevel);
+	void LogOutputToStdHandle(LogLevel logLevel, const char* str, size_t len);
+	void WritePendingLog(const char *str, LogLevel logLevel);
 
-	void LogInternalWithCodeAndLine(LogLevel logLevel, const vchar * str, const char*file, int line, const char*functon, va_list arg);
-	void LogInternal(LogLevel logLevel, const vchar *str, va_list arg);
-	void LogOutput(LogLevel logLevel, const vchar *str, const vchar *srcStr, size_t len);
+	void LogInternalWithCodeAndLine(LogLevel logLevel, const char * str, const char*file, int line, const char*functon, va_list arg);
+	void LogInternal(LogLevel logLevel, const char *str, va_list arg);
+	void LogOutput(LogLevel logLevel, const char *str, const char *srcStr, size_t len);
 	void CloseLogFile();
 };
 

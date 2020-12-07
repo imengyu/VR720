@@ -7,7 +7,7 @@
     android:background="@android:color/white"
     android:orientation="vertical">
 
-    <com.dreamfish.com.vr720.widget.MyTitleBar
+    <com.imengyu.vr720.widget.MyTitleBar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -21,13 +21,28 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <ListView
-            android:id="@+id/listview_main"
+        <com.scwang.smart.refresh.layout.SmartRefreshLayout
+            android:id="@+id/refreshLayout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:listSelector="@android:color/transparent">
+            android:layout_marginStart="1dp"
+            android:layout_marginTop="1dp"
+            android:layout_marginEnd="1dp"
+            android:layout_marginBottom="1dp">
 
-        </ListView>
+            <com.scwang.smart.refresh.header.ClassicsHeader
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <ListView
+                android:id="@+id/listview_main"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:listSelector="@android:color/transparent">
+
+            </ListView>
+
+        </com.scwang.smart.refresh.layout.SmartRefreshLayout>
 
         <include
             android:id="@+id/footer_select_main"
@@ -55,7 +70,8 @@
             android:layout_marginBottom="20dp"
             android:clickable="true"
             android:focusable="true"
-            app:srcCompat="@drawable/ic_button_add" />
+            app:srcCompat="@drawable/ic_button_add"
+            android:contentDescription="@string/action_import_pano" />
 
     </RelativeLayout>
 

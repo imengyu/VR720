@@ -25,6 +25,10 @@ public:
 	 * 绘制模型
 	 */
 	void Render() const;
+	/**
+	 * 重新缓冲数据
+	 */
+	void ReBufferData() const;
 
 	//模型是否可见
 	bool Visible = true;

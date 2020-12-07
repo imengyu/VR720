@@ -18,19 +18,15 @@ enum class CCMobileGameUIEvent {
 class CMobileGameUIEventDistributor {
 
 public:
-#if defined(VR720_ANDROID)
     CMobileGameUIEventDistributor(JNIEnv * env, jobject objNativeVR720Renderer);
-#endif
     ~CMobileGameUIEventDistributor();
 
     void SendEvent(CCMobileGameUIEvent ev);
 
 private:
-#if defined(VR720_ANDROID)
     JavaVM* vm = nullptr;
     jclass objNativeVR720RendererClass;
     jobject objNativeVR720RendererObject;
-#endif
 };
 
 
