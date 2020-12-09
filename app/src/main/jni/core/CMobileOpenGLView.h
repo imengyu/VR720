@@ -36,7 +36,9 @@ public:
 
 private:
     float currentFps = 0;
+    int destroyFrame = 3;
     bool ready = false;
+    bool pause = false;
     bool destroyWithForce = false;
 };
 

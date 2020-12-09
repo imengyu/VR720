@@ -14,6 +14,9 @@ CMobileGameRenderer::CMobileGameRenderer()
 }
 CMobileGameRenderer::~CMobileGameRenderer() = default;
 
+//文件管理
+//*************************
+
 void CMobileGameRenderer::SetOpenFilePath(const char* path)
 {
 	currentOpenFilePath = path;
@@ -24,6 +27,7 @@ void CMobileGameRenderer::DoOpenFile()
     if (fileManager->OpenFile(currentOpenFilePath.c_str())) {
         //主图
         renderer->panoramaThumbnailTex = texLoadQueue->Push(new CCTexture(), 0, 0, -1);//MainTex
+        renderer->panoramaThumbnailTex->backupData = true;
         renderer->panoramaTexPool.push_back(renderer->panoramaThumbnailTex);
         renderer->UpdateMainModelTex();
 
@@ -90,6 +94,9 @@ void CMobileGameRenderer::TestSplitImageAndLoadTexture() {
     SwitchMode(mode);
 }
 
+//测试
+//*************************
+
 GLuint d_glProgram;
 
 void CreateTestGlProgram() {
@@ -151,8 +158,11 @@ void RenderTest() {
     glDrawArrays(GL_TRIANGLES,0,3);
 }
 
+//*************************
+
 bool CMobileGameRenderer::ReInit() {
     if (render_init_finish) {
+        LOGI("[CMobileGameRenderer] ReInit!");
         ReBufferAllData();
         renderer->ReInit();
         return true;
@@ -161,6 +171,8 @@ bool CMobileGameRenderer::ReInit() {
 }
 bool CMobileGameRenderer::Init()
 {
+    LOGI("[CMobileGameRenderer] Init!");
+
     camera = new CCPanoramaCamera();
     renderer = new CCPanoramaRenderer(this);
     fileManager = new CCFileManager(this);
@@ -193,14 +205,15 @@ bool CMobileGameRenderer::Init()
 }
 void CMobileGameRenderer::Destroy()
 {
+    if(destroying)
+        return;
+
     destroying = true;
+
+    LOGI("[CMobileGameRenderer] Destroy!");
     if (uiInfo != nullptr) {
         delete uiInfo;
         uiInfo = nullptr;
-    }
-    if (uiEventDistributor != nullptr) {
-        delete uiEventDistributor;
-        uiEventDistributor = nullptr;
     }
     if (fileManager != nullptr) {
         delete fileManager;
@@ -220,6 +233,11 @@ void CMobileGameRenderer::Destroy()
         delete renderer;
         renderer = nullptr;
     }
+    if (uiEventDistributor != nullptr) {
+        uiEventDistributor->SendEvent(CCMobileGameUIEvent::DestroyComplete);
+        delete uiEventDistributor;
+        uiEventDistributor = nullptr;
+    }
 }
 void CMobileGameRenderer::Resize(int Width, int Height)
 {
@@ -227,37 +245,48 @@ void CMobileGameRenderer::Resize(int Width, int Height)
 }
 
 //输入处理
+//*************************
 
 void CMobileGameRenderer::MouseCallback(COpenGLView* view, float xpos, float ypos, int button, int type) {
     auto* renderer = (CMobileGameRenderer*)view->GetRenderer();
-
-    if (type == ViewMouseEventType::ViewMouseMouseDown) {
-        renderer->lastX = xpos;
-        renderer->lastY = ypos;
-    }
-    else  if (type == ViewMouseEventType::ViewMouseMouseMove) {
-
-        renderer->xoffset = xpos - renderer->lastX;
-        renderer->yoffset = renderer->lastY - ypos; // reversed since y-coordinates go from bottom to top
-
-        renderer->lastX = xpos;
-        renderer->lastY = ypos;
-
-        //旋转球体
-        if (renderer->mode <= PanoramaMode::PanoramaOuterBall) {
-            float xoffset = -renderer->xoffset * renderer->MouseSensitivity;
-            float yoffset = -renderer->yoffset * renderer->MouseSensitivity;
-
-            renderer->renderer->RotateModel(xoffset, yoffset);
+    switch (type) {
+        case ViewMouseEventType::ViewMouseMouseDown: {
+            renderer->lastX = xpos;
+            renderer->lastY = ypos;
+            break;
         }
-        //全景模式是更改U偏移和纬度偏移
-        else if (renderer->mode == PanoramaMode::PanoramaMercator) {
+        case ViewMouseEventType::ViewMouseMouseMove: {
+            renderer->xoffset = xpos - renderer->lastX;
+            renderer->yoffset = renderer->lastY - ypos; // reversed since y-coordinates go from bottom to top
 
-        } else if (renderer->mode == PanoramaMode::PanoramaFull360
-                   || renderer->mode == PanoramaMode::PanoramaFullOrginal) {
-            float xoffset = -renderer->xoffset * renderer->MouseSensitivity;
-            float yoffset = -renderer->yoffset * renderer->MouseSensitivity;
-            renderer->renderer->MoveModel(xoffset, yoffset);
+            renderer->lastX = xpos;
+            renderer->lastY = ypos;
+
+            //旋转球体
+            if (renderer->mode <= PanoramaMode::PanoramaOuterBall) {
+                float xoffset = -renderer->xoffset * renderer->GetMouseSensitivity();
+                float yoffset = -renderer->yoffset * renderer->GetMouseSensitivity();
+
+                renderer->renderer->RotateModel(xoffset, renderer->gyroEnabled ? 0 : yoffset);
+            }
+                //全景模式是更改U偏移和纬度偏移
+            else if (renderer->mode == PanoramaMode::PanoramaMercator) {
+
+            }
+            else if (renderer->mode == PanoramaMode::PanoramaFull360 || renderer->mode == PanoramaMode::PanoramaFullOrginal) {
+                float xoffset = -renderer->xoffset * renderer->GetMouseSensitivity();
+                float yoffset = -renderer->yoffset * renderer->GetMouseSensitivity();
+                renderer->renderer->MoveModel(xoffset, yoffset);
+            }
+            break;
+        }
+        case ViewMouseEventType::ViewMouseMouseUp: {
+            if(renderer->DragCurrentVelocity.x > 0 || renderer->DragCurrentVelocity.y > 0) {
+                renderer->VelocityDragLastOffest.x = renderer->xoffset;
+                renderer->VelocityDragLastOffest.y = renderer->gyroEnabled ? 0 : renderer->yoffset;
+                renderer->VelocityDragCurrentIsInSim = true;
+            }
+            break;
         }
     }
 }
@@ -273,10 +302,12 @@ void CMobileGameRenderer::KeyMoveCallback(CCameraMovement move) {
         switch (move)
         {
         case CCameraMovement::ROATE_UP:
-            renderer->RotateModelForce(0, -RotateSpeed * View->GetDeltaTime());
+            if(!gyroEnabled)
+                renderer->RotateModelForce(0, -RotateSpeed * View->GetDeltaTime());
             break;
         case CCameraMovement::ROATE_DOWN:
-            renderer->RotateModelForce(0, RotateSpeed * View->GetDeltaTime());
+            if(!gyroEnabled)
+                renderer->RotateModelForce(0, RotateSpeed * View->GetDeltaTime());
             break;
         case CCameraMovement::ROATE_LEFT:
             renderer->RotateModelForce(-RotateSpeed * View->GetDeltaTime(), 0);
@@ -313,6 +344,7 @@ void CMobileGameRenderer::KeyMoveCallback(CCameraMovement move) {
 }
 
 //绘制
+//*************************
 
 void CMobileGameRenderer::Render(float FrameTime)
 {
@@ -328,6 +360,7 @@ void CMobileGameRenderer::Render(float FrameTime)
         return;
 
     if (should_destroy) {
+        LOGI("[CMobileGameRenderer] Start destroy in renderer thread");
         Destroy();
         return;
     }
@@ -355,6 +388,37 @@ void CMobileGameRenderer::Render(float FrameTime)
         needTestImageAndSplit = false;
         TestSplitImageAndLoadTexture();
     }
+
+    //平滑移动处理
+    //===========================
+
+    if(VelocityDragCurrentIsInSim) {
+        DragCurrentVelocity.x -= VelocityDragCutSensitivity;
+        DragCurrentVelocity.y -= VelocityDragCutSensitivity;
+
+        float targetPosX = lastX;
+        float targetPosY = lastY;
+
+        if(DragCurrentVelocity.x > 0)
+            targetPosX += (DragCurrentVelocity.x) * (VelocityDragLastOffest.x < 0 ? -1.0f : 1.0f);
+        if(DragCurrentVelocity.y > 0)
+            targetPosY -= (DragCurrentVelocity.y) * (VelocityDragLastOffest.y < 0 ? -1.0f : 1.0f);
+
+        MouseCallback(View, targetPosX, targetPosY, 0, ViewMouseEventType::ViewMouseMouseMove);
+
+        if(DragCurrentVelocity.x <= 0 && DragCurrentVelocity.y <= 0)
+            VelocityDragCurrentIsInSim = false;
+    }
+
+    if(ShouldResetMercatorControl) {
+        ShouldResetMercatorControl = false;
+        renderer->ResetMercatorControl();
+    }
+
+    if(ShouldUpdateMercatorControl) {
+        ShouldUpdateMercatorControl = false;
+        renderer->UpdateMercatorControl();
+    }
 }
 void CMobileGameRenderer::RenderUI()
 {
@@ -362,6 +426,9 @@ void CMobileGameRenderer::RenderUI()
 }
 void CMobileGameRenderer::Update()
 {
+    if (destroying)
+        return;
+
     //加载队列处理
     //===========================
 
@@ -381,6 +448,7 @@ void CMobileGameRenderer::ReBufferAllData() {
 }
 
 //逻辑控制
+//*************************
 
 TextureLoadQueueDataResult* CMobileGameRenderer::LoadChunkTexCallback(TextureLoadQueueInfo* info, CCTexture* texture) {
 
@@ -480,9 +548,19 @@ void CMobileGameRenderer::CameraOrthoSizeChanged(void* data, float fov) {
     ptr->renderer->UpdateFlatModelMinMax(fov);
 }
 
-void CMobileGameRenderer::AddTextureToQueue(CCTexture* tex, int x, int y, int id) {
-    texLoadQueue->Push(tex, x, y, id);
+float CMobileGameRenderer::GetMouseSensitivity() {
+    return (MouseSensitivityMin + (MouseSensitivityMax - MouseSensitivityMin) * camera->GetZoomPercentage());
 }
+char* CMobileGameRenderer::GetDebugText() {
+    return debugText;
+}
+void CMobileGameRenderer::WriteDebugText(char* str) {
+    strcpy(debugText, str);
+}
+
+//公共方法
+//*************************
+
 void CMobileGameRenderer::SwitchMode(PanoramaMode panoramaMode)
 {
     mode = panoramaMode;
@@ -498,8 +576,9 @@ void CMobileGameRenderer::SwitchMode(PanoramaMode panoramaMode)
         renderer->renderPanoramaFull = false;
         renderer->renderNoPanoramaSmall = true;
         renderer->renderPanoramaFlatXLoop = false;
-        renderer->UpdateMercatorControl();
-        MouseSensitivity = 0.001f;
+        ShouldUpdateMercatorControl = true;
+        MouseSensitivityMax = 0.0005f;
+        MouseSensitivityMin = 0.0015f;
         break;
     case PanoramaFullOrginal:
         camera->Projection = CCameraProjection::Orthographic;
@@ -509,8 +588,9 @@ void CMobileGameRenderer::SwitchMode(PanoramaMode panoramaMode)
         renderer->renderPanoramaFlat = true;
         renderer->renderNoPanoramaSmall = true;
         renderer->renderPanoramaFlatXLoop = false;
-        renderer->ResetMercatorControl();
-        MouseSensitivity = 0.001f;
+        ShouldResetMercatorControl = true;
+        MouseSensitivityMax = 0.0005f;
+        MouseSensitivityMin = 0.0015f;
         break;
     case PanoramaFull360:
         camera->Projection = CCameraProjection::Orthographic;
@@ -520,8 +600,9 @@ void CMobileGameRenderer::SwitchMode(PanoramaMode panoramaMode)
         renderer->renderPanoramaFlat = true;
         renderer->renderNoPanoramaSmall = true;
         renderer->renderPanoramaFlatXLoop = true;
-        renderer->ResetMercatorControl();
-        MouseSensitivity = 0.001f;
+        ShouldResetMercatorControl = true;
+        MouseSensitivityMax = 0.0005f;
+        MouseSensitivityMin = 0.0015f;
         break;
     case PanoramaAsteroid:
         camera->Projection = CCameraProjection::Perspective;
@@ -530,7 +611,8 @@ void CMobileGameRenderer::SwitchMode(PanoramaMode panoramaMode)
         camera->FiledOfView = 135.0f;
         camera->FovMin = 35.0f;
         camera->FovMax = 135.0f;
-        MouseSensitivity = 0.1f;
+        MouseSensitivityMin = 0.01f;
+        MouseSensitivityMax = 0.1f;
         renderer->renderNoPanoramaSmall = false;
         renderer->renderPanoramaFlat = false;
         break;
@@ -544,7 +626,8 @@ void CMobileGameRenderer::SwitchMode(PanoramaMode panoramaMode)
         renderer->renderPanoramaFull = fullChunkLoadEnabled && SplitFullImage && camera->FiledOfView < 30;
         renderer->renderNoPanoramaSmall = false;
         renderer->renderPanoramaFlat = false;
-        MouseSensitivity = 0.1f;
+        MouseSensitivityMin = 0.01f;
+        MouseSensitivityMax = 0.1f;
         break;
     case PanoramaSphere:
         camera->Projection = CCameraProjection::Perspective;
@@ -556,33 +639,36 @@ void CMobileGameRenderer::SwitchMode(PanoramaMode panoramaMode)
         renderer->renderPanoramaFull = fullChunkLoadEnabled && SplitFullImage && camera->FiledOfView < 30;
         renderer->renderNoPanoramaSmall = false;
         renderer->renderPanoramaFlat = false;
-        MouseSensitivity = 0.1f;
+        MouseSensitivityMin = 0.01f;
+        MouseSensitivityMax = 0.1f;
         break;
     case PanoramaOuterBall:
         camera->Projection = CCameraProjection::Perspective;
         camera->SetMode(CCPanoramaCameraMode::CenterRoate);
-        camera->FiledOfView = 90.0f;
+        camera->FiledOfView = 110.0f;
         camera->Position.z = 1.5f;
         camera->FovMin = 25.0f;
         camera->FovMax = 130.0f;
         renderer->renderPanoramaFull = false;
         renderer->renderNoPanoramaSmall = false;
         renderer->renderPanoramaFlat = false;
-        MouseSensitivity = 0.1f;
+        MouseSensitivityMin = 0.01f;
+        MouseSensitivityMax = 0.1f;
         break;
     default:
         break;
     }
 }
-
-void CMobileGameRenderer::UpdateGryoValue(float x, float y, float z) const {
-    if(renderer && gryoEnabled
-        && mode != PanoramaMode::PanoramaFull360 && mode != PanoramaMode::PanoramaFullOrginal)
-            renderer->RotateXYZModelIncrement(z, y, x);
+void CMobileGameRenderer::UpdateGyroValue(float x, float y, float z, float w) const {
+    if(renderer) {
+        renderer->gyroEnabled = gyroEnabled;
+        if (gyroEnabled && mode <= PanoramaMode::PanoramaOuterBall)
+            renderer->GyroscopeRotateModel(x, y, z, w);
+    }
 }
-void CMobileGameRenderer::SetGryoEnabled(bool enable) {
-    gryoEnabled = enable;
-    if(renderer && !gryoEnabled)
+void CMobileGameRenderer::SetGyroEnabled(bool enable) {
+    gyroEnabled = enable;
+    if(renderer && !gyroEnabled)
         renderer->ResetModel();
 }
 void CMobileGameRenderer::SetEnableFullChunkLoad(bool enable) {
@@ -591,4 +677,12 @@ void CMobileGameRenderer::SetEnableFullChunkLoad(bool enable) {
 void CMobileGameRenderer::SetVREnabled(bool enable) {
     vREnabled = enable;
 }
+void CMobileGameRenderer::SetMouseDragVelocity(float x, float y) {
+    DragCurrentVelocity.x = glm::abs(x);
+    DragCurrentVelocity.y = glm::abs(y);
+
+    if(DragCurrentVelocity.x < 2 && DragCurrentVelocity.y <= 2)
+        VelocityDragCurrentIsInSim = false;
+}
+
 

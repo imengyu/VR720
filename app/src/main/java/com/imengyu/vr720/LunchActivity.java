@@ -16,6 +16,7 @@ import androidx.preference.PreferenceManager;
 
 import com.imengyu.vr720.dialog.CommonDialog;
 import com.imengyu.vr720.dialog.CommonDialogs;
+import com.imengyu.vr720.utils.StorageDirUtils;
 
 public class LunchActivity extends AppCompatActivity {
 
@@ -32,6 +33,8 @@ public class LunchActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
             //耗时任务，比如加载网络数据
+            StorageDirUtils.testAndCreateStorageDirs();
+            //转回UI线程
             runOnUiThread(() -> {
                 //检查是否同意许可以及请求权限
                 testAgreementAllowed((b) -> {
@@ -65,8 +68,7 @@ public class LunchActivity extends AppCompatActivity {
 
     private String[] permissions = {
             Manifest.permission.READ_EXTERNAL_STORAGE,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.CAMERA,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
     };
 
     private boolean checkPermission(){

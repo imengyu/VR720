@@ -13,6 +13,7 @@ enum class CCMobileGameUIEvent {
     MarkLoadFailed,
     UiInfoChanged,
     FileClosed,
+    DestroyComplete,
 };
 
 class CMobileGameUIEventDistributor {

@@ -1,10 +1,13 @@
 package com.imengyu.vr720;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -25,22 +28,27 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.exifinterface.media.ExifInterface;
 import androidx.preference.PreferenceManager;
 
+import com.hjq.toast.ToastUtils;
 import com.imengyu.vr720.config.MainMessages;
 import com.imengyu.vr720.core.NativeVR720;
 import com.imengyu.vr720.core.NativeVR720GLSurfaceView;
 import com.imengyu.vr720.core.NativeVR720Renderer;
+import com.imengyu.vr720.core.sensor.ImprovedOrientationSensor1Provider;
 import com.imengyu.vr720.dialog.CommonDialog;
+import com.imengyu.vr720.dialog.LoadingDialog;
 import com.imengyu.vr720.utils.DateUtils;
 import com.imengyu.vr720.utils.FileSizeUtil;
 import com.imengyu.vr720.utils.FileUtils;
+import com.imengyu.vr720.utils.ImageUtils;
 import com.imengyu.vr720.utils.StatusBarUtils;
+import com.imengyu.vr720.core.representation.MatrixF4x4;
+import com.imengyu.vr720.core.representation.Quaternion;
 import com.imengyu.vr720.widget.MyTitleBar;
-import com.imengyu.vr720.widget.ToolbarButton;
-import com.hjq.toast.ToastUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -52,14 +60,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-
-public class PanoActivity extends AppCompatActivity implements SensorEventListener {
+public class PanoActivity extends AppCompatActivity {
 
     /** Tag for logging. */
     public static final String TAG = PanoActivity.class.getSimpleName();
 
     private Context mContext;
     private Resources resources;
+    private String filePath;
 
     private View pano_bar;
     private View pano_error;
@@ -78,13 +86,9 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
     private TextView text_pano_info_exposure_bias_value;
     private TextView text_pano_info_iso_sensitivit;
 
-    private MyTitleBar myTitleBar;
-
+    private TextView text_debug;
+    private MyTitleBar titlebar;
     private Button button_mode;
-    private ToolbarButton button_vr;
-    private ToolbarButton button_gryo;
-
-    private String filePath;
 
     private NativeVR720GLSurfaceView glSurfaceView;
 
@@ -92,6 +96,7 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
     private Drawable iconModeLittlePlanet;
     private Drawable iconModeRectiliner;
     private Drawable iconModeSource;
+    private Drawable iconModeMercator;
     private Drawable iconModeVideoBall;
 
     private boolean closeMarked = false;
@@ -103,6 +108,7 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
         super.onCreate(savedInstanceState);
 
         requestWindowFeature(Window.FEATURE_NO_TITLE);
+
         //设置全屏
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -118,6 +124,7 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
 
         initResources();
         initSettings();
+        initSensor();
 
         NativeVR720.updateAssetManagerPtr(getAssets());
         //初始化内核
@@ -141,8 +148,9 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
+        unInitSensor();
         renderer.onDestroy();
+        super.onDestroy();
     }
 
     private String imageSize = "";
@@ -168,16 +176,23 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
     private void initRenderer() {
         renderer = new NativeVR720Renderer(handler);
         renderer.setEnableFullChunks(panoEnableFull);
+        renderer.setOnRequestGyroValueCallback(quaternion -> {
+            orientationSensor1Provider.getQuaternion(quaternion);
+        });
         glSurfaceView = findViewById(R.id.pano_view);
         glSurfaceView.setNativeRenderer(renderer);
+        glSurfaceView.setCaptureCallback(this::screenShotCallback);
+        glSurfaceView.setDragVelocityEnabled(dragVelocityEnabled);
 
         startUpdateThread();
     }
     private void initControls() {
-        myTitleBar = findViewById(R.id.myTitleBar);
-        myTitleBar.setLeftIconOnClickListener((v) -> onBackPressed());
-        myTitleBar.setRightIconOnClickListener((v) -> shareThisImage());
+        titlebar = findViewById(R.id.titlebar);
+        titlebar.setLeftIconOnClickListener((v) -> onBackPressed());
+        titlebar.setRightIconOnClickListener((v) -> shareThisImage());
 
+        text_debug = findViewById(R.id.text_debug);
+        text_debug.setVisibility(View.GONE);
         pano_bar = findViewById(R.id.pano_toolbar_view);
         pano_error = findViewById(R.id.pano_error_view);
         pano_error.setVisibility(View.GONE);
@@ -208,43 +223,46 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
         iconModeRectiliner = ResourcesCompat.getDrawable(resources, R.drawable.ic_bar_projection_rectilinear, null);
         iconModeSource = ResourcesCompat.getDrawable(resources, R.drawable.ic_bar_projection_source, null);
         iconModeVideoBall = ResourcesCompat.getDrawable(resources, R.drawable.ic_bar_projection_video_ball, null);
-        iconModeBall.setBounds(0,0,iconModeBall.getMinimumWidth(),iconModeBall.getMinimumHeight());
-        iconModeLittlePlanet.setBounds(0,0,iconModeLittlePlanet.getMinimumWidth(),iconModeLittlePlanet.getMinimumHeight());
-        iconModeRectiliner.setBounds(0,0,iconModeRectiliner.getMinimumWidth(),iconModeRectiliner.getMinimumHeight());
-        iconModeSource.setBounds(0,0,iconModeSource.getMinimumWidth(),iconModeSource.getMinimumHeight());
-        iconModeVideoBall.setBounds(0,0,iconModeVideoBall.getMinimumWidth(),iconModeVideoBall.getMinimumHeight());
+        iconModeMercator = ResourcesCompat.getDrawable(resources, R.drawable.ic_bar_projection_mercator, null);
+
+        iconModeBall.setBounds(0,0, iconModeBall.getMinimumWidth(), iconModeBall.getMinimumHeight());
+        iconModeLittlePlanet.setBounds(0,0, iconModeLittlePlanet.getMinimumWidth(), iconModeLittlePlanet.getMinimumHeight());
+        iconModeRectiliner.setBounds(0,0, iconModeRectiliner.getMinimumWidth(), iconModeRectiliner.getMinimumHeight());
+        iconModeSource.setBounds(0,0, iconModeSource.getMinimumWidth(), iconModeSource.getMinimumHeight());
+        iconModeVideoBall.setBounds(0,0,iconModeVideoBall.getMinimumWidth(), iconModeVideoBall.getMinimumHeight());
+        iconModeMercator.setBounds(0,0, iconModeMercator.getMinimumWidth(), iconModeMercator.getMinimumHeight());
     }
     private void initSettings() {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         panoEnableFull = sharedPreferences.getBoolean("enable_full_chunks", false);
         currentPanoMode = sharedPreferences.getInt("pano_mode", 0);
         vrEnabled = sharedPreferences.getBoolean("pano_enable_vr", false);
-        gryoEnabled = sharedPreferences.getBoolean("pano_enable_gryo", false);
+        gyroEnabled = sharedPreferences.getBoolean("pano_enable_gyro", false);
+        dragVelocityEnabled = sharedPreferences.getBoolean("enable_drag_velocity", true);
     }
     private void initButtons() {
 
-        button_gryo = findViewById(R.id.button_gryo);
-        button_vr = findViewById(R.id.button_vr);
+        SwitchCompat switch_enable_vr = findViewById(R.id.switch_enable_vr);
+        SwitchCompat switch_enable_gyro = findViewById(R.id.switch_enable_gyro);
         button_mode = findViewById(R.id.button_mode);
         button_mode.setOnClickListener(v -> changeMode());
-        button_vr.setOnClickListener(v -> {
-            vrEnabled = !vrEnabled;
+
+        switch_enable_gyro.setOnCheckedChangeListener((compoundButton, b) -> {
+            gyroEnabled = compoundButton.isChecked();
+            if(gyroEnabled) orientationSensor1Provider.start();
+            else orientationSensor1Provider.stop();
+            renderer.setGyroEnable(gyroEnabled);
+        });
+        switch_enable_vr.setOnCheckedChangeListener((compoundButton, b) -> {
+            vrEnabled = compoundButton.isChecked();
             renderer.setVREnable(vrEnabled);
-            button_vr.setChecked(vrEnabled);
         });
-        button_gryo.setOnClickListener(v -> {
-            gryoEnabled = !gryoEnabled;
-            if(gryoEnabled) initSensor();
-            else unInitSensor();
-            renderer.setGryoEnable(gryoEnabled);
-            button_gryo.setChecked(gryoEnabled);
-        });
-
+        switch_enable_gyro.setChecked(gyroEnabled);
+        switch_enable_vr.setChecked(vrEnabled);
         renderer.setVREnable(vrEnabled);
-        renderer.setGryoEnable(gryoEnabled);
-        button_gryo.setChecked(gryoEnabled);
-        button_vr.setChecked(vrEnabled);
+        renderer.setGyroEnable(gyroEnabled);
 
+        //视图点击事件
         glSurfaceView.setOnTouchListener((view, motionEvent) -> {
             switch (motionEvent.getAction()) {
                 case MotionEvent.ACTION_MOVE:
@@ -252,6 +270,8 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
                     break;
                 case MotionEvent.ACTION_DOWN:
                     lastTouchMoved = false;
+                    if(pano_menu.getVisibility() == View.VISIBLE) showMore();
+                    if(pano_info.getVisibility() == View.VISIBLE) pano_info.setVisibility(View.GONE);
                     break;
                 case MotionEvent.ACTION_UP:
                     if(!lastTouchMoved) {
@@ -262,8 +282,9 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
             }
             return false;
         });
-        myTitleBar.setLeftIconOnClickListener(v -> onBackPressed());
+        titlebar.setLeftIconOnClickListener(v -> onBackPressed());
 
+        findViewById(R.id.button_short).setOnClickListener(v -> screenShot());
         findViewById(R.id.button_more).setOnClickListener(v -> showMore());
         findViewById(R.id.button_close_pano_info).setOnClickListener(v -> showTools());
         findViewById(R.id.action_view_file_info).setOnClickListener(v -> showFileInfo());
@@ -278,7 +299,7 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
 
         editor.putInt("pano_mode", currentPanoMode);
         editor.putBoolean("pano_enable_vr", vrEnabled);
-        editor.putBoolean("pano_enable_gryo", gryoEnabled);
+        editor.putBoolean("pano_enable_gyro", gyroEnabled);
 
         editor.apply();
     }
@@ -308,21 +329,14 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
     private int currentPanoMode = 0;
     private boolean panoEnableFull = false;
     private boolean vrEnabled = false;
-    private boolean gryoEnabled = false;
+    private boolean gyroEnabled = false;
+    private boolean dragVelocityEnabled = true;
 
     private void changeMode() {
-        if(currentPanoMode == NativeVR720Renderer.PanoramaMode_PanoramaCylinder)
+        if(currentPanoMode < NativeVR720Renderer.PanoramaMode_PanoramaModeMax - 1)
+            currentPanoMode++;
+        else
             currentPanoMode = NativeVR720Renderer.PanoramaMode_PanoramaSphere;
-        else if(currentPanoMode == NativeVR720Renderer.PanoramaMode_PanoramaSphere)
-            currentPanoMode = NativeVR720Renderer.PanoramaMode_PanoramaAsteroid;
-        else if(currentPanoMode == NativeVR720Renderer.PanoramaMode_PanoramaAsteroid)
-            currentPanoMode = NativeVR720Renderer.PanoramaMode_PanoramaOuterBall;
-        else if(currentPanoMode == NativeVR720Renderer.PanoramaMode_PanoramaOuterBall)
-            currentPanoMode = NativeVR720Renderer.PanoramaMode_PanoramaFull360;
-        else if(currentPanoMode == NativeVR720Renderer.PanoramaMode_PanoramaFull360)
-            currentPanoMode = NativeVR720Renderer.PanoramaMode_PanoramaFullOrginal;
-        else if(currentPanoMode == NativeVR720Renderer.PanoramaMode_PanoramaFullOrginal)
-            currentPanoMode = NativeVR720Renderer.PanoramaMode_PanoramaCylinder;
         renderer.setPanoramaMode(currentPanoMode);
         updateModeButton();
     }
@@ -351,6 +365,10 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
             case NativeVR720Renderer.PanoramaMode_PanoramaFullOrginal:
                 button_mode.setText(getString(R.string.text_mode_source));
                 button_mode.setCompoundDrawables(null, iconModeSource, null, null);
+                break;
+            case NativeVR720Renderer.PanoramaMode_PanoramaMercator:
+                button_mode.setText(getString(R.string.text_mode_mercator));
+                button_mode.setCompoundDrawables(null, iconModeMercator, null, null);
                 break;
         }
     }
@@ -424,6 +442,27 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
         text_pano_error.setText(err);
         disableToolBar();
     }
+    private void screenShot() {
+        captureLoadingDialog = new LoadingDialog(this);
+        captureLoadingDialog.show();
+        glSurfaceView.startCapture();
+    }
+    private void screenShotCallback(Bitmap b) {
+        //保存图像
+        ImageUtils.SaveImageResult result = ImageUtils.saveImageToStorageWithAutoName(b);
+        //显示
+        runOnUiThread(() -> {
+            captureLoadingDialog.cancel();
+            captureLoadingDialog = null;
+
+            if(result.success)
+                ToastUtils.show(String.format(getString(R.string.text_image_save_success), result.path));
+            else
+                ToastUtils.show(String.format(getString(R.string.text_image_save_failed), result.error));
+        });
+    }
+
+    private LoadingDialog captureLoadingDialog = null;
 
     /**
      *  标题栏开启关闭与全屏
@@ -463,14 +502,14 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
             //switchFullScreen(!toolbarOn);
             if (toolbarOn) {
                 pano_bar.startAnimation(AnimationUtils.loadAnimation(PanoActivity.this, R.anim.bottom_up));
-                myTitleBar.startAnimation(AnimationUtils.loadAnimation(PanoActivity.this, R.anim.top_down));
+                titlebar.startAnimation(AnimationUtils.loadAnimation(PanoActivity.this, R.anim.top_down));
                 pano_bar.setVisibility(View.VISIBLE);
-                myTitleBar.setVisibility(View.VISIBLE);
+                titlebar.setVisibility(View.VISIBLE);
             } else {
                 pano_bar.startAnimation(AnimationUtils.loadAnimation(PanoActivity.this, R.anim.buttom_down));
-                myTitleBar.startAnimation(AnimationUtils.loadAnimation(PanoActivity.this, R.anim.top_up));
+                titlebar.startAnimation(AnimationUtils.loadAnimation(PanoActivity.this, R.anim.top_up));
                 pano_bar.setVisibility(View.GONE);
-                myTitleBar.setVisibility(View.GONE);
+                titlebar.setVisibility(View.GONE);
             }
         }
     }
@@ -497,6 +536,9 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
                 case MainMessages.MSG_QUIT_LATE:
                     mTarget.get().onQuitLate();
                     break;
+                case MainMessages.MSG_FORCE_PAUSE:
+                    mTarget.get().onPause();
+                    break;
                 default:
                     super.handleMessage(msg);
             }
@@ -518,8 +560,8 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
 
         renderer.setPanoramaMode(NativeVR720Renderer.PanoramaMode_PanoramaSphere);
 
-        myTitleBar.setTitle(FileUtils.getFileName(filePath));
-        myTitleBar.setVisibility(View.VISIBLE);
+        titlebar.setTitle(FileUtils.getFileName(filePath));
+        titlebar.setVisibility(View.VISIBLE);
         pano_loading.setVisibility(View.GONE);
         pano_bar.setVisibility(View.VISIBLE);
         pano_tools.setVisibility(View.VISIBLE);
@@ -527,21 +569,15 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
     private void onRendererMessage(int msg) {
         switch (msg) {
             case NativeVR720Renderer.MobileGameUIEvent_FileClosed:
+                Log.i(TAG, "FileClosed");
                 disableToolBar();
                 if(closeMarked) {
+                    Log.i(TAG, "renderer.destroy()");
                     renderer.destroy();
-                    onPause();
-                    new Timer().schedule(new TimerTask() {
-                        @Override
-                        public void run() {
-                            handler.sendEmptyMessage(MainMessages.MSG_QUIT_LATE);
-                        }
-                    }, 200);
-
                 }
                 break;
             case NativeVR720Renderer.MobileGameUIEvent_MarkLoadFailed:
-                myTitleBar.setVisibility(View.VISIBLE);
+                titlebar.setVisibility(View.VISIBLE);
                 showErr(renderer.getLastError());
                 break;
             case NativeVR720Renderer.MobileGameUIEvent_MarkLoadingEnd:
@@ -555,6 +591,16 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
                 break;
             case NativeVR720Renderer.MobileGameUIEvent_UiInfoChanged:
                 break;
+            case NativeVR720Renderer.MobileGameUIEvent_DestroyComplete:
+                Log.i(TAG, "DestroyComplete");
+                handler.sendEmptyMessage(MainMessages.MSG_FORCE_PAUSE);
+                new Timer().schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        handler.sendEmptyMessage(MainMessages.MSG_QUIT_LATE);
+                    }
+                },  300);
+                break;
         }
     }
 
@@ -567,22 +613,30 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     protected void onPause() {
-        super.onPause();
+
+        if(captureLoadingDialog != null) {
+            captureLoadingDialog.cancel();
+            captureLoadingDialog = null;
+        }
 
         saveSettings();
         stopUpdateThread();
-        if(gryoEnabled)
-            unInitSensor();
+
+        if(gyroEnabled)
+            orientationSensor1Provider.stop();
 
         glSurfaceView.onPause();
+
+        super.onPause();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
 
-        if(initialized) {
-            if(gryoEnabled) initSensor();
+        if(initialized && !closeMarked) {
+            if(gyroEnabled)
+                orientationSensor1Provider.start();
             startUpdateThread();
             glSurfaceView.onResume();
         }
@@ -603,47 +657,6 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
         super.onConfigurationChanged(newConfig);
         //glSurfaceView.getLayoutParams().width = initialWidth;
         //glSurfaceView.getLayoutParams().height = initialHeight;
-    }
-
-    //陀螺仪回调
-    //**********************
-
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-        if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
-            //从 x、y、z 轴的正向位置观看处于原始方位的设备，如果设备逆时针旋转，将会收到正值；否则，为负值
-            if(timestamp != 0){
-                // 得到两次检测到手机旋转的时间差（纳秒），并将其转化为秒
-                final float dT = (event.timestamp - timestamp) * NS2S;
-                // 将手机在各个轴上的旋转角度相加，即可得到当前位置相对于初始位置的旋转弧度
-                angle[0] += event.values[0] * dT;
-                angle[1] += event.values[1] * dT;
-                angle[2] += event.values[2] * dT;
-                // 将弧度转化为角度
-                float anglex = (float) Math.toDegrees(angle[0]);
-                float angley = (float) Math.toDegrees(angle[1]);
-                float anglez = (float) Math.toDegrees(angle[2]);
-
-                float anglexInc = oldAngle[0] - anglex;
-                float angleyInc = oldAngle[1] - angley;
-                float anglezInc = oldAngle[2] - anglez;
-
-                oldAngle[0] = anglex;
-                oldAngle[1] = angley;
-                oldAngle[2] = anglez;
-
-                renderer.updateGryoValue(anglexInc, angleyInc, anglezInc);
-            }
-            //将当前时间赋值给timestamp
-            timestamp = event.timestamp;
-
-        }
-
-    }
-
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int i) {
-
     }
 
     //主图片处理逻辑
@@ -675,36 +688,22 @@ public class PanoActivity extends AppCompatActivity implements SensorEventListen
     }
     private void loadImage() { renderer.openFile(filePath); }
     private void closeImage() {
-        closeMarked = true;
-        renderer.closeFile();
+        if(!closeMarked) {
+            closeMarked = true;
+            renderer.closeFile();
+        }
     }
 
     //陀螺仪控制
     //**********************
 
-    private SensorManager sensorManager;
-    private boolean sensorInited = false;
-    private static final float NS2S = 1.0f / 1000000000.0f;
-    private float timestamp;
-    private final float[] angle = new float[3];
-    private final float[] oldAngle = new float[3];
+    private ImprovedOrientationSensor1Provider orientationSensor1Provider = null;
 
     private void initSensor() {
-        if(!sensorInited) {
-            sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-            if (sensorManager != null) {
-                Sensor accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-                Sensor gryoScopeSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
-                sensorManager.registerListener(this, gryoScopeSensor, SensorManager.SENSOR_DELAY_GAME);
-                sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_GAME);
-                sensorInited = true;
-            }
-        }
+        orientationSensor1Provider = new ImprovedOrientationSensor1Provider(
+                (SensorManager) getSystemService(Activity.SENSOR_SERVICE));
     }
     private void unInitSensor() {
-        if(sensorInited) {
-            sensorInited = false;
-            sensorManager.unregisterListener(this);
-        }
+        orientationSensor1Provider.stop();
     }
 }

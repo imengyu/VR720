@@ -1,7 +1,5 @@
 package com.imengyu.vr720;
 
-import android.annotation.SuppressLint;
-import android.content.Intent;
 import android.os.Bundle;
 import android.widget.TextView;
 
@@ -19,7 +17,7 @@ public class AboutActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_about);
 
-        MyTitleBar titleBar = findViewById(R.id.myTitleBar);
+        MyTitleBar titleBar = findViewById(R.id.titlebar);
         titleBar.setLeftIconOnClickListener(v -> finish());
 
         StatusBarUtils.setLightMode(this);

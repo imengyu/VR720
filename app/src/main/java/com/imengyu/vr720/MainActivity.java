@@ -31,6 +31,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 import com.hjq.toast.ToastUtils;
 import com.imengyu.vr720.config.MainMessages;
+import com.imengyu.vr720.core.NativeVR720;
 import com.imengyu.vr720.dialog.CommonDialog;
 import com.imengyu.vr720.dialog.CommonDialogs;
 import com.imengyu.vr720.list.MainList;
@@ -69,7 +70,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
     @Override
     protected void onDestroy() {
+        ((VR720Application)getApplication()).onQuit();
         super.onDestroy();
+    }
+    @Override
+    protected void onStop() {
+        super.onStop();
     }
     @Override
     protected void onResume() {
@@ -240,12 +246,20 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             if ((System.currentTimeMillis() - exitTime) > 2000) {
                 ToastUtils.show(resources.getText(R.string.text_press_once_more_to_quit));
                 exitTime = System.currentTimeMillis();
-            } else finish();
+            } else {
+                quit();
+            }
 
             return true;
         }
 
         return super.onKeyDown(keyCode, event);
+    }
+
+    private void quit() {
+        finish();
+        //NativeVR720.releaseNative();
+        //System.exit(0);
     }
 
     //====================================================
@@ -296,7 +310,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         } else if (id == R.id.nav_about) {
             CommonDialogs.showAbout(this);
         } else if (id == R.id.nav_quit) {
-            finish();
+            quit();
         }
 
         DrawerLayout drawer = findViewById(R.id.drawer_layout);

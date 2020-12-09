@@ -23,7 +23,7 @@ public class SettingsActivity extends AppCompatActivity {
                 .replace(R.id.settings, new SettingsFragment())
                 .commit();
 
-        MyTitleBar titleBar = findViewById(R.id.myTitleBar);
+        MyTitleBar titleBar = findViewById(R.id.titlebar);
         titleBar.setLeftIconOnClickListener(v -> finish());
 
         StatusBarUtils.setLightMode(this);

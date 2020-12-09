@@ -97,6 +97,15 @@
         <item name="android:textColorHighlight">@color/colorPrimaryDark</item>
     </style>
 
+    <style name="CustomDialog" parent="Theme.AppCompat.Dialog">
+        <item name="android:windowBackground">@color/colorTransparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textColorPrimary">@color/colorPrimary</item>
+        <item name="android:textColorSecondary">@color/colorAccent</item>
+        <item name="android:textColorHighlight">@color/colorPrimaryDark</item>
+    </style>
+
     <!--对话框动画-->
     <style name="DialogBottomPopup" parent="android:Animation">
         <item name="android:windowEnterAnimation">@anim/dialog_bottom_up_show</item>

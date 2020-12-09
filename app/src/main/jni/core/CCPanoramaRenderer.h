@@ -47,6 +47,8 @@ public:
     CCShader* shader = nullptr;
     CCModel* mainModel = nullptr;
     CCModel* mainFlatModel = nullptr;
+    float mainModelYRotationBase = 0;
+    bool gyroEnabled = false;
 
     std::vector<ChunkModel*> fullModels;
     glm::mat4 model = glm::mat4(1.0f);
@@ -93,20 +95,20 @@ public:
 
     std::vector< CCSmartPtr<CCTexture>> panoramaTexPool;
 
+
     void ReleaseTexPool();
     void ReleaseFullModel();
     void GenerateFullModel(int chunkW, int chunkH);
+    void ReBufferAllData();
 
-    void ResetModel() const;
+    void ResetModel();
     void RotateModel(float xoffset, float yoffset);
     void RotateModelForce(float y, float z);
-    void RotateXYZModelForce(float x, float y, float z);
-    void RotateXYZModelIncrement(float x, float y, float z);
+    void GyroscopeRotateModel(float x, float y, float z, float w);
     void MoveModel(float xoffset, float yoffset) const;
     void MoveModelForce(float x, float y) const;
     void UpdateMercatorControl();
     void ResetMercatorControl() const;
-    void ReBufferAllData();
 
     glm::vec2 FlatModelMax = glm::vec2(0.0f);
     glm::vec2 FlatModelMin = glm::vec2(0.0f);
@@ -122,13 +124,14 @@ public:
 
 private:
 
-
     void CreateMainModel();
     void CreateMainModelFlatMesh(CCMesh* mesh) const;
     glm::vec3  CreateFullModelSphereMesh(ChunkModel* info, int segXStart, int segYStart, int segXEnd, int segYEnd) const;
     void CreateMainModelSphereMesh(CCMesh* mesh) const;
 
     void LoadBuiltInResources();
+    void ReleaseBuiltInResources();
+    void InitShader();
 
     void RenderThumbnail() const;
     void RenderFullChunks(float deltaTime);
@@ -146,9 +149,7 @@ private:
     float Mercator_фp = 0;
     float Mercator_λp = 0;
 
-    void ReleaseBuiltInResources();
-
-    void InitShader();
+    glm::quat quatMult = glm::quat(0, 0, 1, 0);   // 沿着 Z 周旋转的四元数 因子
 };
 
 

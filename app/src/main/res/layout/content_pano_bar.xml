@@ -13,6 +13,54 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <Button
+                android:id="@+id/action_pano_gyro"
+                style="@style/ButtonDarkItem"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:drawableStart="@drawable/ic_file_gyro"
+                android:drawableTint="@android:color/white"
+                android:text="@string/action_pano_gyro" />
+
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/switch_enable_gyro"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="0dp"
+                android:layout_marginEnd="10dp" />
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <Button
+                android:id="@+id/action_pano_vr"
+                style="@style/ButtonDarkItem"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:drawableStart="@drawable/ic_file_vr"
+                android:drawableTint="@android:color/white"
+                android:text="@string/text_vr_mode" />
+
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/switch_enable_vr"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="0dp"
+                android:layout_marginEnd="10dp" />
+
+        </RelativeLayout>
+
         <Button
             android:id="@+id/action_view_file_info"
             style="@style/ButtonDarkItem"
@@ -172,11 +220,13 @@
 
             <TextView
                 android:id="@+id/text_pano_info_file_path"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
+                android:layout_marginStart="75dp"
                 android:text="@string/text_placeholder"
+                android:textAlignment="textEnd"
                 android:textColor="@android:color/white" />
         </RelativeLayout>
 
@@ -271,23 +321,19 @@
             android:textAlignment="center"
             android:textColor="@android:color/white"
             app:hoverColor="@color/colorPrimary"
-            app:hoverIcon="@drawable/ic_bar_vr_hover"
-            app:normalColor="@android:color/white"
-            app:normalIcon="@drawable/ic_bar_vr" />
+            app:normalColor="@android:color/white" />
 
         <com.imengyu.vr720.widget.ToolbarButton
-            android:id="@+id/button_gryo"
+            android:id="@+id/button_short"
             style="@style/Widget.AppCompat.Button.Borderless"
             android:layout_width="wrap_content"
             android:layout_height="70dp"
-            android:drawableTop="@drawable/ic_bar_gryo"
-            android:text="@string/text_gryo"
+            android:drawableTop="@drawable/ic_bar_shot"
+            android:text="@string/action_shot"
             android:textAlignment="center"
             android:textColor="@android:color/white"
             app:hoverColor="@color/colorPrimary"
-            app:hoverIcon="@drawable/ic_bar_gryo_hover"
-            app:normalColor="@android:color/white"
-            app:normalIcon="@drawable/ic_bar_gryo" />
+            app:normalColor="@android:color/white" />
 
         <com.imengyu.vr720.widget.ToolbarButton
             android:id="@+id/button_mode"
@@ -314,9 +360,7 @@
             android:textAlignment="center"
             android:textColor="@android:color/white"
             app:hoverColor="@color/colorPrimary"
-            app:hoverIcon="@drawable/ic_bar_more_hover"
-            app:normalColor="@android:color/white"
-            app:normalIcon="@drawable/ic_bar_more" />
+            app:normalColor="@android:color/white" />
 
     </LinearLayout>
 

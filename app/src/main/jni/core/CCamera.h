@@ -5,9 +5,10 @@
 #include <gtc/matrix_transform.hpp>
 #include <vector>
 #include "CColor.h"
+#include "CCModel.h"
 
 // 初始化摄像机变量
-const float DEF_YAW = -90.0f;
+const float DEF_YAW = 0.0f;
 const float DEF_PITCH = 0.0f;
 const float DEF_SPEED = 2.5f;
 const float DEF_ROATE_SPEED = 20.0f;
@@ -34,16 +35,13 @@ enum class CCameraProjection {
 typedef void(*CCPanoramaCameraFovChangedCallback)(void* data, float fov);
 
 class COpenGLView;
+class CCModel;
 /**
  * 摄像机类，处理输入并计算相应的欧拉角，矢量和矩阵
  */
-class CCamera
+class CCamera : public CCModel
 {
 public:
-	// 摄像机位置
-	glm::vec3 Position = glm::vec3(0.0f);
-	// 旋转欧拉角
-	glm::vec3 Rotate = glm::vec3(0.0f);
 	//摄像机投影
 	CCameraProjection Projection = CCameraProjection::Perspective;
 	// 摄像机FOV
@@ -74,7 +72,7 @@ public:
 	 * 返回使用欧拉角和LookAt矩阵计算的view矩阵
 	 * @return
 	 */
-	glm::mat4 GetViewMatrix() const;
+	glm::mat4 GetViewMatrix();
 
 	/**
 	 * 设置摄像机透视投影FOV改变时的回调
@@ -89,16 +87,6 @@ public:
 	 */
 	void SetOrthoSizeChangedCallback(CCPanoramaCameraFovChangedCallback callback, void* data);
 
-	/**
-	 * 设置摄像机位置
-	 * @param position 摄像机位置
-	 */
-	void SetPosition(glm::vec3 position);
-	/**
-	 * 设置摄像机旋转
-	 * @param rotation 旋转欧拉角
-	 */
-	void SetRotation(glm::vec3 rotation);
 	/**
 	 * 设置摄像机fov
 	 * @param fov FiledOfView
@@ -117,12 +105,7 @@ public:
 	/**
 	 * 重置摄像机旋转和位置
 	 */
-	void Reset();
-
-	glm::vec3 Front = glm::vec3(0.0f, 0.0f, -1.0f);
-	glm::vec3 Up = glm::vec3(0.0f);
-	glm::vec3 Right = glm::vec3(0.0f);
-	glm::vec3 WorldUp = glm::vec3(0.0f);
+	void Reset() override ;
 
 	/**
 	 * 设置摄像机所属 VIEW

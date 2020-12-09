@@ -45,9 +45,12 @@
     <string name="action_back_main">返回主界面</string>
     <string name="action_open_now">立即开启</string>
     <string name="action_help">帮助文档</string>
+    <string name="action_shot">截图</string>
+    <string name="action_pano_gyro">手机陀螺仪</string>
 
     <!-- small texts -->
     <string name="text_tip">提示</string>
+    <string name="text_please_wait">请稍后</string>
     <string name="text_placeholder">文字占位符</string>
     <string name="text_return">返回</string>
     <string name="text_choosed_items">已选择 %d 项</string>
@@ -59,18 +62,19 @@
     <string name="text_core_ver">内核版本：</string>
     <string name="text_copyright">
         © 2020 By 梦欤 All rights reserved. 
-        <br /> https://imengyu.top
+        <br /> <a href="https://imengyu.top">imengyu.top</a>
     </string>
 
     <string name="text_vr_mode">VR模式</string>
     <string name="text_more">更多</string>
-    <string name="text_gryo">陀螺仪</string>
+    <string name="text_gyro">陀螺仪</string>
     <string name="text_mode_ball">球形</string>
     <string name="text_mode_little_planet">小行星</string>
     <string name="text_mode_video_ball">水晶球</string>
     <string name="text_mode_rectilinear">平面</string>
-    <string name="text_mode_360_pano">360度全景</string>
-    <string name="text_mode_source">全景</string>
+    <string name="text_mode_360_pano">360度</string>
+    <string name="text_mode_source">原图</string>
+    <string name="text_mode_mercator">全景</string>
     <string name="text_loading_wait">正在加载，请稍后</string>
     <string name="text_unknow_pano">未知全景文件</string>
     <string name="text_unknow_size">未知大小</string>
@@ -95,6 +99,8 @@
     <string name="text_image_exposure_bias_value">曝光补偿：</string>
     <string name="text_image_iso_sensitivity">ISO感光度：</string>
 
+    <string name="text_image_save_success">截图成功！图像已保存至 %s</string>
+    <string name="text_image_save_failed">图像保存失败！ %s</string>
     <string name="text_share_image_title">分享这张全景图</string>
     <string name="text_choose_program_to_open">选择对应的软件打开该图像</string>
     <string name="text_image_cannot_open">抱歉，你的系统不能打开此图像</string>
@@ -113,6 +119,8 @@
     <string name="text_logo">标题Logo</string>
     <string name="text_soft_version">当前软件版本：</string>
 
+    <!-- settings -->
+
     <string name="settings_header_common">通用</string>
     <string name="settings_header_panorama">全景图浏览</string>
     <string name="settings_header_others">其他</string>
@@ -120,13 +128,14 @@
 
     <string name="settings_key_enable_full_chunks">启用完整全景图浏览</string>
     <string name="settings_summary_enable_full_chunks">
-        在浏览较大全景图（打样4096x2048）时不会压缩而是以文件最高清晰度显示，
+        在浏览较大全景图（大于4096x2048）时不会压缩而是以文件最高清晰度显示，
         虽然能有更好的效果，但这可能会增加硬件的负担。
     </string>
     <string name="settings_key_about">关于软件</string>
     <string name="settings_key_check_update">检查更新</string>
     <string name="settings_key_auto_update">自动更新软件</string>
     <string name="settings_key_privacy_policy">隐私政策以及许可协议</string>
+    <string name="settings_key_enable_drag_velocity">开启惯性拖动</string>
 
     <!-- agreement -->
     <string name="text_agreement_base_welecome">

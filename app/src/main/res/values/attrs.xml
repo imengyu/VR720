@@ -15,8 +15,6 @@
     <declare-styleable name="ToolbarButton">
         <attr name="normalColor" format="color" />
         <attr name="hoverColor" format="color" />
-        <attr name="normalIcon" format="reference" />
-        <attr name="hoverIcon" format="reference" />
         <attr name="activeable" format="boolean" />
     </declare-styleable>
     <declare-styleable name="MyTitleBar">
@@ -30,5 +28,11 @@
             <enum name="OneButtonAndText" value="11" />
             <enum name="TwoButton" value="12" />
         </attr>
+    </declare-styleable>
+    <declare-styleable name="RotateLoading">
+        <attr name="loading_color" format="reference|color"/>
+        <attr name="loading_width" format="dimension" />
+        <attr name="shadow_offset" format="dimension" />
+        <attr name="loading_visible" format="boolean" />
     </declare-styleable>
 </resources>

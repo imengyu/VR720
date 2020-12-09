@@ -55,7 +55,8 @@
         <activity
             android:name=".PanoActivity"
             android:label="@string/title_activity_pano"
-            android:theme="@style/AppTheme.NoActionBar" />
+            android:theme="@style/AppTheme.NoActionBar"
+            android:screenOrientation="nosensor" />
         <activity
             android:name="com.donkingliang.imageselector.ImageSelectorActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"

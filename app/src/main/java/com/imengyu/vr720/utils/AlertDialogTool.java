@@ -133,6 +133,7 @@ public class AlertDialogTool {
      */
     public static Dialog setDialogGravity(Dialog dialog, int gravity) {
         Window window = dialog.getWindow();
+        assert window != null;
         window.setGravity(gravity);
         window.getDecorView().setPadding(0, 0, 0, 0);
         return dialog;

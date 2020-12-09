@@ -8,4 +8,5 @@ public class MainMessages {
     public static final int MSG_NATIVE_MESSAGE = 338;
     public static final int MSG_QUIT_LATE = 339;
     public static final int MSG_LIST_LOAD_FINISH = 340;
+    public static final int MSG_FORCE_PAUSE = 341;
 }

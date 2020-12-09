@@ -1,6 +1,7 @@
 package com.imengyu.vr720.widget;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
@@ -8,6 +9,7 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 
 import androidx.appcompat.widget.AppCompatButton;
+import androidx.core.widget.TextViewCompat;
 
 import com.imengyu.vr720.R;
 
@@ -30,8 +32,9 @@ public class ToolbarButton extends AppCompatButton {
 
     private int normalColor = Color.WHITE;
     private int hoverColor = Color.RED;
-    private Drawable normalIcon = null;
-    private Drawable hoverIcon = null;
+
+    private ColorStateList normalColorStateList = null;
+    private ColorStateList hoverColorStateList = null;
 
     private boolean activeable = true;
     private boolean checked = false;
@@ -43,15 +46,11 @@ public class ToolbarButton extends AppCompatButton {
             activeable = a.getBoolean(R.styleable.ToolbarButton_activeable, activeable);
             hoverColor = a.getColor(R.styleable.ToolbarButton_hoverColor, hoverColor);
             normalColor = a.getColor(R.styleable.ToolbarButton_normalColor, normalColor);
-            normalIcon = a.getDrawable(R.styleable.ToolbarButton_normalIcon);
-            if(normalIcon != null)
-                normalIcon.setBounds(0, 0, normalIcon.getMinimumWidth(),
-                    normalIcon.getMinimumHeight());
-            hoverIcon = a.getDrawable(R.styleable.ToolbarButton_hoverIcon);
-            if(hoverIcon != null)
-                hoverIcon.setBounds(0, 0, hoverIcon.getMinimumWidth(),
-                    hoverIcon.getMinimumHeight());
+            a.recycle();
         }
+
+        normalColorStateList = ColorStateList.valueOf(normalColor);
+        hoverColorStateList = ColorStateList.valueOf(hoverColor);
 
         setBackground(null);
     }
@@ -61,17 +60,19 @@ public class ToolbarButton extends AppCompatButton {
     }
     public void setChecked(boolean checked) {
         this.checked = checked;
-        setHightlight(checked);
+        setHightLight(checked);
     }
 
-    private void setHightlight(boolean hightlight){
+    private void setHightLight(boolean hightlight){
         if(activeable) {
             if (hightlight) {
                 setTextColor(hoverColor);
-                setCompoundDrawables(null, hoverIcon, null, null);
+                TextViewCompat.setCompoundDrawableTintList(this, hoverColorStateList);
+                setForegroundTintList(hoverColorStateList);
             } else {
-                setCompoundDrawables(null, normalIcon, null, null);
                 setTextColor(normalColor);
+                TextViewCompat.setCompoundDrawableTintList(this, normalColorStateList);
+                setForegroundTintList(normalColorStateList);
             }
         }
     }
@@ -79,9 +80,9 @@ public class ToolbarButton extends AppCompatButton {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if(event.getAction() == MotionEvent.ACTION_DOWN){
-            setHightlight(true);
+            setHightLight(true);
         }else if(event.getAction() == MotionEvent.ACTION_UP){
-            setHightlight(checked);
+            setHightLight(checked);
         }
         return super.onTouchEvent(event);
     }

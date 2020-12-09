@@ -8,6 +8,7 @@ import android.os.Handler;
 import android.os.Message;
 
 import com.imengyu.vr720.config.MainMessages;
+import com.imengyu.vr720.core.representation.Quaternion;
 
 /**
  * 本地渲染器
@@ -57,12 +58,31 @@ public class NativeVR720Renderer {
     public void nativeSetNativePtr(long ptr) { mainNativePtr = ptr; }
     public long nativeGetNativePtr() { return mainNativePtr; }
 
+    public interface OnRequestGyroValueCallback {
+        void requestGyroValue(Quaternion quaternion);
+    }
+
+    private OnRequestGyroValueCallback onRequestGyroValueCallback;
+
+    /**
+     * 设置陀螺仪数据请求回调
+     * @param onRequestGyroValueCallback 回调
+     */
+    public void setOnRequestGyroValueCallback(OnRequestGyroValueCallback onRequestGyroValueCallback) {
+        this.onRequestGyroValueCallback = onRequestGyroValueCallback;
+    }
+    public void requestGyroValue(Quaternion quaternion) {
+        if(onRequestGyroValueCallback != null)
+            onRequestGyroValueCallback.requestGyroValue(quaternion);
+    }
+
     //消息回传
     public static final int MobileGameUIEvent_MarkLoadingStart = 0;
     public static final int MobileGameUIEvent_MarkLoadingEnd = 1;
     public static final int MobileGameUIEvent_MarkLoadFailed = 2;
     public static final int MobileGameUIEvent_UiInfoChanged = 3;
     public static final int MobileGameUIEvent_FileClosed = 4;
+    public static final int MobileGameUIEvent_DestroyComplete = 5;
 
     //全景模式
     public static final int PanoramaMode_PanoramaSphere = 0;
@@ -83,7 +103,7 @@ public class NativeVR720Renderer {
     public void onSurfaceChanged(int width, int height) { onSurfaceChanged(mainNativePtr, width, height); }
     public void onDrawFrame() { onDrawFrame(mainNativePtr); }
     public void onMainThread() { onMainThread(mainNativePtr); }
-    public void onDestroy() { onDestroy(mainNativePtr); }
+    public void onDestroy() { onDestroy(mainNativePtr); mainNativePtr = 0; }
     public void onUpdateFps(float fps) { onUpdateFps(mainNativePtr, fps); }
     public void destroy() { destroy(mainNativePtr); }
 
@@ -96,20 +116,23 @@ public class NativeVR720Renderer {
     private native void onDestroy(long nativePtr);
     private native void openFile(long nativePtr, String path);
     private native String getLastError(long nativePtr);
+    private native String getDebugText(long nativePtr);
     private native void closeFile(long nativePtr);
     private native void processMouseMove(long nativePtr, float x, float y);
     private native void processMouseDown(long nativePtr, float x, float y);
     private native void processMouseUp(long nativePtr, float x, float y);
+    private native void processMouseDragVelocity(long nativePtr, float x, float y);
     private native void processViewZoom(long nativePtr, float v);
     private native void processKey(long nativePtr, int key, boolean down);
     private native int getPanoramaMode(long nativePtr);
     private native void setPanoramaMode(long nativePtr, int mode);
-    private native void setGryoEnable(long nativePtr, boolean enable);
+    private native void setGyroEnable(long nativePtr, boolean enable);
     private native void setVREnable(long nativePtr, boolean enable);
-    private native void updateGryoValue(long nativePtr, float x, float y, float z);
+    private native void updateGyroValue(long nativePtr, float x, float y, float z, float w);
     private native void setEnableFullChunks(long nativePtr, boolean enable);
     private native void onResume(long nativePtr);
     private native void onPause(long nativePtr);
+
 
     /**
      * 打开全景图片文件
@@ -121,6 +144,11 @@ public class NativeVR720Renderer {
      * @return 错误信息
      */
     public String getLastError() { return getLastError(mainNativePtr); }
+    /**
+     * 获取内核的调试字符串
+     * @return 调试字符串
+     */
+    public String getDebugText() { return getDebugText(mainNativePtr); }
     /**
      * 关闭当前文件
      */
@@ -146,6 +174,13 @@ public class NativeVR720Renderer {
     public void processMouseUp(float x, float y) { processMouseUp(mainNativePtr, x, y); }
 
     /**
+     * 进行更新拖动速度
+     * @param x x轴速度
+     * @param y y轴速度
+     */
+    public void processMouseDragVelocity(float x, float y) { processMouseDragVelocity(mainNativePtr, x, y); }
+
+    /**
      * 进行缩放视图
      * @param v +-参数
      */
@@ -169,16 +204,26 @@ public class NativeVR720Renderer {
      */
     public void setPanoramaMode(int mode) { setPanoramaMode(mainNativePtr, mode); }
 
+    private boolean gyroEnable = false;
+
     /**
      * 设置是否启用陀螺仪
      * @param enable 是否启用
      */
-    public void setGryoEnable(boolean enable) { setGryoEnable(mainNativePtr, enable); }
+    public void setGyroEnable(boolean enable) { gyroEnable = enable; setGyroEnable(mainNativePtr, enable); }
+    /**
+     * 获取是否启用陀螺仪
+     * @return 是否启用
+     */
+    public boolean getGyroEnable() { return gyroEnable; }
 
     /**
      * 强制更新陀螺仪参数
      */
-    public void updateGryoValue(float x, float y, float z) { updateGryoValue(mainNativePtr, x,y,z); }
+    public void updateGyroValue(float x, float y, float z, float w) {
+        updateGyroValue(mainNativePtr, x,y,z,w);
+    }
+
 
     /**
      * 设置是否启用VR双屏模式

@@ -27,13 +27,16 @@ bool CMobileOpenGLView::Init() {
 void CMobileOpenGLView::Destroy() {
     if(ready) {
         ready = false;
-        LOGI("[OpenGLView] destroy!");
+        LOGI("[OpenGLView] Destroy!");
         if (OpenGLRenderer) {
-            if(destroyWithForce)
+            if (destroyWithForce) {
+                LOGI("[OpenGLRenderer] Force destroy");
                 OpenGLRenderer->Destroy();
-            else
+                OpenGLRenderer = nullptr;
+            } else {
+                LOGI("[OpenGLRenderer] Mark destroy");
                 OpenGLRenderer->MarkDestroy();
-            OpenGLRenderer = nullptr;
+            }
         }
         if (Camera) {
             delete Camera;
@@ -57,8 +60,16 @@ void CMobileOpenGLView::RenderUI() {
     if (ready && OpenGLRenderer) OpenGLRenderer->RenderUI();
 }
 void CMobileOpenGLView::Render() {
-    if(!ready)
+    if(!ready) {
+
+        //Frames for destroy
+        if(destroyFrame > 0) {
+            destroyFrame--;
+            if (OpenGLRenderer)
+                OpenGLRenderer->Render(currentFps);
+        } else OpenGLRenderer = nullptr;
         return;
+    }
 
     //绘制
     glClear(GL_COLOR_BUFFER_BIT);

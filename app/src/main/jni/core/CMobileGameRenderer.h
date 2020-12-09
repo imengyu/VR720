@@ -37,12 +37,15 @@ public:
 	void MarkCloseFile();
 	void MarkDestroy() override { should_destroy = true; }
 	void SwitchMode(PanoramaMode mode);
-	void SetGryoEnabled(bool enable);
+	void SetGyroEnabled(bool enable);
 	void SetEnableFullChunkLoad(bool enable);
 	void SetVREnabled(bool enable);
-	void UpdateGryoValue(float x, float y, float z) const;
-    void AddTextureToQueue(CCTexture* tex, int x, int y, int id);
+	void SetMouseDragVelocity(float x, float y);
+	void UpdateGyroValue(float x, float y, float z, float w) const;
 
+
+	void WriteDebugText(char* str);
+	char *GetDebugText();
 	PanoramaMode GetMode() { return mode; }
 	const char* GetImageOpenError() { return last_image_error.c_str(); }
     CCGUInfo* GetGUInfo() { return uiInfo; }
@@ -68,7 +71,7 @@ private:
 	CCFileManager*fileManager = nullptr;
 	CCTextureLoadQueue*texLoadQueue = nullptr;
 
-	bool gryoEnabled = false;
+	bool gyroEnabled = false;
     bool vREnabled = false;
 	bool fullChunkLoadEnabled = false;
 
@@ -88,6 +91,9 @@ private:
 	bool needTestImageAndSplit = false;
 	float lastX = 0, lastY = 0, xoffset = 0, yoffset = 0;
 
+	bool ShouldResetMercatorControl = false;
+	bool ShouldUpdateMercatorControl = false;
+
 	void TestSplitImageAndLoadTexture();
 
 	TextureLoadQueueDataResult* LoadChunkTexCallback(TextureLoadQueueInfo* info, CCTexture* texture);
@@ -96,9 +102,12 @@ private:
 	static void CameraFOVChanged(void* data, float fov);
 	static void CameraOrthoSizeChanged(void* data, float fov);
 
-	float MouseSensitivity = 0.1f;
+	float MouseSensitivityMin = 0.01f;
+	float MouseSensitivityMax = 0.06f;
 	float RotateSpeed = 20.0f;
 	float MoveSpeed = 0.3f;
+
+	float GetMouseSensitivity();
 
 	bool SplitFullImage = true;
 
@@ -107,5 +116,12 @@ private:
 	static void MouseCallback(COpenGLView* view, float x, float y, int button, int type);
 	static void ScrollCallback(COpenGLView* view, float x, float y, int button, int type);
 	void KeyMoveCallback(CCameraMovement move);
+
+	glm::vec2 DragCurrentVelocity = glm::vec2(0);
+	glm::vec2 VelocityDragLastOffest = glm::vec2(0);
+	bool VelocityDragCurrentIsInSim = false;
+	float VelocityDragCutSensitivity = 5.0f;
+
+	char debugText[256] = { 0 };
 };
 

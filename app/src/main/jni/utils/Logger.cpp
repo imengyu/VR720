@@ -118,33 +118,6 @@ void Logger::SetLogOutPutCallback(LogCallBack callback, void* lparam)
 	callBackData = lparam;
 }
 
-void Logger::InitLogConsoleStdHandle() {
-#if defined(VR720_WINDOWS)
-	hOutput = GetStdHandle(STD_OUTPUT_HANDLE);
-#endif
-}
-void Logger::LogOutputToStdHandle(LogLevel logLevel, const char* str, size_t len) {
-#if defined(VR720_WINDOWS)
-	switch (logLevel)
-	{
-	case LogLevelInfo:
-		SetConsoleTextAttribute(hOutput, FOREGROUND_INTENSITY | FOREGROUND_BLUE);
-		break;
-	case LogLevelWarn:
-		SetConsoleTextAttribute(hOutput, FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_GREEN);
-		break;
-	case LogLevelError:
-		SetConsoleTextAttribute(hOutput, FOREGROUND_INTENSITY | FOREGROUND_RED);
-		break;
-	case LogLevelText:
-		SetConsoleTextAttribute(hOutput, FOREGROUND_INTENSITY | FOREGROUND_RED |
-			FOREGROUND_GREEN |
-			FOREGROUND_BLUE);
-		break;
-	}
-	WriteConsoleW(hOutput, str, len, NULL, NULL);
-#endif
-}
 
 void Logger::ResentNotCaputureLog()
 {
@@ -201,7 +174,10 @@ void Logger::CloseLogFile()
 Logger* globalStaticLogger = nullptr;
 
 Logger* Logger::GetStaticInstance() { return globalStaticLogger; }
-void Logger::InitConst() { globalStaticLogger = new Logger("VR720Native"); }
+void Logger::InitConst() {
+	globalStaticLogger = new Logger("VR720Native");
+	globalStaticLogger->SetLogOutPut(LogOutPutConsolne);
+}
 void Logger::DestroyConst() { delete globalStaticLogger; }
 
 

@@ -8,6 +8,8 @@
 #include "CCMaterial.h"
 #include "CCRenderGlobal.h"
 #include "CMobileGameRenderer.h"
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/euler_angles.hpp>
 
 CCPanoramaRenderer::CCPanoramaRenderer(CMobileGameRenderer* renderer)
 {
@@ -102,7 +104,7 @@ void CCPanoramaRenderer::Render(float deltaTime)
     Renderer->View->CalcMainCameraProjection(shader);
 
     //模型位置和矩阵映射
-    model = mainModel->GetMatrix();
+    model = mainModel->GetModelMatrix();
     glUniformMatrix4fv(globalRenderInfo->modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
     //完整绘制
@@ -120,6 +122,47 @@ void CCPanoramaRenderer::Render(float deltaTime)
     }
 
 }
+void CCPanoramaRenderer::LoadBuiltInResources() {
+    panoramaCheckTex =
+            CCAssetsManager::LoadTexture(
+                    CCAssetsManager::GetResourcePath("textures", "checker.jpg").c_str());
+    if(!panoramaCheckTex->Loaded())
+        panoramaCheckTex = nullptr;
+
+    panoramaRedCheckTex = CCAssetsManager::LoadTexture(
+            CCAssetsManager::GetResourcePath("textures", "red_checker.jpg").c_str());
+
+}
+void CCPanoramaRenderer::ReleaseBuiltInResources() {
+    if(!panoramaCheckTex.IsNullptr())
+        panoramaCheckTex = nullptr;
+    if(!panoramaCheckTex.IsNullptr())
+        panoramaCheckTex = nullptr;
+}
+void CCPanoramaRenderer::ReleaseTexPool() {
+    renderPanoramaFull = false;
+    if (!panoramaTexPool.empty()) {
+        for (auto & it : panoramaTexPool)
+            it.ForceRelease();
+        panoramaTexPool.clear();
+    }
+    panoramaThumbnailTex = nullptr;
+}
+void CCPanoramaRenderer::ReBufferAllData() {
+    mainModel->ReBufferData();
+    if(!fullModels.empty())
+        for (auto m : fullModels) {
+            m->model->ReBufferData();
+        }
+    if(!panoramaTexPool.empty())
+        for (const auto& m : panoramaTexPool) {
+            if(!m.IsNullptr())
+                m->ReBufferData();
+        }
+}
+
+//全景模型创建与销毁
+//*************************
 
 void CCPanoramaRenderer::CreateMainModel() {
 
@@ -148,13 +191,13 @@ void CCPanoramaRenderer::CreateMainModelFlatMesh(CCMesh* mesh) const {
     float u, v = 0;
 
     for (int j = 0; j <= sphereSegmentY; j++) {
-        v += vstep;
         u = 0;
         for (int i = 0; i <= sphereSegmentX; i++) {
-            u += ustep;
             mesh->positions.push_back(glm::vec3(0.5f - u, (0.5f - v) / 2.0f, 0.0f));
             mesh->texCoords.push_back(glm::vec2(1.0f - u, v));
+            u += ustep;
         }
+        v += vstep;
     }
 
 
@@ -294,34 +337,6 @@ glm::vec3 CCPanoramaRenderer::CreateFullModelSphereMesh(ChunkModel* info, int se
 
     return GetSpherePoint(center_u, center_v, r);
 }
-void CCPanoramaRenderer::LoadBuiltInResources() {
-    panoramaCheckTex =
-            CCAssetsManager::LoadTexture(
-                    CCAssetsManager::GetResourcePath("textures", "checker.jpg").c_str());
-    if(!panoramaCheckTex->Loaded())
-        panoramaCheckTex = nullptr;
-
-    panoramaRedCheckTex = CCAssetsManager::LoadTexture(
-            CCAssetsManager::GetResourcePath("textures", "red_checker.jpg").c_str());
-
-}
-void CCPanoramaRenderer::ReleaseBuiltInResources() {
-    if(!panoramaCheckTex.IsNullptr())
-        panoramaCheckTex = nullptr;
-    if(!panoramaCheckTex.IsNullptr())
-        panoramaCheckTex = nullptr;
-}
-void CCPanoramaRenderer::ReleaseTexPool() {
-    renderPanoramaFull = false;
-    if (!panoramaTexPool.empty()) {
-        for (auto & it : panoramaTexPool)
-            it.ForceRelease();
-        panoramaTexPool.clear();
-    }
-    panoramaThumbnailTex = nullptr;
-}
-
-//完整全景模型
 
 void CCPanoramaRenderer::ReleaseFullModel()
 {
@@ -367,42 +382,47 @@ void CCPanoramaRenderer::GenerateFullModel(int chunkW, int chunkH)
 }
 
 //模型控制
+//*************************
 
-void CCPanoramaRenderer::ResetModel() const
+void CCPanoramaRenderer::ResetModel()
 {
     mainModel->Reset();
     mainFlatModel->Material->offest.x = 0.0f;
+    mainModelYRotationBase = 0.0f;
 }
 void CCPanoramaRenderer::RotateModel(float xoffset, float yoffset)
 {
-    mainModel->Rotation.y += xoffset;
-    mainModel->Rotation.z -= yoffset;
-    mainModel->UpdateVectors();
+    glm::vec3 localEulerAngles = mainModel->GetLocalEulerAngles();
+    mainModel->SetLocalEulerAngles(glm::vec3(
+            localEulerAngles.x - yoffset,
+            localEulerAngles.y + xoffset,
+            localEulerAngles.z
+    ));
+    mainModelYRotationBase += xoffset;
 
     UpdateFullChunksVisible();
 }
-void CCPanoramaRenderer::RotateModelForce(float y, float z)
+void CCPanoramaRenderer::RotateModelForce(float x, float y)
 {
-    mainModel->Rotation.y += y;
-    mainModel->Rotation.z += z;
-    mainModel->UpdateVectors();
-
+    glm::vec3 localEulerAngles = mainModel->GetLocalEulerAngles();
+    mainModel->SetLocalEulerAngles(glm::vec3(
+            localEulerAngles.x + x,
+            localEulerAngles.y + y,
+            localEulerAngles.z
+    ));
+    mainModelYRotationBase += x;
     UpdateFullChunksVisible();
 }
-void CCPanoramaRenderer::RotateXYZModelForce(float x, float y, float z) {
-    mainModel->Rotation.y = y;
-    mainModel->Rotation.z = z;
-    mainModel->Rotation.x = x;
-    mainModel->UpdateVectors();
+void CCPanoramaRenderer::GyroscopeRotateModel(float x, float y, float z, float w) {
 
-    UpdateFullChunksVisible();
-}
-void CCPanoramaRenderer::RotateXYZModelIncrement(float x, float y, float z) {
-    mainModel->Rotation.y += y;
-    mainModel->Rotation.z += z;
-    mainModel->Rotation.x += x;
-    mainModel->UpdateVectors();
+    glm::quat gyroscopeQua = glm::quat(w, x, y, z);
+    glm::vec3 euler = glm::degrees(glm::eulerAngles(gyroscopeQua));
 
+    mainModel->SetLocalEulerAngles(glm::vec3(
+            euler.x,
+            euler.y + mainModelYRotationBase,
+            euler.z + 90.0f
+    ));
     UpdateFullChunksVisible();
 }
 void CCPanoramaRenderer::MoveModel(float xoffset, float yoffset) const
@@ -441,6 +461,7 @@ void CCPanoramaRenderer::MoveModelForce(float x, float y) const
     if (mainModel->Position.y < FlatModelMin.y) mainModel->Position.y = FlatModelMin.y;
     if (mainModel->Position.y > FlatModelMax.y) mainModel->Position.y = FlatModelMax.y;
 }
+
 void CCPanoramaRenderer::UpdateMercatorControl() {
     //PrecalcMercator();
 
@@ -480,6 +501,7 @@ void CCPanoramaRenderer::ResetMercatorControl() const {
 }
 
 //渲染
+//*************************
 
 void CCPanoramaRenderer::RenderThumbnail() const
 {
@@ -510,6 +532,7 @@ void CCPanoramaRenderer::RenderFlat() const {
 }
 
 //更新
+//*************************
 
 void CCPanoramaRenderer::UpdateMainModelTex() const
 {
@@ -541,6 +564,7 @@ void CCPanoramaRenderer::UpdateFullChunksVisible() {
                     logger->Log("Star load chunk %d, %d", m->chunkX, m->chunkY);
 
                     auto* tex = new CCTexture();
+                    tex->backupData = true;
                     tex->wrapS = GL_MIRRORED_REPEAT;
                     tex->wrapT = GL_MIRRORED_REPEAT;
                     m->model->Material->diffuse = tex;
@@ -557,6 +581,9 @@ void CCPanoramaRenderer::UpdateFlatModelMinMax(float orthoSize) {
     FlatModelMoveRato = orthoSize / 1.0f;
     MoveModelForce(0, 0);
 }
+
+//数学计算
+//*************************
 
 bool CCPanoramaRenderer::IsInView(glm::vec3 worldPos)
 {
@@ -625,16 +652,4 @@ void CCPanoramaRenderer::PrecalcMercator() {
     );
 }
 
-void CCPanoramaRenderer::ReBufferAllData() {
-    mainModel->ReBufferData();
-    if(!fullModels.empty())
-        for (auto m : fullModels) {
-            m->model->ReBufferData();
-        }
-    if(!panoramaTexPool.empty())
-        for (const auto& m : panoramaTexPool) {
-            if(!m.IsNullptr())
-                m->ReBufferData();
-        }
-}
 

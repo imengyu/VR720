@@ -4,41 +4,50 @@
 void CCPanoramaCamera::ProcessKeyboard(CCameraMovement direction, float deltaTime)
 {
 	float velocity = MovementSpeed * deltaTime;
-	switch (direction)
-	{
-	case CCameraMovement::FORWARD:
-		Position += Front * velocity;
-		break;
-	case CCameraMovement::BACKWARD:
-		Position -= Front * velocity;
-		break;
-	case CCameraMovement::LEFT:
-		Position -= Right * velocity;
-		break;
-	case CCameraMovement::RIGHT:
-		Position += Right * velocity;
-		break;
-	case CCameraMovement::ROATE_UP:
-		Rotate.y += RoateSpeed * deltaTime;
-		CallRotateCallback();
-		break;
-	case CCameraMovement::ROATE_DOWN:
-		Rotate.y -= RoateSpeed * deltaTime;
-		CallRotateCallback();
-		break;
-	case CCameraMovement::ROATE_LEFT:
-		Rotate.x -= RoateSpeed * 1.3f * deltaTime;
-		CallRotateCallback();
-		break;
-	case CCameraMovement::ROATE_RIGHT:
-		Rotate.x += RoateSpeed * 1.3f * deltaTime;
-		CallRotateCallback();
-		break;
-	default:
-		break;
+	switch (direction) {
+		case CCameraMovement::FORWARD:
+			Position += GetFront() * velocity;
+			break;
+		case CCameraMovement::BACKWARD:
+			Position -= GetFront() * velocity;
+			break;
+		case CCameraMovement::LEFT:
+			Position -= GetFront() * velocity;
+			break;
+		case CCameraMovement::RIGHT:
+			Position += GetFront() * velocity;
+			break;
+		case CCameraMovement::ROATE_UP: {
+			glm::vec3 eulerAngles = GetEulerAngles();
+			eulerAngles.y += RoateSpeed * deltaTime;
+			SetEulerAngles(eulerAngles);
+			CallRotateCallback();
+			break;
+		}
+		case CCameraMovement::ROATE_DOWN: {
+			glm::vec3 eulerAngles = GetEulerAngles();
+			eulerAngles.y -= RoateSpeed * deltaTime;
+			SetEulerAngles(eulerAngles);
+			CallRotateCallback();
+			break;
+		}
+		case CCameraMovement::ROATE_LEFT: {
+			glm::vec3 eulerAngles = GetEulerAngles();
+			eulerAngles.x -= RoateSpeed * 1.3f * deltaTime;
+			SetEulerAngles(eulerAngles);
+			CallRotateCallback();
+			break;
+		}
+		case CCameraMovement::ROATE_RIGHT: {
+			glm::vec3 eulerAngles = GetEulerAngles();
+			eulerAngles.x += RoateSpeed * 1.3f * deltaTime;
+			SetEulerAngles(eulerAngles);
+			CallRotateCallback();
+			break;
+		}
+		default:
+			break;
 	}
-
-	updateCameraVectors();
 }
 
 // 处理从鼠标输入系统接收的输入，预测x和y方向的偏移值
@@ -50,21 +59,21 @@ void CCPanoramaCamera::ProcessMouseMovement(float xoffset, float yoffset, bool c
 		xoffset *= MouseSensitivity;
 		yoffset *= MouseSensitivity;
 
-		Rotate.x += xoffset;
-		Rotate.y += yoffset;
+		glm::vec3 eulerAngles = GetEulerAngles();
+
+		eulerAngles.x += xoffset;
+		eulerAngles.y += yoffset;
 
 		// 确保当pitch超出范围时，屏幕不会翻转
 		if (constrainPitch)
 		{
-			if (Rotate.y > 89.0f)
-				Rotate.y = 89.0f;
-			if (Rotate.y < -89.0f)
-				Rotate.y = -89.0f;
+			if (eulerAngles.y > 89.0f)
+				eulerAngles.y = 89.0f;
+			if (eulerAngles.y < -89.0f)
+				eulerAngles.y = -89.0f;
 		}
 
-		// 使用更新的欧拉角更新3个向量
-		updateCameraVectors();
-
+		SetEulerAngles(eulerAngles);
 		CallRotateCallback();
 		break;
 	}
@@ -83,10 +92,13 @@ void CCPanoramaCamera::ProcessMouseMovement(float xoffset, float yoffset, bool c
 		Position.y = distance * glm::sin(glm::radians(RoateYForWorld));
 		Position.z = w * glm::sin(glm::radians(RoateXForWorld));
 
-		if (Position.y < 0) Rotate.x = 180.0f - Rotate.x;
-		if (Position.z < 0) Rotate.y = 180.0f - Rotate.y;
+		glm::vec3 eulerAngles = GetEulerAngles();
 
-		updateCameraVectors();
+		if (Position.y < 0) eulerAngles.x = 180.0f - eulerAngles.x;
+		if (Position.z < 0) eulerAngles.y = 180.0f - eulerAngles.y;
+
+		SetEulerAngles(eulerAngles);
+
 		break;
 	}
 	default:
@@ -164,7 +176,7 @@ void CCPanoramaCamera::SetMode(CCPanoramaCameraMode mode)
 	case CCPanoramaCameraMode::OutRoataround:
 		Reset();
 		Position = glm::vec3(0.0f, 0.0f, 3.0f);
-		Rotate = glm::vec3(-90.0f, 0.0f, 0.0f);
+		SetEulerAngles(glm::vec3(-90.0f, 0.0f, 0.0f));
 		RoateYForWorld = 0.0f;
 		RoateXForWorld = 0.0f;
 		ForceUpdate();
@@ -198,4 +210,18 @@ void CCPanoramaCamera::SetRotateCallback(CCPanoramaCameraCallback callback, void
 
 void CCPanoramaCamera::CallRotateCallback() {
 	if (rotateCallback) rotateCallback(rotateCallbackData, this);
+}
+
+float CCPanoramaCamera::GetZoomPercentage() {
+	switch (Mode) {
+		case CCPanoramaCameraMode::OrthoZoom:
+			return (float)(OrthographicSize - OrthoSizeMin) / (float)(OrthoSizeMax - OrthoSizeMin);
+		case CCPanoramaCameraMode::CenterRoate:
+			return (float)(FiledOfView - RoateNearMax) / (float)(FovMax - FovMin);
+		case CCPanoramaCameraMode::OutRoataround:
+			return (float)(Position.z - RoateNearMax) / (float)(RoateFarMax - RoateNearMax);
+		case CCPanoramaCameraMode::Static:
+			break;
+	}
+	return 0;
 }

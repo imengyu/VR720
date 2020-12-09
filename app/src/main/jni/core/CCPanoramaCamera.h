@@ -44,6 +44,8 @@ public:
 	void SetMode(CCPanoramaCameraMode mode);
 	//设置旋转回调
 	void SetRotateCallback(CCPanoramaCameraCallback callback, void* data);
+	//获取缩放百分比
+	float GetZoomPercentage();
 
 	float RoateNearMax = 0.2f;
 	float RoateFarMax = 3.5f;
@@ -55,7 +57,7 @@ public:
 	float MovementSpeed = DEF_SPEED;
 	float RoateSpeed = DEF_ROATE_SPEED;
 	float MouseSensitivity = DEF_SENSITIVITY;
-	float OrthoSizeMin = 0.2f;
+	float OrthoSizeMin = 0.05f;
 	float OrthoSizeMax = 1.0f;
 	float OrthoSizeZoomSpeed = 0.001f;
 

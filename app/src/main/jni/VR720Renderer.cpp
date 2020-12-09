@@ -44,14 +44,8 @@ extern "C" JNIEXPORT void JNICALL Java_com_imengyu_vr720_core_NativeVR720Rendere
     LOGI("NativeVR720Renderer.onDestroy");
 
     //Destroy
-    view->Destroy();
+    view->ManualDestroy();
     delete view;
-
-    //zero native_ptr
-    jclass clazz = env->FindClass("com/imengyu/vr720/core/NativeVR720Renderer");
-    jmethodID nativeSetNativePtr = env->GetMethodID(clazz, "nativeSetNativePtr", "(J)V");
-    env->CallVoidMethod(thiz, nativeSetNativePtr, (jlong)0);
-    env->DeleteLocalRef(clazz);
 }
 extern "C" JNIEXPORT void JNICALL Java_com_imengyu_vr720_core_NativeVR720Renderer_onSurfaceCreated(JNIEnv *env, jobject thiz, jlong native_ptr) {
     GET_VIEW(native_ptr);
@@ -104,6 +98,11 @@ extern "C" JNIEXPORT jstring JNICALL Java_com_imengyu_vr720_core_NativeVR720Rend
     auto* gameRenderer = (CMobileGameRenderer*)view->GetRenderer();
     return CStringHlp::charTojstring(env, gameRenderer->GetImageOpenError());
 }
+extern "C" JNIEXPORT jstring JNICALL Java_com_imengyu_vr720_core_NativeVR720Renderer_getDebugText(JNIEnv *env, jobject thiz, jlong native_ptr) {
+    GET_VIEW_OR_RET(native_ptr, nullptr);
+    auto* gameRenderer = (CMobileGameRenderer*)view->GetRenderer();
+    return CStringHlp::charTojstring(env, gameRenderer->GetDebugText());
+}
 extern "C" JNIEXPORT void JNICALL Java_com_imengyu_vr720_core_NativeVR720Renderer_closeFile(JNIEnv *env, jobject thiz, jlong native_ptr) {
     GET_VIEW(native_ptr);
     auto* gameRenderer = (CMobileGameRenderer*)view->GetRenderer();
@@ -119,20 +118,20 @@ extern "C" JNIEXPORT jint JNICALL Java_com_imengyu_vr720_core_NativeVR720Rendere
     auto* gameRenderer = (CMobileGameRenderer*)view->GetRenderer();
     return gameRenderer->GetMode();
 }
-extern "C" JNIEXPORT void JNICALL Java_com_imengyu_vr720_core_NativeVR720Renderer_updateGryoValue(JNIEnv *env, jobject thiz, jlong native_ptr, jfloat x, jfloat y, jfloat z) {
+extern "C" JNIEXPORT void JNICALL Java_com_imengyu_vr720_core_NativeVR720Renderer_updateGyroValue(JNIEnv *env, jobject thiz, jlong native_ptr, jfloat x, jfloat y, jfloat z, jfloat w) {
     GET_VIEW(native_ptr);
     auto* gameRenderer = (CMobileGameRenderer*)view->GetRenderer();
-    gameRenderer->UpdateGryoValue(x,y,z);
+    gameRenderer->UpdateGyroValue(x,y,z,w);
 }
 extern "C" JNIEXPORT void JNICALL Java_com_imengyu_vr720_core_NativeVR720Renderer_setVREnable(JNIEnv *env, jobject thiz, jlong native_ptr, jboolean enable) {
     GET_VIEW(native_ptr);
     auto* gameRenderer = (CMobileGameRenderer*)view->GetRenderer();
     gameRenderer->SetVREnabled(enable);
 }
-extern "C" JNIEXPORT void JNICALL Java_com_imengyu_vr720_core_NativeVR720Renderer_setGryoEnable(JNIEnv *env, jobject thiz, jlong native_ptr, jboolean enable) {
+extern "C" JNIEXPORT void JNICALL Java_com_imengyu_vr720_core_NativeVR720Renderer_setGyroEnable(JNIEnv *env, jobject thiz, jlong native_ptr, jboolean enable) {
     GET_VIEW(native_ptr);
     auto* gameRenderer = (CMobileGameRenderer*)view->GetRenderer();
-    gameRenderer->SetGryoEnabled(enable);
+    gameRenderer->SetGyroEnabled(enable);
 }
 extern "C" JNIEXPORT void JNICALL Java_com_imengyu_vr720_core_NativeVR720Renderer_onUpdateFps(JNIEnv *env, jobject thiz, jlong native_ptr, jfloat fps) {
     GET_VIEW(native_ptr);
@@ -140,7 +139,7 @@ extern "C" JNIEXPORT void JNICALL Java_com_imengyu_vr720_core_NativeVR720Rendere
 }
 extern "C" JNIEXPORT void JNICALL Java_com_imengyu_vr720_core_NativeVR720Renderer_destroy(JNIEnv *env, jobject thiz, jlong native_ptr) {
     GET_VIEW(native_ptr);
-    view->ManualDestroy();
+    view->Destroy();
 }
 extern "C" JNIEXPORT void JNICALL Java_com_imengyu_vr720_core_NativeVR720Renderer_onResume(JNIEnv *env, jobject thiz, jlong native_ptr) {
     GET_VIEW(native_ptr);
@@ -154,4 +153,9 @@ extern "C" JNIEXPORT void JNICALL Java_com_imengyu_vr720_core_NativeVR720Rendere
     GET_VIEW(native_ptr);
     auto* gameRenderer = (CMobileGameRenderer*)view->GetRenderer();
     gameRenderer->SetEnableFullChunkLoad(enable);
+}
+extern "C" JNIEXPORT void JNICALL Java_com_imengyu_vr720_core_NativeVR720Renderer_processMouseDragVelocity(JNIEnv *env, jobject thiz, jlong native_ptr, jfloat x, jfloat y) {
+    GET_VIEW(native_ptr);
+    auto* gameRenderer = (CMobileGameRenderer*)view->GetRenderer();
+    gameRenderer->SetMouseDragVelocity(x, y);
 }

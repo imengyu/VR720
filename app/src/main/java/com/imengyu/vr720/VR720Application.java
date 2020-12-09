@@ -19,15 +19,17 @@ public class VR720Application extends Application {
 
     @Override
     public void onTerminate() {
+        NativeVR720.releaseNative();
         super.onTerminate();
+    }
 
+    public void onQuit() {
         NativeVR720.releaseNative();
     }
 
     @Override
     public void onLowMemory() {
-        super.onLowMemory();
-
         NativeVR720.lowMemory();
+        super.onLowMemory();
     }
 }
