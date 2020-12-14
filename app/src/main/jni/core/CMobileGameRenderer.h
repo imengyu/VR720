@@ -35,6 +35,7 @@ public:
 	void DoOpenFile();
 	void MarkShouldOpenFile() { should_open_file = true; }
 	void MarkCloseFile();
+	bool IsFileOpen();
 	void MarkDestroy() override { should_destroy = true; }
 	void SwitchMode(PanoramaMode mode);
 	void SetGyroEnabled(bool enable);
@@ -42,7 +43,7 @@ public:
 	void SetVREnabled(bool enable);
 	void SetMouseDragVelocity(float x, float y);
 	void UpdateGyroValue(float x, float y, float z, float w) const;
-
+	void UpdateDebugValue(float x, float y, float z, float w, float u, float v);
 
 	void WriteDebugText(char* str);
 	char *GetDebugText();
@@ -50,6 +51,18 @@ public:
 	const char* GetImageOpenError() { return last_image_error.c_str(); }
     CCGUInfo* GetGUInfo() { return uiInfo; }
 	void SetUiEventDistributor( CMobileGameUIEventDistributor*uv) { uiEventDistributor = uv; }
+
+	float MouseSensitivityMin = 0.01f;
+	float MouseSensitivityMax = 0.06f;
+	float RotateSpeed = 20.0f;
+	float MoveSpeed = 0.3f;
+	const float MoveInGyroSensitivity = 1.0f;
+	float MouseInFlatSensitivityMin = 0.01f;
+	float MouseInFlatSensitivityMax = 0.06f;
+
+	float GetMouseSensitivity();
+	float GetMouseSensitivityInFlat();
+
 private:
 
 	Logger* logger;
@@ -102,13 +115,6 @@ private:
 	static void CameraFOVChanged(void* data, float fov);
 	static void CameraOrthoSizeChanged(void* data, float fov);
 
-	float MouseSensitivityMin = 0.01f;
-	float MouseSensitivityMax = 0.06f;
-	float RotateSpeed = 20.0f;
-	float MoveSpeed = 0.3f;
-
-	float GetMouseSensitivity();
-
 	bool SplitFullImage = true;
 
 	void ReBufferAllData();
@@ -123,5 +129,6 @@ private:
 	float VelocityDragCutSensitivity = 5.0f;
 
 	char debugText[256] = { 0 };
+
 };
 

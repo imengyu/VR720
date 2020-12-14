@@ -97,6 +97,11 @@ bool CCTexture::Loaded() const
 
 void CCTexture::DoBackupBufferData(BYTE* data, int w, int h, GLenum type)
 {
+	if (backupDataPtr) {
+		free(backupDataPtr);
+		backupDataPtr = nullptr;
+	}
+
     switch (type) {
         case GL_RGB:
             backupDataLength = w * h * 3;

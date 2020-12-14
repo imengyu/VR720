@@ -53,6 +53,9 @@ public:
 	glm::vec3 GetFront() ;
 	glm::vec3 GetUp() ;
 	glm::vec3 GetRight() ;
+	glm::vec3 GetLocalFront() { return mLocalFront; }
+	glm::vec3 GetLocalUp() { return mLocalUp; }
+	glm::vec3 GetLocalRight() { return mLocalRight; }
 
 	/**
 	 * …Ë÷√Œª÷√

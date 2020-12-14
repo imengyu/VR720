@@ -40,11 +40,9 @@ extern "C" JNIEXPORT void JNICALL Java_com_imengyu_vr720_core_NativeVR720Rendere
 extern "C" JNIEXPORT void JNICALL Java_com_imengyu_vr720_core_NativeVR720Renderer_onDestroy(JNIEnv *env, jobject thiz, jlong native_ptr) {
 
     GET_VIEW(native_ptr);
-
     LOGI("NativeVR720Renderer.onDestroy");
-
-    //Destroy
     view->ManualDestroy();
+    //Destroy
     delete view;
 }
 extern "C" JNIEXPORT void JNICALL Java_com_imengyu_vr720_core_NativeVR720Renderer_onSurfaceCreated(JNIEnv *env, jobject thiz, jlong native_ptr) {
@@ -56,13 +54,11 @@ extern "C" JNIEXPORT void JNICALL Java_com_imengyu_vr720_core_NativeVR720Rendere
     view->Resize(width, height);
 }
 extern "C" JNIEXPORT void JNICALL Java_com_imengyu_vr720_core_NativeVR720Renderer_onDrawFrame(JNIEnv *env, jobject thiz, jlong native_ptr) {
-    auto* view = (CMobileOpenGLView*)native_ptr;
-    if(!view) return;
-
+    GET_VIEW(native_ptr);
     view->Render();
 }
 extern "C" JNIEXPORT void JNICALL Java_com_imengyu_vr720_core_NativeVR720Renderer_onMainThread(JNIEnv *env, jobject thiz, jlong native_ptr) {
-    auto* view = (CMobileOpenGLView*)native_ptr;
+    GET_VIEW(native_ptr);
     view->Update();
 }
 extern "C" JNIEXPORT void JNICALL Java_com_imengyu_vr720_core_NativeVR720Renderer_processKey(JNIEnv *env, jobject thiz, jlong native_ptr, jint key, jboolean down) {
@@ -122,6 +118,16 @@ extern "C" JNIEXPORT void JNICALL Java_com_imengyu_vr720_core_NativeVR720Rendere
     GET_VIEW(native_ptr);
     auto* gameRenderer = (CMobileGameRenderer*)view->GetRenderer();
     gameRenderer->UpdateGyroValue(x,y,z,w);
+}
+extern "C" JNIEXPORT jboolean JNICALL Java_com_imengyu_vr720_core_NativeVR720Renderer_isFileOpen(JNIEnv *env, jobject thiz, jlong native_ptr) {
+    GET_VIEW_OR_RET(native_ptr, false);
+    auto* gameRenderer = (CMobileGameRenderer*)view->GetRenderer();
+    return  gameRenderer->IsFileOpen();
+}
+extern "C" JNIEXPORT void JNICALL Java_com_imengyu_vr720_core_NativeVR720Renderer_updateDebugValue(JNIEnv *env, jobject thiz, jlong native_ptr, jfloat x, float y, jfloat z, jfloat w, jfloat v, jfloat u) {
+    GET_VIEW(native_ptr);
+    auto* gameRenderer = (CMobileGameRenderer*)view->GetRenderer();
+    gameRenderer->UpdateDebugValue(x,y,z,w,v,u);
 }
 extern "C" JNIEXPORT void JNICALL Java_com_imengyu_vr720_core_NativeVR720Renderer_setVREnable(JNIEnv *env, jobject thiz, jlong native_ptr, jboolean enable) {
     GET_VIEW(native_ptr);

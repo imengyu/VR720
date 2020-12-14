@@ -57,7 +57,7 @@ public class MainList {
                     nextChangedDoNotNotify = false;
                     return;
                 }
-                if(mainListItems.size() > 6){
+                if(mainListItems.size() >= 4){
                     for(int i = mainListItems.size() - 1;i>=0;i--){
                         MainListItem item = mainListItems.get(i);
                         if(item.getForceItemType() == MainListItem.ITEM_TYPE_TEXT)
@@ -198,6 +198,13 @@ public class MainList {
     private final List<MainListItem> mainListItems = new ArrayList<>();
     private MainListAdapter mainListAdapter = null;
 
+    public ArrayList<CharSequence> getMainListPathItems() {
+        ArrayList<CharSequence> list = new ArrayList<>();
+        for (MainListItem li : mainListItems)
+            if(li.filePath != null)
+                list.add(li.filePath);
+        return list;
+    }
     public List<MainListItem> getMainListItems() {
         return mainListItems;
     }
@@ -409,7 +416,8 @@ public class MainList {
 
                     viewHolder.checkMark.setChecked(item.isChecked());
                     viewHolder.checkMark.setVisibility(mCheckable ? View.VISIBLE : View.GONE);
-                } else if (item.getForceItemType() == MainListItem.ITEM_TYPE_TEXT) {
+                }
+                else if (item.getForceItemType() == MainListItem.ITEM_TYPE_TEXT) {
                     viewHolder.imageView.setVisibility(View.GONE);
                     viewHolder.textView.setVisibility(View.VISIBLE);
                     viewHolder.checkMark.setVisibility(View.GONE);

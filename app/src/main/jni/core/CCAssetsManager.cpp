@@ -70,7 +70,8 @@ std::string CCAssetsManager::LoadStringResource(const char *path) {
     if(buffer) {
         bufferLength = bufferLength / sizeof(char) + 1;
         str.resize(bufferLength);
-        strncpy((char *) str.data(), (char *) buffer, bufferLength);
+        memset((void*)str.data(),0, bufferLength);
+        strncpy((char *) str.data(), (char *) buffer, bufferLength - 1);
         free(buffer);
     } else
         LOGEF("LoadStringResource %s failed !", path);

@@ -17,7 +17,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        db.execSQL("create table if not exists image_list(_id integer primary key autoincrement,path text not null)");
+        db.execSQL("create table if not exists image_list(_id integer primary key autoincrement,path text not null,belong_galleries text not null)");
+        db.execSQL("create table if not exists gallery_list(_id integer primary key autoincrement,name text not null)");
     }
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {

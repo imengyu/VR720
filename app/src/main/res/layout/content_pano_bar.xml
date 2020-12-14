@@ -26,6 +26,23 @@
                 android:drawableTint="@android:color/white"
                 android:text="@string/action_pano_gyro" />
 
+            <TextView
+                android:id="@+id/text_not_support_sensor"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="10dp"
+                android:layout_toStartOf="@id/switch_enable_gyro"
+                android:background="@drawable/dialog_white_bg"
+                android:drawablePadding="4dp"
+                android:paddingStart="4dp"
+                android:paddingTop="2dp"
+                android:paddingEnd="7dp"
+                android:paddingBottom="2dp"
+                android:text="@string/text_gyro_not_support"
+                app:drawableLeftCompat="@drawable/ic_warning" />
+
             <androidx.appcompat.widget.SwitchCompat
                 android:id="@+id/switch_enable_gyro"
                 android:layout_width="wrap_content"
@@ -152,6 +169,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
+                android:layout_marginStart="255dp"
                 android:text="@string/text_placeholder"
                 android:textColor="@android:color/white" />
         </RelativeLayout>

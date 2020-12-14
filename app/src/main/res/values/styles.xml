@@ -60,6 +60,12 @@
         <item name="android:drawablePadding">6dp</item>
     </style>
 
+    <style name="ToolbarPopupTheme" parent="Widget.AppCompat.Light.PopupMenu">
+        <item name="android:colorBackground">@color/colorTransparent</item>
+        <item name="android:background">@drawable/dialog_white_bg</item>
+        <item name="android:padding">4dp</item>
+        <item name="overlapAnchor">false</item>
+    </style>
 
     <style name="FileInfoDarkItem">
         <item name="android:background">@drawable/btn_dark_item</item>

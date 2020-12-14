@@ -77,7 +77,6 @@ public:
 	void SetLogOutPutFile(const char *filePath);
 
 	void ResentNotCaputureLog();
-	void InitLogConsoleStdHandle();
 private:
     std::list<LOG_SLA> logPendingBuffer;
     std::string logFilePath;
@@ -87,9 +86,7 @@ private:
     LogOutPut outPut = LogOutPutConsolne;
     LogCallBack callBack = nullptr;
     void* callBackData{};
-    void* hOutput = NULL;
 
-	void LogOutputToStdHandle(LogLevel logLevel, const char* str, size_t len);
 	void WritePendingLog(const char *str, LogLevel logLevel);
 
 	void LogInternalWithCodeAndLine(LogLevel logLevel, const char * str, const char*file, int line, const char*functon, va_list arg);

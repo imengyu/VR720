@@ -95,6 +95,7 @@ public:
 
     std::vector< CCSmartPtr<CCTexture>> panoramaTexPool;
 
+    void SetCurrentFrameVRValue(int w, int h);
 
     void ReleaseTexPool();
     void ReleaseFullModel();
@@ -149,7 +150,9 @@ private:
     float Mercator_фp = 0;
     float Mercator_λp = 0;
 
-    glm::quat quatMult = glm::quat(0, 0, 1, 0);   // 沿着 Z 周旋转的四元数 因子
+    bool currentFrameVr = false;
+    int currentFrameVrW = 0;
+    int currentFrameVrH = 0;
 };
 
 

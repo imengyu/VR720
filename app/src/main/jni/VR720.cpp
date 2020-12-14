@@ -23,7 +23,7 @@ extern "C" JNIEXPORT void JNICALL Java_com_imengyu_vr720_core_NativeVR720_update
   CCAssetsManager::Android_InitFromJni(env, asset_manager);
 }
 extern "C" JNIEXPORT jstring JNICALL Java_com_imengyu_vr720_core_NativeVR720_getNativeVersion(JNIEnv *env, jclass) {
-  return env->NewStringUTF("1.0.2.DEV-3");
+  return env->NewStringUTF("2.1.6");
 }
 extern "C" JNIEXPORT void JNICALL Java_com_imengyu_vr720_core_NativeVR720_lowMemory(JNIEnv *env, jclass clazz) {
     auto* pool = CCPtrPool::GetStaticPool();

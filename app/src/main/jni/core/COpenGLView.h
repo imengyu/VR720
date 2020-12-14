@@ -22,8 +22,7 @@ class COpenGLView
 {
 public:
 	COpenGLView(COpenGLRenderer* renderer);
-
-	COpenGLView();
+	COpenGLView() = default;
 
 	virtual ~COpenGLView();
 
@@ -83,7 +82,14 @@ public:
 	 * 计算当前主摄像机的矩阵映射
 	 * @param shader 使用的程序
 	 */
-	void CalcCameraProjection(CCamera* camera, CCShader* shader) const;
+	void CalcCameraProjection(CCamera* camera, CCShader* shader, int w, int h) const;
+	/**
+	 * 计算当前主摄像机的矩阵映射（自定义大小）
+	 * @param shader 使用的程序
+	 * @param w 屏幕宽度
+	 * @param h 屏幕高度
+	 */
+	void CalcMainCameraProjectionWithWH(CCShader *shader, int w, int h) const;
 
 	//当前主摄像机
 	CCamera* Camera = nullptr;
@@ -146,10 +152,12 @@ public:
 	 */
 	COpenGLRenderer* GetRenderer();
 
+	void SetManualDestroyCamera(bool manual);
 protected:
 
 	int DownedKeys[MAX_KEY_LIST] = { 0 };
 	int UpedKeys[MAX_KEY_LIST]= { 0 };
+	bool IsManualDestroyCamera = false;
 
 	COpenGLRenderer* OpenGLRenderer = NULL;
 

@@ -15,6 +15,9 @@ COpenGLView::~COpenGLView() = default;
 COpenGLRenderer* COpenGLView::GetRenderer() {
 	return OpenGLRenderer;
 }
+void COpenGLView::SetManualDestroyCamera(bool manual) {
+	IsManualDestroyCamera = manual;
+}
 void COpenGLView::SetCamera(CCamera * camera) {
 	if (Camera)
 		Camera->SetView(nullptr);
@@ -23,7 +26,7 @@ void COpenGLView::SetCamera(CCamera * camera) {
 		Camera->SetView(this);
 }
 
-void COpenGLView::CalcCameraProjection(CCamera * camera, CCShader * shader) const {
+void COpenGLView::CalcCameraProjection(CCamera * camera, CCShader * shader, int w, int h) const {
 	if (camera) {
 
 		//摄像机矩阵变换
@@ -31,12 +34,12 @@ void COpenGLView::CalcCameraProjection(CCamera * camera, CCShader * shader) cons
 		glUniformMatrix4fv(shader->viewLoc, 1, GL_FALSE, glm::value_ptr(camera->view));
 		//摄像机投影
 		camera->projection = camera->Projection == CCameraProjection::Perspective ?
-							 glm::perspective(glm::radians(camera->FiledOfView), (float)Width / (float)Height,
+							 glm::perspective(glm::radians(camera->FiledOfView), (float)w / (float)h,
 											  camera->ClippingNear,
 											  camera->ClippingFar) :
 							 glm::ortho(-camera->OrthographicSize / 2, camera->OrthographicSize / 2,
-										-((float)Height / (float)Width * camera->OrthographicSize / 2),
-										((float)Height / (float)Width * camera->OrthographicSize / 2),
+										-((float)h / (float)w * camera->OrthographicSize / 2),
+										((float)h / (float)w * camera->OrthographicSize / 2),
 										camera->ClippingNear, camera->ClippingFar);
 		glUniformMatrix4fv(shader->projectionLoc, 1, GL_FALSE, glm::value_ptr(camera->projection));
 	}
@@ -49,7 +52,10 @@ void COpenGLView::CalcNoMainCameraProjection(CCShader * shader) const {
 	glUniformMatrix4fv(shader->projectionLoc, 1, GL_FALSE, glm::value_ptr(view));
 }
 void COpenGLView::CalcMainCameraProjection(CCShader * shader) const {
-	CalcCameraProjection(Camera, shader);
+	CalcCameraProjection(Camera, shader, Width, Height);
+}
+void COpenGLView::CalcMainCameraProjectionWithWH(CCShader * shader, int w, int h) const {
+	CalcCameraProjection(Camera, shader, w, h);
 }
 
 //用户事件处理
@@ -59,8 +65,8 @@ void COpenGLView::Resize(int w, int h) {
 	Width = w;
 	Height = h;
 }
-void COpenGLView::SetMouseCallback(ViewMouseCallback mouseCallback) {
-	this->mouseCallback = mouseCallback;
+void COpenGLView::SetMouseCallback(ViewMouseCallback callback) {
+	this->mouseCallback = callback;
 }
 void COpenGLView::SetZoomViewCallback(ViewMouseCallback callback) {
 	this->scrollCallback = callback;

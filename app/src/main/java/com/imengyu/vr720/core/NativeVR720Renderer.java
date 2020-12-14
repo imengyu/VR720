@@ -124,16 +124,18 @@ public class NativeVR720Renderer {
     private native void processMouseDragVelocity(long nativePtr, float x, float y);
     private native void processViewZoom(long nativePtr, float v);
     private native void processKey(long nativePtr, int key, boolean down);
+    private native boolean isFileOpen(long nativePtr);
     private native int getPanoramaMode(long nativePtr);
     private native void setPanoramaMode(long nativePtr, int mode);
     private native void setGyroEnable(long nativePtr, boolean enable);
     private native void setVREnable(long nativePtr, boolean enable);
     private native void updateGyroValue(long nativePtr, float x, float y, float z, float w);
+    private native void updateDebugValue(long nativePtr, float x, float y, float z, float w, float v, float u);
     private native void setEnableFullChunks(long nativePtr, boolean enable);
     private native void onResume(long nativePtr);
     private native void onPause(long nativePtr);
 
-
+    public boolean isFileOpen() { return isFileOpen(mainNativePtr); }
     /**
      * 打开全景图片文件
      * @param path 文件路径
@@ -224,6 +226,9 @@ public class NativeVR720Renderer {
         updateGyroValue(mainNativePtr, x,y,z,w);
     }
 
+    public void updateDebugValue(float x, float y, float z, float w, float v, float u) {
+        updateDebugValue(mainNativePtr, x,y,z,w,v,u);
+    }
 
     /**
      * 设置是否启用VR双屏模式

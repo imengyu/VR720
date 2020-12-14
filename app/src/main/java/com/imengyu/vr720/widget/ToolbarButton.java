@@ -32,9 +32,11 @@ public class ToolbarButton extends AppCompatButton {
 
     private int normalColor = Color.WHITE;
     private int hoverColor = Color.RED;
+    private int disableColor = Color.GRAY;
 
     private ColorStateList normalColorStateList = null;
     private ColorStateList hoverColorStateList = null;
+    private ColorStateList disableColorStateList = null;
 
     private boolean activeable = true;
     private boolean checked = false;
@@ -46,11 +48,13 @@ public class ToolbarButton extends AppCompatButton {
             activeable = a.getBoolean(R.styleable.ToolbarButton_activeable, activeable);
             hoverColor = a.getColor(R.styleable.ToolbarButton_hoverColor, hoverColor);
             normalColor = a.getColor(R.styleable.ToolbarButton_normalColor, normalColor);
+            disableColor = a.getColor(R.styleable.ToolbarButton_disableColor, disableColor);
             a.recycle();
         }
 
         normalColorStateList = ColorStateList.valueOf(normalColor);
         hoverColorStateList = ColorStateList.valueOf(hoverColor);
+        disableColorStateList = ColorStateList.valueOf(disableColor);
 
         setBackground(null);
     }
@@ -63,8 +67,20 @@ public class ToolbarButton extends AppCompatButton {
         setHightLight(checked);
     }
 
+    private void updateDisabled(boolean fromTouch){
+        if (isEnabled() && !fromTouch) {
+            setTextColor(normalColor);
+            TextViewCompat.setCompoundDrawableTintList(this, normalColorStateList);
+            setForegroundTintList(normalColorStateList);
+        }
+        if(!isEnabled()) {
+            setTextColor(disableColor);
+            TextViewCompat.setCompoundDrawableTintList(this, disableColorStateList);
+            setForegroundTintList(disableColorStateList);
+        }
+    }
     private void setHightLight(boolean hightlight){
-        if(activeable) {
+        if(activeable && isEnabled()) {
             if (hightlight) {
                 setTextColor(hoverColor);
                 TextViewCompat.setCompoundDrawableTintList(this, hoverColorStateList);
@@ -78,12 +94,18 @@ public class ToolbarButton extends AppCompatButton {
     }
 
     @Override
+    public void setEnabled(boolean enabled) {
+        super.setEnabled(enabled);
+        updateDisabled(false);
+    }
+
+    @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if(event.getAction() == MotionEvent.ACTION_DOWN){
+        updateDisabled(true);
+        if(event.getAction() == MotionEvent.ACTION_DOWN)
             setHightLight(true);
-        }else if(event.getAction() == MotionEvent.ACTION_UP){
+        else if(event.getAction() == MotionEvent.ACTION_UP)
             setHightLight(checked);
-        }
         return super.onTouchEvent(event);
     }
 }

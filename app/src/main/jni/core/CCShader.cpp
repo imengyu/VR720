@@ -23,6 +23,7 @@ CCShader::CCShader(const char* vShaderCode, const char* fShaderCode)
     if (!success)
     {
         glGetShaderInfoLog(vertex, 512, nullptr, infoLog);
+        LOGIF("[CCShader]  vShaderCode : \n%s", vShaderCode);
         LOGEF("[CCShader] Compile vertex shader file failed! \n%s", infoLog);
     };
 
@@ -35,6 +36,7 @@ CCShader::CCShader(const char* vShaderCode, const char* fShaderCode)
     if (!success)
     {
         glGetShaderInfoLog(fragment, 512, nullptr, infoLog);
+        LOGIF("[CCShader]  fShaderCode : \n%s", fShaderCode);
         LOGEF("[CCShader] Compile fragment shader file failed! \n%s", infoLog);
     };
 

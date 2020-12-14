@@ -1,4 +1,5 @@
 #include "CCSmartPtr.hpp"
+#include "Logger.h"
 
 CCUPtr::CCUPtr(void* ptr) : p(ptr), count(1) { }
 CCUPtr::~CCUPtr() { 
@@ -21,7 +22,7 @@ void CCPtrPool::InitPool()
 void CCPtrPool::ReleasePool()
 {
 	if (globalPool) {
-		globalPool->ClearUnUsedPtr();
+		globalPool->ReleaseAllPtr();
 		delete globalPool;
 		globalPool = nullptr;
 	}
@@ -69,9 +70,23 @@ void CCPtrPool::ReleasePtr(void* ptr)
 		pool.erase(ptr);
 	}
 }
-void CCPtrPool::ClearUnUsedPtr()
+void CCPtrPool::ClearUnUsedPtr() {
+
+	int deletedCount = 0;
+	for (auto &it : pool)
+		if (it.second->count <= 0) {
+			delete it.second;
+			deletedCount++;
+		}
+
+	LOGIF("[CCPtrPool] Clear un used Ptr : %d ptr released ", deletedCount);
+	pool.clear();
+}
+void CCPtrPool::ReleaseAllPtr()
 {
 	for (auto & it : pool)
 		delete it.second;
+
+	LOGIF("[CCPtrPool] Release Ptr : %d ptr released ", pool.size());
 	pool.clear();
 }

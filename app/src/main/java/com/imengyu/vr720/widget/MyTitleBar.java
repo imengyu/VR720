@@ -8,6 +8,7 @@ import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.constraintlayout.widget.ConstraintLayout;
@@ -22,6 +23,7 @@ public class MyTitleBar extends ConstraintLayout {
   public static final int TITLE_MODE_ONE_AND_TEXT = 11;
   public static final int TITLE_MODE_TWO = 12;
 
+  private LinearLayout viewCustom;
   private Button ivBack;
   private Button ivMore;
   private TextView tvTitle;
@@ -45,6 +47,7 @@ public class MyTitleBar extends ConstraintLayout {
     tvTitle = inflate.findViewById(R.id.text_title);
     tvMore = inflate.findViewById(R.id.text_more);
     ivMore = inflate.findViewById(R.id.btn_more);
+    viewCustom = inflate.findViewById(R.id.view_custom);
 
     init(context,attributeSet);
   }
@@ -69,6 +72,15 @@ public class MyTitleBar extends ConstraintLayout {
     setTitleMode(titleBarType);
   }
 
+  public void addCustomView(View view) {
+    viewCustom.addView(view);
+  }
+  public void removeCustomView(View view) {
+    viewCustom.removeView(view);
+  }
+  public void setCustomViewsVisible(int visible) {
+    viewCustom.setVisibility(visible);
+  }
 
   public void setRightButtonIcon(Drawable icon) {
     ivMore.setForeground(icon);
@@ -83,9 +95,18 @@ public class MyTitleBar extends ConstraintLayout {
     ivBack.setForeground(getResources().getDrawable(rightIcon,null));
   }
 
+
+  /**
+   * 获取标题栏是否是暗黑模式
+   * @return 标题栏是否是暗黑模式
+   */
   public boolean isTitleBarDark() {
     return titleBarDark;
   }
+  /**
+   * 设置标题栏是否是暗黑模式
+   * @param titleBarDark 是否是暗黑模式
+   */
   public void setTitleBarDark(boolean titleBarDark) {
     this.titleBarDark = titleBarDark;
     if(titleBarDark) {

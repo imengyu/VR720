@@ -13,6 +13,7 @@
         <attr name="imageRoundHeight" format="dimension" />
     </declare-styleable>
     <declare-styleable name="ToolbarButton">
+        <attr name="disableColor" format="color" />
         <attr name="normalColor" format="color" />
         <attr name="hoverColor" format="color" />
         <attr name="activeable" format="boolean" />

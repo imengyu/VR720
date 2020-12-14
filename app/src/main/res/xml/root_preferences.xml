@@ -41,14 +41,22 @@
 
         <SwitchPreferenceCompat
             app:iconSpaceReserved="false"
+            app:defaultValue="false"
             app:key="enable_full_chunks"
             app:title="@string/settings_key_enable_full_chunks"
             app:summary="@string/settings_summary_enable_full_chunks" />
 
         <SwitchPreferenceCompat
             app:iconSpaceReserved="false"
+            app:defaultValue="true"
             app:key="enable_drag_velocity"
             app:title="@string/settings_key_enable_drag_velocity" />
+
+        <SwitchPreferenceCompat
+            app:iconSpaceReserved="false"
+            app:defaultValue="false"
+            app:key="enable_non_fullscreen"
+            app:title="@string/settings_key_enable_non_fullscreen" />
 
     </PreferenceCategory>
 
@@ -56,7 +64,11 @@
         app:iconSpaceReserved="false"
         app:title="@string/settings_header_others">
 
-
+        <SwitchPreferenceCompat
+            app:iconSpaceReserved="false"
+            app:defaultValue="false"
+            app:key="show_debug_tool"
+            app:title="@string/settings_key_show_debug_tool" />
 
     </PreferenceCategory>
 

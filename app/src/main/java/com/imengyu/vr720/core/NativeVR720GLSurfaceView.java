@@ -11,6 +11,7 @@ import android.view.MotionEvent;
 import android.view.VelocityTracker;
 
 import com.imengyu.vr720.core.representation.Quaternion;
+import com.imengyu.vr720.core.representation.Vector3f;
 
 import java.nio.IntBuffer;
 import java.util.TimerTask;
@@ -107,8 +108,8 @@ public class NativeVR720GLSurfaceView extends GLSurfaceView {
      * 截图
      */
     private Bitmap createBitmapFromGLSurface(int w, int h, GL10 gl) {
-        int bitmapBuffer[] = new int[w * h];
-        int bitmapSource[] = new int[w * h];
+        int[] bitmapBuffer = new int[w * h];
+        int[] bitmapSource = new int[w * h];
         IntBuffer intBuffer = IntBuffer.wrap(bitmapBuffer);
         intBuffer.position(0);
         try {
@@ -185,8 +186,8 @@ public class NativeVR720GLSurfaceView extends GLSurfaceView {
      * 启动定时渲染
      */
     public void startRenderer() {
-        Log.i(TAG, "startRenderer");
         if(pool == null) {
+            Log.i(TAG, "startRenderer");
             pool = Executors.newScheduledThreadPool(1);
             pool.scheduleAtFixedRate(task, 0, frameExecuteTime, TimeUnit.MILLISECONDS);
         }
@@ -196,8 +197,8 @@ public class NativeVR720GLSurfaceView extends GLSurfaceView {
      * 停止定时渲染
      */
     public void stopRenderer() {
-        Log.i(TAG, "stopRenderer");
         if(pool != null) {
+            Log.i(TAG, "stopRenderer");
             pool.shutdown();
             try {
                 if(!pool.awaitTermination(1000, TimeUnit.MILLISECONDS))
@@ -236,7 +237,7 @@ public class NativeVR720GLSurfaceView extends GLSurfaceView {
 
         private int width = 0;
         private int height = 0;
-        private Quaternion gyroQuaternion = new Quaternion();
+        private final Quaternion gyroQuaternion = new Quaternion();
 
         @Override
         public void onSurfaceCreated(GL10 gl10, javax.microedition.khronos.egl.EGLConfig eglConfig) {
@@ -274,22 +275,29 @@ public class NativeVR720GLSurfaceView extends GLSurfaceView {
 
     @Override
     public void onPause() {
-        super.onPause();
         nativeVR720Renderer.onPause();
         stopRenderer();
+
+        super.onPause();
     }
     @Override
     public void onResume() {
-        super.onResume();
         nativeVR720Renderer.onResume();
         startRenderer();
+        super.onResume();
     }
 
+    /*
     @Override
     protected void onDetachedFromWindow() {
         if(nativeVR720Renderer != null)
             nativeVR720Renderer.onDestroy();
         super.onDetachedFromWindow();
+    }
+    */
+
+    public void onDestroyComplete() {
+        nativeVR720Renderer.nativeSetNativePtr(0);
     }
 
     //输入事件处理

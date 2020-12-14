@@ -32,46 +32,42 @@ glm::mat4 CCModel::GetModelMatrix()
 
     glm::mat4 model(1.0f);
 
+    model = glm::rotate(model, glm::radians(mLocalEulerAngles.z), WorldFront);
     model = glm::rotate(model, glm::radians(mLocalEulerAngles.x), WorldRight);
     model = glm::rotate(model, glm::radians(mLocalEulerAngles.y), WorldUp);
-    model = glm::rotate(model, glm::radians(mLocalEulerAngles.z), mLocalFront);
+
 
     model = glm::translate(model, Position);
     model = glm::scale(model, LocalScale);
-
-    model = glm::rotate(model, glm::radians(mEulerAngles.x), mRight);
-    model = glm::rotate(model, glm::radians(mEulerAngles.y), mUp);
-    model = glm::rotate(model, glm::radians(mEulerAngles.z), mFront);
+    model = glm::mat4_cast(mRotation) * model;
 
     return model;
 }
 
 void CCModel::UpdateVectors() {
 
-    glm::mat4 mtx = glm::yawPitchRoll(
-            glm::radians(mEulerAngles.x),
-            glm::radians(mEulerAngles.y),
-            glm::radians(mEulerAngles.z)
-    );
-    glm::mat4 mtxLocal = glm::yawPitchRoll(
-            glm::radians(mLocalEulerAngles.x),
-            glm::radians(mLocalEulerAngles.y),
-            glm::radians(mLocalEulerAngles.z)
-    );
+    glm::mat4 mtx = glm::mat4_cast(mRotation);
 
     mUp = mtx * glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
     mFront = mtx * glm::vec4(0.0f, 0.0f, -1.0f, 1.0f);
     mRight = mtx * glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
-    mLocalUp = mtxLocal * glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
-    mLocalFront = mtxLocal * glm::vec4(0.0f, 0.0f, -1.0f, 1.0f);
-    mLocalRight = mtxLocal * glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+
+    mtx = glm::yawPitchRoll(
+            glm::radians(mLocalEulerAngles.y),
+            glm::radians(mLocalEulerAngles.x),
+            glm::radians(mLocalEulerAngles.z)
+    );
+
+    mLocalUp = mtx * glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
+    mLocalFront = mtx * glm::vec4(0.0f, 0.0f, -1.0f, 1.0f);
+    mLocalRight = mtx * glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
 
     VectorDirty = false;
 }
 void CCModel::Reset() {
     Position = glm::vec3(0.0f);
-    mRotation = glm::quat(0,0,0,0);
-    mLocalRotation = glm::quat(0,0,0,0);
+    mRotation = glm::quat();
+    mLocalRotation = glm::quat();
     mEulerAngles = glm::vec3(0.0f);
     mLocalEulerAngles = glm::vec3(0.0f);
 }
@@ -110,9 +106,16 @@ void CCModel::SetLocalEulerAngles(glm::vec3 eulerAngles) {
             glm::radians(eulerAngles.z));
 
     mLocalRotation = glm::toQuat(euler);
-    mLocalEulerAngles = eulerAngles;
 
-    VectorDirty = true;
+    mLocalEulerAngles.x = eulerAngles.x;
+    mLocalEulerAngles.y = eulerAngles.y;
+    mLocalEulerAngles.z = 0;
+
+    UpdateVectors();
+
+    mLocalEulerAngles.z = eulerAngles.z;
+
+    UpdateVectors();
 }
 void CCModel::SetEulerAngles(glm::vec3 eulerAngles) {
 

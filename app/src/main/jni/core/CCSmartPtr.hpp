@@ -46,6 +46,8 @@ public:
     CCUPtr* RemoveRefPtr(void* ptr);
     void ReleasePtr(void* ptr);
     void ClearUnUsedPtr();
+
+    void ReleaseAllPtr();
 };
 #define CCPtrPoolStatic CCPtrPool::GetStaticPool()
 

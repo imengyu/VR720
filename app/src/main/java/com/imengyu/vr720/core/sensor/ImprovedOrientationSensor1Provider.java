@@ -134,6 +134,8 @@ public class ImprovedOrientationSensor1Provider extends OrientationProvider {
     final private Quaternion correctedQuaternion = new Quaternion();
     final private Quaternion interpolatedQuaternion = new Quaternion();
 
+    private boolean isDeviceSupport = false;
+
     /**
      * Initialises a new ImprovedOrientationSensor1Provider
      * 
@@ -142,9 +144,14 @@ public class ImprovedOrientationSensor1Provider extends OrientationProvider {
     public ImprovedOrientationSensor1Provider(SensorManager sensorManager) {
         super(sensorManager);
 
+        Sensor gyroSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+        Sensor rotationVector = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
+
+        isDeviceSupport = gyroSensor != null && rotationVector != null;
+
         //Add the gyroscope and rotation Vector
-        sensorList.add(sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE));
-        sensorList.add(sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR));
+        sensorList.add(gyroSensor);
+        sensorList.add(rotationVector);
     }
 
     @Override
@@ -274,5 +281,9 @@ public class ImprovedOrientationSensor1Provider extends OrientationProvider {
             // Set the rotation matrix as well to have both representations
             SensorManager.getRotationMatrixFromVector(currentOrientationRotationMatrix.matrix, correctedQuaternion.array());
         }
+    }
+
+    public boolean isDeviceSupport() {
+        return isDeviceSupport;
     }
 }

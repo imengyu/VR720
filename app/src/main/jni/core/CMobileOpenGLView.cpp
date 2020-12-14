@@ -28,6 +28,8 @@ void CMobileOpenGLView::Destroy() {
     if(ready) {
         ready = false;
         LOGI("[OpenGLView] Destroy!");
+
+        //Destroy Renderer
         if (OpenGLRenderer) {
             if (destroyWithForce) {
                 LOGI("[OpenGLRenderer] Force destroy");
@@ -38,11 +40,18 @@ void CMobileOpenGLView::Destroy() {
                 OpenGLRenderer->MarkDestroy();
             }
         }
-        if (Camera) {
+        //Destroy camera
+        if (Camera && !IsManualDestroyCamera) {
             delete Camera;
             Camera = nullptr;
         }
+        //Make a clear
+        CCPtrPool::GetStaticPool()->ClearUnUsedPtr();
     }
+}
+void CMobileOpenGLView::ManualDestroy() {
+    destroyWithForce = true;
+    Destroy();
 }
 void CMobileOpenGLView::Pause() {
     LOGI("[OpenGLView] Pause!");
@@ -60,6 +69,17 @@ void CMobileOpenGLView::RenderUI() {
     if (ready && OpenGLRenderer) OpenGLRenderer->RenderUI();
 }
 void CMobileOpenGLView::Render() {
+
+    //绘制
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    //清空
+    if (Camera)
+        glClearColor(Camera->Background.r, Camera->Background.g, Camera->Background.b,
+                     Camera->Background.a);
+    else
+        glClearColor(0,0,0,0);
+
     if(!ready) {
 
         //Frames for destroy
@@ -70,14 +90,6 @@ void CMobileOpenGLView::Render() {
         } else OpenGLRenderer = nullptr;
         return;
     }
-
-    //绘制
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    //清空
-    if (Camera)
-        glClearColor(Camera->Background.r, Camera->Background.g, Camera->Background.b,
-                     Camera->Background.a);
 
     //绘制
     if (OpenGLRenderer) OpenGLRenderer->Render(currentFps);
@@ -103,13 +115,8 @@ void CMobileOpenGLView::ProcessZoomEvent(float v) {
     if(ready && scrollCallback) scrollCallback(this, v, v, 0, ViewMouseEventType::ViewMouseMouseWhell);
 }
 
-CMobileOpenGLView::CMobileOpenGLView(COpenGLRenderer *renderer) : COpenGLView(renderer) {
+CMobileOpenGLView::CMobileOpenGLView(COpenGLRenderer *renderer) : COpenGLView(renderer) {}
 
-}
 
-void CMobileOpenGLView::ManualDestroy() {
-    destroyWithForce = true;
-    Destroy();
-}
 
 
