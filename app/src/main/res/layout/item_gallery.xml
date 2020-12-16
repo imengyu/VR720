@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <RelativeLayout
+        android:id="@+id/view_item"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="auto"
+        android:orientation="vertical"
+        android:paddingStart="10dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="15dp"
+        android:paddingBottom="10dp">
+
+        <com.imengyu.vr720.widget.RoundAngleImageView
+            android:id="@+id/image_thumbnail"
+            android:layout_width="120dp"
+            android:layout_height="60dp"
+            android:layout_alignParentStart="true"
+            android:scaleType="center"
+            app:srcCompat="@drawable/ic_tumb" />
+
+        <com.imengyu.vr720.widget.RoundAngleImageView
+            android:id="@+id/image"
+            android:layout_width="120dp"
+            android:layout_height="60dp"
+            android:layout_alignParentStart="true"
+            android:scaleType="center"
+            app:srcCompat="@drawable/ic_image_ilike" />
+
+        <CheckBox
+            android:id="@+id/check"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerInParent="false"
+            android:layout_centerHorizontal="false"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="0dp"
+            android:button="@drawable/check_normal"
+            android:clickable="false"
+            android:focusable="false"
+            android:textAlignment="center" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="15dp"
+            android:layout_marginEnd="10dp"
+            android:layout_toStartOf="@id/check"
+            android:layout_toEndOf="@id/image"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/text_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:text="@string/text_placeholder"
+                android:textColor="@android:color/black"
+                android:textSize="17sp" />
+
+            <TextView
+                android:id="@+id/text_subtitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/text_placeholder"
+                android:textSize="15sp" />
+
+        </LinearLayout>
+
+    </RelativeLayout>
+
+</LinearLayout>

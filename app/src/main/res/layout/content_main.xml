@@ -24,6 +24,7 @@
         android:layout_height="40dp"
         android:text="@string/title_home"
         android:textSize="16sp"
+        android:textStyle="bold"
         app:activeable="true"
         app:normalColor="@android:color/black"
         app:hoverColor="@color/colorAccent" />
@@ -33,6 +34,7 @@
         android:layout_width="wrap_content"
         android:layout_height="40dp"
         android:text="@string/title_gallery"
+        android:textStyle="bold"
         android:textSize="16sp"
         app:activeable="true"
         app:normalColor="@android:color/black"

@@ -1,0 +1,32 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.imengyu.vr720.GalleryActivity">
+
+    <item
+        android:id="@+id/action_import_pano"
+        android:title="@string/action_import_pano" />
+
+    <item
+        android:id="@+id/action_sort"
+        android:title="@string/action_sort" >
+
+        <menu>
+            <item
+                android:id="@+id/action_sort_name"
+                android:title="@string/action_sort_name" />
+            <item
+                android:id="@+id/action_sort_date"
+                android:title="@string/action_sort_date" />
+            <item
+                android:id="@+id/action_sort_size"
+                android:title="@string/action_sort_size" />
+        </menu>
+
+    </item>
+
+    <item
+        android:id="@+id/action_rename"
+        android:title="@string/action_rename" />
+
+</menu>

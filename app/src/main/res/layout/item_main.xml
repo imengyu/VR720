@@ -18,7 +18,7 @@
         android:clickable="true"
         app:imageRoundHeight="10dp"
         app:imageRoundWidth="10dp"
-        app:imageSize="@string/text_unknow_size"
+        app:imageSize="@string/text_un_know_size"
         app:imageText=""
         app:imageTextColor="@android:color/white"
         app:imageTextSize="15dp"

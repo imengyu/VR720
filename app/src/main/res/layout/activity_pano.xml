@@ -44,7 +44,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:left_icon="@drawable/ic_back_white"
         app:right_icon="@drawable/ic_share"
-        app:title="@string/text_unknow_pano"
+        app:title="@string/text_un_know_pano"
         app:title_bar_dark="true"
         app:title_bar_type="TwoButton" />
 

@@ -1,18 +1,23 @@
 package com.imengyu.vr720;
 
 import android.app.Activity;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.hardware.SensorManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import android.util.Size;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
@@ -27,6 +32,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.content.res.ResourcesCompat;
+import androidx.core.widget.TextViewCompat;
 import androidx.exifinterface.media.ExifInterface;
 import androidx.preference.PreferenceManager;
 
@@ -40,15 +46,21 @@ import com.imengyu.vr720.core.sensor.ImprovedOrientationSensor1Provider;
 import com.imengyu.vr720.dialog.CommonDialog;
 import com.imengyu.vr720.dialog.LoadingDialog;
 import com.imengyu.vr720.model.ImageInfo;
+import com.imengyu.vr720.model.ImageItem;
+import com.imengyu.vr720.service.ListDataService;
 import com.imengyu.vr720.utils.DateUtils;
 import com.imengyu.vr720.utils.FileSizeUtil;
 import com.imengyu.vr720.utils.FileUtils;
 import com.imengyu.vr720.utils.ImageUtils;
 import com.imengyu.vr720.utils.StatusBarUtils;
+import com.imengyu.vr720.utils.StorageDirUtils;
 import com.imengyu.vr720.widget.MyTitleBar;
+import com.imengyu.vr720.widget.ToolbarButton;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Date;
@@ -66,6 +78,7 @@ public class PanoActivity extends AppCompatActivity {
     private Context mContext;
     private Resources resources;
 
+    private String filePathReal;
     private String filePath;
     private ArrayList<CharSequence> fileList;
     private boolean fileLoading = false;
@@ -85,7 +98,6 @@ public class PanoActivity extends AppCompatActivity {
     private View pano_menu;
     private View pano_info;
     private View pano_tools;
-    private View layout_debug;
     private TextView text_pano_error;
     private TextView text_pano_info_size;
     private TextView text_pano_info_file_size;
@@ -100,10 +112,10 @@ public class PanoActivity extends AppCompatActivity {
     private SeekBar seek_x;
     private SeekBar seek_y;
     private SeekBar seek_z;
-    private TextView text_debug;
     private MyTitleBar titlebar;
     private Button button_mode;
     private NativeVR720GLSurfaceView glSurfaceView;
+    private ToolbarButton button_like;
 
     private Drawable iconModeBall;
     private Drawable iconModeLittlePlanet;
@@ -118,12 +130,15 @@ public class PanoActivity extends AppCompatActivity {
     private Animation fade_show;
     private Animation top_down;
     private Animation top_up;
+    private ColorStateList likeColorStateList;
 
     private String openNextPath;
     private boolean openNextMarked = false;
     private boolean closeMarked = false;
     private boolean initialized = false;
     private boolean lastTouchMoved = false;
+
+    private ListDataService listDataService;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -140,10 +155,11 @@ public class PanoActivity extends AppCompatActivity {
         StatusBarUtils.setDarkMode(this);
         StatusBarUtils.setStatusBarColor(this, getColor(R.color.colorPrimary));
 
+        listDataService = ((VR720Application)getApplication()).getListDataService();
         resources = getResources();
         mContext = getApplicationContext();
-        filePath = getIntent().getStringExtra("filePath");
-        fileList = getIntent().getCharSequenceArrayListExtra("fileList");
+
+        ((VR720Application)getApplication()).checkAndInit();
 
         initAnimations();
         initResources();
@@ -165,7 +181,61 @@ public class PanoActivity extends AppCompatActivity {
         onResume();
 
         //加载图片
-        loadImage(filePath);
+        readArgAndLoadImage();
+    }
+
+    private void readArgAndLoadImage() {
+        //读取输入路径
+        Intent intent = getIntent();
+        if(Intent.ACTION_VIEW.equals(intent.getAction()))
+            loadImageFromAction(intent);
+        else
+            loadImageFromArg(intent);
+    }
+    private void loadImageFromAction(Intent intent) {
+        Uri uri = intent.getData();
+        String uriScheme = uri.getScheme();
+        if (uriScheme.equalsIgnoreCase("file")) {
+            filePath = uri.getPath();
+            filePathReal = uri.toString();
+
+            loadImage(filePath, true);
+        }
+        else if (uriScheme.equalsIgnoreCase("content")) {
+            filePath = StorageDirUtils.getViewCachePath() +
+                    FileUtils.getFileNameWithExt(uri.getPath());
+            filePathReal = uri.toString();
+
+            new Thread(() -> {
+                try {
+                    InputStream inputStream = getContentResolver().openInputStream(uri);
+                    FileOutputStream fileOutputStream = new FileOutputStream(new File(filePath));
+                    int index;
+                    byte[] bytes = new byte[1024];
+                    while ((index = inputStream.read(bytes)) != -1) {
+                        fileOutputStream.write(bytes, 0, index);
+                        fileOutputStream.flush();
+                    }
+                    inputStream.close();
+                    fileOutputStream.close();
+
+                    runOnUiThread(() -> loadImage(filePath, true));
+                } catch (IOException e) {
+                    runOnUiThread(() -> showErr(e.toString()));
+                }
+            }).start();
+        }
+        else {
+            showErr("Bad uri scheme : " + uriScheme);
+        }
+    }
+    private void loadImageFromArg(Intent intent) {
+
+        filePath = intent.getStringExtra("filePath");
+        filePathReal = filePath;
+        fileList = intent.getCharSequenceArrayListExtra("fileList");
+
+        loadImage(filePath, true);
     }
 
     @Override
@@ -192,9 +262,7 @@ public class PanoActivity extends AppCompatActivity {
 
         renderer = new NativeVR720Renderer(handler);
         renderer.setEnableFullChunks(panoEnableFull);
-        renderer.setOnRequestGyroValueCallback(quaternion -> {
-            orientationSensor1Provider.getQuaternion(quaternion);
-        });
+        renderer.setOnRequestGyroValueCallback(quaternion -> orientationSensor1Provider.getQuaternion(quaternion));
         glSurfaceView = findViewById(R.id.pano_view);
         glSurfaceView.setNativeRenderer(renderer);
         glSurfaceView.setCaptureCallback(this::screenShotCallback);
@@ -207,8 +275,8 @@ public class PanoActivity extends AppCompatActivity {
         titlebar.setLeftIconOnClickListener((v) -> onBackPressed());
         titlebar.setRightIconOnClickListener((v) -> shareThisImage());
 
-        layout_debug = findViewById(R.id.layout_debug);
-        text_debug = findViewById(R.id.text_debug);
+        View layout_debug = findViewById(R.id.layout_debug);
+        TextView text_debug = findViewById(R.id.text_debug);
         if(!debugEnabled)
             text_debug.setVisibility(View.GONE);
         pano_bar = findViewById(R.id.pano_toolbar_view);
@@ -221,6 +289,7 @@ public class PanoActivity extends AppCompatActivity {
         pano_info.setVisibility(View.GONE);
         pano_menu.setVisibility(View.GONE);
         pano_tools.setVisibility(View.VISIBLE);
+        pano_info.setOnTouchListener((view, motionEvent) -> true);
 
         text_sensor_cant_use_in_mode = findViewById(R.id.text_sensor_cant_use_in_mode);
         text_sensor_cant_use_in_mode.setVisibility(View.GONE);
@@ -271,6 +340,7 @@ public class PanoActivity extends AppCompatActivity {
         gyroEnabled = sharedPreferences.getBoolean("pano_enable_gyro", false);
         dragVelocityEnabled = sharedPreferences.getBoolean("enable_drag_velocity", true);
         debugEnabled = sharedPreferences.getBoolean("show_debug_tool", false);
+        dontCheckImageNormalSize = sharedPreferences.getBoolean("do_not_check_pano_normal_size", false);
         if(sharedPreferences.getBoolean("enable_non_fullscreen", false))
             switchFullScreen(false);
     }
@@ -344,6 +414,8 @@ public class PanoActivity extends AppCompatActivity {
 
         titlebar.setLeftIconOnClickListener(v -> onBackPressed());
 
+        likeColorStateList = ColorStateList.valueOf(resources.getColor(R.color.colorImageLike, null));
+
         findViewById(R.id.button_short).setOnClickListener(v -> {
             if(!fileLoading && fileLoaded)
                 screenShot();
@@ -356,12 +428,33 @@ public class PanoActivity extends AppCompatActivity {
             if(!fileLoading && fileLoaded)
                 showTools();
         });
+        button_like =  findViewById(R.id.button_like);
+        button_like.setOnClickListener(v -> {
+            if(currentImageItem != null) {
+                if(currentImageItem.isInBelongGalleries(ListDataService.GALLERY_LIST_ID_I_LIKE)) {
+                    currentImageItem.belongGalleries.remove((Integer) ListDataService.GALLERY_LIST_ID_I_LIKE);
+                    ToastUtils.show(getString(R.string.text_removed_from_i_like));
+                }
+                else {
+                    currentImageItem.belongGalleries.add(ListDataService.GALLERY_LIST_ID_I_LIKE);
+                    ToastUtils.show(getString(R.string.text_added_to_i_like));
+                }
+                updateLikeButtonState();
+            }
+        });
 
         findViewById(R.id.action_view_file_info).setOnClickListener(v -> showFileInfo());
         findViewById(R.id.action_delete_file).setOnClickListener(v -> deleteFile());
         findViewById(R.id.action_openwith_text).setOnClickListener(v -> openWithOtherApp());
         findViewById(R.id.action_back_main).setOnClickListener(v -> closeImage(true));
         findViewById(R.id.button_back).setOnClickListener(v -> closeImage(true));
+
+        findViewById(R.id.layout_info_path).setOnClickListener((v) -> {
+            ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+            ClipData mClipData = ClipData.newPlainText(filePath, filePath);
+            cm.setPrimaryClip(mClipData);
+            ToastUtils.show(getString(R.string.text_path_copied_to_clipboard));
+        });
 
         SeekBar.OnSeekBarChangeListener listener = new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -389,6 +482,7 @@ public class PanoActivity extends AppCompatActivity {
         editor.putInt("pano_mode", currentPanoMode);
         editor.putBoolean("pano_enable_vr", vrEnabled);
         editor.putBoolean("pano_enable_gyro", gyroEnabled);
+        editor.putBoolean("do_not_check_pano_normal_size", dontCheckImageNormalSize);
 
         editor.apply();
     }
@@ -424,12 +518,15 @@ public class PanoActivity extends AppCompatActivity {
     //界面控制
     //**********************
 
+    private Size currentImageSize = new Size(0,0);
+    private ImageItem currentImageItem = null;
     private int currentPanoMode = 0;
     private boolean panoEnableFull = false;
     private boolean vrEnabled = false;
     private boolean gyroEnabled = false;
     private boolean dragVelocityEnabled = true;
     private boolean debugEnabled = true;
+    private boolean dontCheckImageNormalSize = true;
 
     private void changeMode() {
         if(currentPanoMode < NativeVR720Renderer.PanoramaMode_PanoramaModeMax - 1)
@@ -476,23 +573,13 @@ public class PanoActivity extends AppCompatActivity {
         if(gyroEnabled) {
             switch (currentPanoMode) {
                 case NativeVR720Renderer.PanoramaMode_PanoramaSphere:
-                    text_sensor_cant_use_in_mode.setVisibility(View.GONE);
-                    break;
+                case NativeVR720Renderer.PanoramaMode_PanoramaOuterBall:
                 case NativeVR720Renderer.PanoramaMode_PanoramaCylinder:
-                    text_sensor_cant_use_in_mode.setVisibility(View.GONE);
-                    break;
                 case NativeVR720Renderer.PanoramaMode_PanoramaAsteroid:
                     text_sensor_cant_use_in_mode.setVisibility(View.GONE);
                     break;
-                case NativeVR720Renderer.PanoramaMode_PanoramaOuterBall:
-                    text_sensor_cant_use_in_mode.setVisibility(View.GONE);
-                    break;
                 case NativeVR720Renderer.PanoramaMode_PanoramaFull360:
-                    text_sensor_cant_use_in_mode.setVisibility(View.VISIBLE);
-                    break;
                 case NativeVR720Renderer.PanoramaMode_PanoramaFullOrginal:
-                    text_sensor_cant_use_in_mode.setVisibility(View.VISIBLE);
-                    break;
                 case NativeVR720Renderer.PanoramaMode_PanoramaMercator:
                     text_sensor_cant_use_in_mode.setVisibility(View.VISIBLE);
                     break;
@@ -516,9 +603,7 @@ public class PanoActivity extends AppCompatActivity {
             new Timer().schedule(new TimerTask() {
                 @Override
                 public void run() {
-                    runOnUiThread(() -> {
-                        pano_menu.setVisibility(View.GONE);
-                    });
+                    runOnUiThread(() -> pano_menu.setVisibility(View.GONE));
                 }
             }, 200);
 
@@ -575,8 +660,9 @@ public class PanoActivity extends AppCompatActivity {
         glSurfaceView.startCapture();
     }
     private void screenShotCallback(Bitmap b) {
-        //保存图像
-        ImageUtils.SaveImageResult result = ImageUtils.saveImageToStorageWithAutoName(b);
+        //保存图像到SCREENSHOT文件夹
+        ImageUtils.SaveImageResult result = ImageUtils.saveImageToStorageWithAutoName(
+                StorageDirUtils.getScreenShotsStoragePath(), b);
         //显示
         runOnUiThread(() -> {
             captureLoadingDialog.cancel();
@@ -589,11 +675,30 @@ public class PanoActivity extends AppCompatActivity {
         });
     }
     private void updatePrevNextBtnState() {
-        int currentIndex = findIndexInPathList(filePath);
-        currentCanNext = currentIndex < fileList.size() - 1;
-        currentCanPrev = currentIndex > 0;
-        button_next.setVisibility(currentCanNext ? View.VISIBLE : View.GONE);
-        button_prev.setVisibility(currentCanPrev ? View.VISIBLE : View.GONE);
+        if(fileList == null) {
+            currentCanNext = false;
+            currentCanPrev = false;
+            button_next.setVisibility(View.GONE);
+            button_prev.setVisibility(View.GONE);
+        } else {
+            int currentIndex = findIndexInPathList(filePath);
+            currentCanNext = currentIndex < fileList.size() - 1;
+            currentCanPrev = currentIndex > 0;
+            button_next.setVisibility(currentCanNext ? View.VISIBLE : View.GONE);
+            button_prev.setVisibility(currentCanPrev ? View.VISIBLE : View.GONE);
+        }
+    }
+    private void updateLikeButtonState() {
+        currentImageItem = listDataService.findImageItem(filePath);
+       if(currentImageItem == null) {
+           TextViewCompat.setCompoundDrawableTintList(button_like, null);
+           button_like.setEnabled(false);
+       }else {
+           button_like.setEnabled(true);
+           TextViewCompat.setCompoundDrawableTintList(button_like,
+                   currentImageItem.isInBelongGalleries(ListDataService.GALLERY_LIST_ID_I_LIKE) ?
+                           likeColorStateList : null);
+       }
     }
 
     private boolean currentCanNext = false;
@@ -628,29 +733,32 @@ public class PanoActivity extends AppCompatActivity {
         if (toolbarOn) {
             pano_bar.startAnimation(bottom_up);
             titlebar.startAnimation(top_down);
-            button_next.startAnimation(fade_show);
-            button_prev.startAnimation(fade_show);
-
             pano_bar.setVisibility(View.VISIBLE);
             titlebar.setVisibility(View.VISIBLE);
 
-            if(currentCanNext)
+            if(currentCanNext) {
                 button_next.setVisibility(View.VISIBLE);
-            if(currentCanPrev)
+                button_next.startAnimation(fade_show);
+            }
+            if(currentCanPrev) {
                 button_prev.setVisibility(View.VISIBLE);
+                button_prev.startAnimation(fade_show);
+            }
 
         } else {
             pano_bar.startAnimation(bottom_down);
             titlebar.startAnimation(top_up);
-            button_next.startAnimation(fade_hide);
-            button_prev.startAnimation(fade_hide);
-
             pano_bar.setVisibility(View.GONE);
             titlebar.setVisibility(View.GONE);
-            if(currentCanNext)
+
+            if(currentCanNext) {
                 button_next.setVisibility(View.GONE);
-            if(currentCanPrev)
+                button_next.startAnimation(fade_hide);
+            }
+            if(currentCanPrev) {
+                button_prev.startAnimation(fade_hide);
                 button_prev.setVisibility(View.GONE);
+            }
         }
     }
 
@@ -696,6 +804,9 @@ public class PanoActivity extends AppCompatActivity {
         Log.d(TAG, "Renderer is ok");
         Log.d(TAG, "Load image file : " + filePath);
 
+        if(!ImageUtils.checkSizeIs720Panorama(currentImageSize) && ImageUtils.checkSizeIs320Panorama(currentImageSize))
+            currentPanoMode = NativeVR720Renderer.PanoramaMode_PanoramaFull360;
+
         //设置上次模式
         updateModeButton();
         renderer.setPanoramaMode(currentPanoMode);
@@ -718,7 +829,7 @@ public class PanoActivity extends AppCompatActivity {
                 }
                 if (openNextMarked) {
                     openNextMarked = false;
-                    loadImage(openNextPath);
+                    loadImage(openNextPath, false);
                     openNextPath = null;
                 }
                 break;
@@ -751,9 +862,9 @@ public class PanoActivity extends AppCompatActivity {
             case NativeVR720Renderer.MobileGameUIEvent_DestroyComplete: {
                 Log.i(TAG, "DestroyComplete");
 
+                glSurfaceView.forceStop();
                 fileLoaded = false;
                 fileLoading = false;
-                onPause();
                 glSurfaceView.onDestroyComplete();
                 handler.sendEmptyMessageDelayed(MainMessages.MSG_QUIT_LATE, 200);
             }
@@ -815,10 +926,20 @@ public class PanoActivity extends AppCompatActivity {
     //**********************
 
     private final ImageInfo imageInfo = new ImageInfo();
+    private interface OnLoadImageInfoFinishedListener {
+        void onLoadImageInfoFinishedListener(Size imageSize, boolean isFromInitialization);
+    }
 
-    private void loadImageInfo() {
+    private void loadImageInfo(boolean isFromInitialization, OnLoadImageInfoFinishedListener loadImageInfoFinishedListener) {
         final String text_un_know = getResources().getString(R.string.text_un_know);
         new Thread(() -> {
+
+            Size imageSize = new Size(0,0);
+            try {
+                imageSize = ImageUtils.getImageSize(filePath);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
             imageInfo.imageFileSize = FileSizeUtil.getAutoFileOrFilesSize(filePath);
             imageInfo.imageTime = DateUtils.format(new Date((new File(filePath)).lastModified()));
@@ -828,6 +949,10 @@ public class PanoActivity extends AppCompatActivity {
                 imageInfo.imageTime = exifInterface.getAttribute(ExifInterface.TAG_DATETIME);
                 imageInfo.imageSize = exifInterface.getAttribute(ExifInterface.TAG_IMAGE_WIDTH) +
                         "x" + exifInterface.getAttribute(ExifInterface.TAG_IMAGE_LENGTH);
+
+                if(imageInfo.imageSize.equals("x"))
+                    imageInfo.imageSize = imageSize.getWidth() + "x" + imageSize.getHeight();
+
                 imageInfo.imageISOSensitivity = exifInterface.getAttribute(ExifInterface.TAG_RW2_ISO);
 
                 if(StringUtils.isEmptyString(imageInfo.imageISOSensitivity))
@@ -845,6 +970,8 @@ public class PanoActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
 
+            loadImageInfoFinishedListener.onLoadImageInfoFinishedListener(imageSize, isFromInitialization);
+
             handler.sendEmptyMessage(MainMessages.MSG_LOAD_IMAGE_INFO);
         }).start();
     }
@@ -852,12 +979,12 @@ public class PanoActivity extends AppCompatActivity {
         text_pano_info_size.setText(imageInfo.imageSize);
         text_pano_info_file_size.setText(imageInfo.imageFileSize);
         text_pano_info_image_time.setText(imageInfo.imageTime);
-        text_pano_info_file_path.setText(filePath);
+        text_pano_info_file_path.setText(filePathReal.equals("") ? filePath : filePathReal);
         text_pano_info_shutter_time.setText(imageInfo.imageShutterTime);
         text_pano_info_exposure_bias_value.setText(imageInfo.imageExposureBiasValue);
         text_pano_info_iso_sensitivit.setText(imageInfo.imageISOSensitivity);
     }
-    private void loadImage(String path) {
+    private void loadImage(String path, boolean isFromInitialization) {
 
         //如果已经打开文件，那么先关闭
         if(renderer.isFileOpen()) {
@@ -868,14 +995,56 @@ public class PanoActivity extends AppCompatActivity {
         }
 
         filePath = path;
+        currentImageItem = listDataService.findImageItem(filePath);
 
         //刷新前后按钮状态
         updatePrevNextBtnState();
+        updateLikeButtonState();
 
-        //加载
-        renderer.openFile(path);
+        if(path == null || path.isEmpty())  {
+            showErr(getString(R.string.text_not_provide_path));
+            return;
+        }
+
         //加载图片基础信息
-        loadImageInfo();
+        loadImageInfo(isFromInitialization, (size, b) -> {
+
+            currentImageSize = size;
+
+            runOnUiThread(() -> {
+                if(ImageUtils.checkSizeIsNormalPanorama(size) || dontCheckImageNormalSize) {
+                    //加载
+                    renderer.openFile(path);
+                } else {
+                    //不是正常的全景图，询问用户是否加载
+                    new CommonDialog(PanoActivity.this)
+                            .setTitle(getString(R.string.text_tip))
+                            .setMessage(getString(R.string.text_panorama_size_not_right_warning_text))
+                            .setPositive(getString(R.string.action_cancel_load))
+                            .setNegative(getString(R.string.action_continue_load))
+                            .setCheckText(getString(R.string.text_do_not_ask_me_again))
+                            .setOnClickBottomListener(new CommonDialog.OnClickBottomListener() {
+                                @Override
+                                public void onPositiveClick(CommonDialog dialog) {
+                                    dialog.dismiss();
+                                    if(isFromInitialization)
+                                        finish();
+                                    else
+                                        showErr(getString(R.string.text_panorama_size_not_right));
+                                }
+                                @Override
+                                public void onNegativeClick(CommonDialog dialog) {
+                                    if(dialog.isCheckBoxChecked())
+                                        dontCheckImageNormalSize = true;
+                                    //继续加载
+                                    renderer.openFile(path);
+                                }
+                            })
+                            .show();
+                }
+            });
+
+        });
     }
     private void closeImage(boolean quit) {
         closeMarked = quit;
@@ -888,7 +1057,7 @@ public class PanoActivity extends AppCompatActivity {
         if(currentIndex >= fileList.size() - 1) {
             ToastUtils.show(getString(R.string.text_this_is_last_image));
         } else {
-            loadImage(fileList.get(currentIndex + 1).toString());
+            loadImage(fileList.get(currentIndex + 1).toString(), false);
         }
     }
     private void prevImage() {
@@ -899,7 +1068,7 @@ public class PanoActivity extends AppCompatActivity {
             ToastUtils.show(getString(R.string.text_this_is_first_image));
             return;
         }
-        loadImage(fileList.get(currentIndex - 1).toString());
+        loadImage(fileList.get(currentIndex - 1).toString(), false);
     }
 
     //陀螺仪控制

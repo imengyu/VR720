@@ -24,8 +24,8 @@ public class ImageUtils
      * @param maxHeight 指定输出图像的高度
      * @return 生成的缩略图
      */
-    public static Bitmap revitionImageSize(String path, int maxWidth, int maxHeight) throws IOException {
-        Bitmap bitmap = null;
+    public static Bitmap revitionImageSize(String path, int maxWidth, int maxHeight) {
+        Bitmap bitmap;
         try {
             BufferedInputStream in = new BufferedInputStream(new FileInputStream(
                     new File(path)));
@@ -53,25 +53,54 @@ public class ImageUtils
     }
 
     /**
+     * 加载图片为 Bitmap
+     * @param path  图像的路径
+     * @return 返回Bitmap
+     */
+    public static Bitmap loadBitmap(String path) {
+        Bitmap bitmap = null;
+        try {
+            BufferedInputStream in = new BufferedInputStream(new FileInputStream(
+                    new File(path)));
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            bitmap = BitmapFactory.decodeStream(in, null, options);
+            in.close();
+        } catch (Exception e) {
+            return null;
+        }
+        return bitmap;
+    }
+
+
+    /**
      * 获取图像大小
      * @param imagePath 图像路径
      * @return 图像大小
      * @throws IOException 抛出异常
      */
     public static Size getImageSize(String imagePath) throws IOException {
-        FileInputStream fis;
-        fis = new FileInputStream(imagePath);
-        BitmapFactory.Options opt = new BitmapFactory.Options();
-        opt.inJustDecodeBounds = true;
+        FileInputStream fileInputStream = new FileInputStream(imagePath);
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
 
-        BitmapFactory.decodeFile(imagePath, opt);
-        Bitmap bitmap = BitmapFactory.decodeStream(fis,null, opt);
+        BitmapFactory.decodeFile(imagePath, options);
+        BitmapFactory.decodeStream(fileInputStream,null, options);
 
-        fis.close();
-        if(bitmap == null)
-           throw new IOException("打开图像失败");
+        fileInputStream.close();
+        return new Size(options.outWidth, options.outHeight);
+    }
 
-        return new Size(bitmap.getWidth(), bitmap.getHeight());
+    public static boolean checkSizeIsNormalPanorama(Size imageSize)  {
+        return checkSizeIs320Panorama(imageSize) || checkSizeIs720Panorama(imageSize);
+    }
+
+    public static boolean checkSizeIs720Panorama(Size imageSize)  {
+        int w = imageSize.getWidth(), h = imageSize.getHeight();
+        return Math.abs(2.0 - (double) w / h) < 0.15;
+    }
+    public static boolean checkSizeIs320Panorama(Size imageSize)  {
+        int w = imageSize.getWidth(), h = imageSize.getHeight();
+        return h > 0 && (double)w / h > 5;
     }
 
     public static class SaveImageResult {
@@ -85,10 +114,10 @@ public class ImageUtils
      * @param bitmap 图像
      * @return 返回是否成功
      */
-    public static SaveImageResult saveImageToStorageWithAutoName(Bitmap bitmap) {
+    public static SaveImageResult saveImageToStorageWithAutoName(String dir, Bitmap bitmap) {
         SimpleDateFormat simpleDate = new SimpleDateFormat("yyyyMMddHHmmss", Locale.getDefault());
         String fileName = String.format("%s.jpg", simpleDate.format(new Date()));
-        String filePath = StorageDirUtils.STORAGE_PATH + "/VR720/ScreenShots/ScreenShot" + fileName;
+        String filePath = dir + fileName;
 
         SaveImageResult result = new SaveImageResult();
         result.path = filePath;

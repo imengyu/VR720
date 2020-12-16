@@ -94,7 +94,7 @@
             android:layout_height="wrap_content"
             android:drawableStart="@drawable/ic_file_open"
             android:drawableTint="@android:color/white"
-            android:text="@string/action_openwith_text" />
+            android:text="@string/action_open_with_text" />
 
         <Button
             android:id="@+id/action_delete_file"
@@ -223,11 +223,14 @@
         </RelativeLayout>
 
         <RelativeLayout
+            android:id="@+id/layout_info_path"
             style="@style/FileInfoDarkItem"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:clickable="true"
             android:gravity="fill|fill_horizontal"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:focusable="true">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -329,13 +332,13 @@
         android:gravity="center_horizontal">
 
         <com.imengyu.vr720.widget.ToolbarButton
-            android:id="@+id/button_vr"
+            android:id="@+id/button_like"
             style="@style/Widget.AppCompat.Button.Borderless"
             android:layout_width="wrap_content"
             android:layout_height="70dp"
             android:layout_marginStart="8dp"
-            android:drawableTop="@drawable/ic_bar_vr"
-            android:text="@string/text_vr_mode"
+            android:drawableTop="@drawable/ic_image_ilike"
+            android:text="@string/text_i_like_it"
             android:textAlignment="center"
             android:textColor="@android:color/white"
             app:hoverColor="@color/colorPrimary"

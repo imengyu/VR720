@@ -11,4 +11,7 @@ public class MainMessages {
     public static final int MSG_FORCE_PAUSE = 341;
     public static final int MSG_TEST_VAL = 342;
     public static final int MSG_ADD_IMAGE = 343;
+    public static final int MSG_REFRESH_GALLERY_LIST = 344;
+    public static final int MSG_GALLERY_LIST_ADD_ITEM = 345;
+    public static final int MSG_REFRESH_GALLERY_ITEM = 346;
 }

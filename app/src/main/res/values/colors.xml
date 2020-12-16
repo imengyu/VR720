@@ -1,18 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#7EAFE0</color>
-    <color name="colorPrimaryDark">#6F97B5</color>
-    <color name="colorAccent">#58A2F0</color>
+    <color name="colorPrimary">#787CC5</color>
+    <color name="colorPrimaryDark">#666AAF</color>
+    <color name="colorAccent">#6F98FF</color>
+
+    <color name="colorIcon">#6F73B5</color>
+    <color name="colorText">#353535</color>
+    <color name="colorDisabled">#BFBFBF</color>
+    <color name="colorDisabledLight">#A8A8A8</color>
     <color name="colorTransparent">#00000000</color>
     <color name="colorPanoBarBackground">#64000000</color>
     <color name="colorButtonPressed">#4d595d66</color>
     <color name="colorButtonNormal">#D2E9E9E9</color>
+    <color name="colorButtonDisabled">#72E9E9E9</color>
+    <color name="colorButtonPrimaryDisabled">#417EAFE0</color>
 
     <color name="colorButtonDarkPressed">#3148587A</color>
     <color name="colorButtonDarkNormal">#00FFFFFF</color>
+    <color name="colorButtonDarkDisabled">#48F6F6F6</color>
 
     <color name="colorTextBgStart">#01000000</color>
     <color name="colorTextBgEnd">#81000000</color>
     <color name="colorBottomBorder">#3EDFDFDF</color>
+
+    <color name="colorImageLike">#E4E91E87</color>
+    <color name="colorVideo">#009688</color>
+    <color name="colorImageDefault">#33555555</color>
+    <color name="colorImageFailed">#FF9800</color>
 
 </resources>

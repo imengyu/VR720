@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/view_item_outer"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <RelativeLayout
+        android:id="@+id/view_item"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true"
+        android:orientation="vertical">
+
+        <com.imengyu.vr720.widget.RoundAngleImageView
+            android:id="@+id/image"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_alignParentStart="true"
+            android:foreground="?attr/selectableItemBackground"
+            android:scaleType="centerCrop"
+            app:srcCompat="@drawable/ic_tumb" />
+
+        <CheckBox
+            android:id="@+id/check"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_centerInParent="false"
+            android:layout_centerHorizontal="false"
+            android:layout_centerVertical="false"
+            android:layout_marginStart="0dp"
+            android:layout_marginTop="15dp"
+            android:layout_marginEnd="15dp"
+            android:button="@drawable/check_normal"
+            android:clickable="false"
+            android:focusable="false"
+            android:textAlignment="center" />
+
+        <TextView
+            android:id="@+id/text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:text="@string/text_placeholder" />
+
+    </RelativeLayout>
+
+</LinearLayout>

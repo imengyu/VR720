@@ -212,6 +212,10 @@ public class NativeVR720GLSurfaceView extends GLSurfaceView {
         }
     }
 
+    public void forceStop() {
+        stopRenderer();
+    }
+
     /**
      * 更新任务
      */

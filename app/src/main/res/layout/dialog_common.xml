@@ -50,6 +50,17 @@
         android:textColor="#999999"
         android:textSize="14sp" />
 
+    <EditText
+        android:id="@+id/edit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:ems="10"
+        android:inputType="text"
+        android:text="@string/text_placeholder"
+        android:textColor="@color/colorText"
+        android:textColorHighlight="@color/colorText" />
+
     <CheckBox
         android:id="@+id/checkBox"
         android:layout_width="match_parent"
@@ -63,8 +74,8 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1px"
-        android:layout_marginTop="21dp"
-        android:layout_marginBottom="21dp" />
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -82,7 +93,7 @@
             android:gravity="center"
             android:singleLine="true"
             android:text="@string/action_cancel"
-            android:textColor="#999999" />
+            android:textColor="@color/colorText" />
 
         <Button
             android:id="@+id/positive"

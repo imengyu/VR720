@@ -7,7 +7,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 
-import com.imengyu.vr720.dialog.CommonDialogs;
+import com.imengyu.vr720.dialog.AppDialogs;
 import com.imengyu.vr720.utils.StatusBarUtils;
 import com.imengyu.vr720.widget.MyTitleBar;
 
@@ -46,7 +46,7 @@ public class SettingsActivity extends AppCompatActivity {
             assert app_about != null;
 
             app_privacy_policy.setOnPreferenceClickListener(preference -> {
-                CommonDialogs.showPrivacyPolicyAndAgreement(this.getActivity(), null);
+                AppDialogs.showPrivacyPolicyAndAgreement(this.getActivity(), null);
                 return true;
             });
             app_check_update.setOnPreferenceClickListener(preference -> {
@@ -54,7 +54,7 @@ public class SettingsActivity extends AppCompatActivity {
                 return true;
             });
             app_about.setOnPreferenceClickListener(preference -> {
-                CommonDialogs.showAbout(activity);
+                AppDialogs.showAbout(activity);
                 return true;
             });
             app_check_update.setSummary(String.format("%s%s",

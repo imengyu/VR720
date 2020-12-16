@@ -29,7 +29,7 @@
 
     <include
         android:id="@+id/footer_select_main"
-        layout="@layout/layout_footer_selection"
+        layout="@layout/layout_selection_main"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"

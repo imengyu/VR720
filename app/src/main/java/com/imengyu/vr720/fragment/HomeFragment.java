@@ -27,11 +27,14 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.hjq.toast.ToastUtils;
 import com.imengyu.vr720.PanoActivity;
 import com.imengyu.vr720.R;
+import com.imengyu.vr720.VR720Application;
 import com.imengyu.vr720.config.Codes;
 import com.imengyu.vr720.config.MainMessages;
+import com.imengyu.vr720.dialog.AppDialogs;
 import com.imengyu.vr720.dialog.CommonDialog;
 import com.imengyu.vr720.list.MainList;
 import com.imengyu.vr720.model.ImageItem;
+import com.imengyu.vr720.model.list.MainListItem;
 import com.imengyu.vr720.model.TitleSelectionChangedCallback;
 import com.imengyu.vr720.service.ListDataService;
 import com.imengyu.vr720.utils.FileUtils;
@@ -42,6 +45,7 @@ import com.scwang.smart.refresh.layout.api.RefreshLayout;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -96,14 +100,16 @@ public class HomeFragment extends Fragment implements IMainFragment {
         final View button_mainsel_openwith = view.findViewById(R.id.button_mainsel_openwith);
         final View button_mainsel_delete = view.findViewById(R.id.button_mainsel_delete);
         final View button_mainsel_share = view.findViewById(R.id.button_mainsel_share);
+        final View button_mainsel_add_to = view.findViewById(R.id.button_mainsel_add_to);
 
-        button_mainsel_openwith.setOnClickListener(v -> onOpenImageWithImageClick());
+        button_mainsel_openwith.setOnClickListener(v -> onOpenImageWithClick());
         button_mainsel_delete.setOnClickListener(v -> onDeleteImageClick());
         button_mainsel_share.setOnClickListener(v -> onShareImageClick());
+        button_mainsel_add_to.setOnClickListener(v -> onAddImageToClick());
 
-        mainList = new MainList(getContext());
+        mainList = new MainList(getContext(), ((VR720Application)getActivity().getApplication()).getListImageCacheService());
         mainList.init(handler, listView);
-        mainList.setMainListCheckableChangedListener(checkable -> {
+        mainList.setListCheckableChangedListener(checkable -> {
             if (checkable) {
                 fab.hide();
                 AnimationSet animationSet = (AnimationSet) AnimationUtils.loadAnimation(getContext(), R.anim.bottom_up);
@@ -124,18 +130,19 @@ public class HomeFragment extends Fragment implements IMainFragment {
                             false, 0, false);
             }
         });
-        mainList.setMainListCheckItemCountChangedListener((count) -> {
+        mainList.setListCheckItemCountChangedListener((count) -> {
 
             button_mainsel_openwith.setEnabled(count == 1);
             button_mainsel_share.setEnabled(count == 1);
             button_mainsel_delete.setEnabled(count > 0);
+            button_mainsel_add_to.setEnabled(count > 0);
 
             if(titleSelectionChangedCallback != null)
                 titleSelectionChangedCallback.onTitleSelectionChangedCallback(
-                        mainList.isMainListCheckMode(), count, count == mainList.getMainListItemCount());
+                        mainList.isListCheckMode(), count, count == mainList.getMainListItemCount());
         });
-        mainList.setMainListOnItemClickListener((parent, v, position, id) -> {
-            MainList.MainListItem item = mainList.getMainListAdapter().getItem(position);
+        mainList.setListOnItemClickListener((parent, v, position, id) -> {
+            MainListItem item = mainList.getMainListAdapter().getItem(position);
             if(item != null) {
                 onOpenImageClick(item.getFilePath());
             }
@@ -157,11 +164,13 @@ public class HomeFragment extends Fragment implements IMainFragment {
     private PopupMenu mainMenu;
 
     private void initMenu() {
-        mainMenu = new PopupMenu(getContext(), titleBar.getRightButton(), Gravity.TOP,
-                0, R.style.ToolbarPopupTheme);
+        mainMenu = new PopupMenu(getActivity(), titleBar.getRightButton(), Gravity.TOP);
         mainMenu.getMenuInflater().inflate(R.menu.menu_main, mainMenu.getMenu());
         mainMenu.setOnMenuItemClickListener(this::onOptionsItemSelected);
     }
+
+    @Override
+    public void showMore() { mainMenu.show(); }
 
     //====================================================
     //公共方法
@@ -173,19 +182,17 @@ public class HomeFragment extends Fragment implements IMainFragment {
             //获取选择器返回的数据
             ArrayList<String> images = data.getStringArrayListExtra(ImageSelector.SELECT_RESULT);
             if(images!=null) {
-                for (String path : images) {
-                    mainList.addImageToItem(path, false);
-                    listDataService.addImageItem(path);
-                }
+                for (String path : images)
+                    mainList.addImageToItem(listDataService.addImageItem(path), false);
                 mainList.sort();
                 mainList.notifyChange();
             }
         }
         else if (requestCode == Codes.REQUEST_CODE_PANO && data != null) {
             if(data.getBooleanExtra("isDeleteFile", false)) {
-                MainList.MainListItem item = mainList.findImageItem(data.getStringExtra("filePath"));
+                MainListItem item = mainList.findImageItem(data.getStringExtra("filePath"));
                 if(item != null) {
-                    listDataService.removeImageItem(item.getFilePath());
+                    listDataService.removeImageItem(item.getImageItem());
                     mainList.deleteItem(item);
                     mainList.notifyChange();
                 }
@@ -206,25 +213,22 @@ public class HomeFragment extends Fragment implements IMainFragment {
             mainList.selectAllItems();
     }
     @Override
-    public void setTitleSelectionQuit() { mainList.setMainListCheckMode(false); }
+    public void setTitleSelectionQuit() { mainList.setListCheckMode(false); }
 
     @Override
     public boolean onBackPressed() {
-        if(mainList.isMainListCheckMode()) {
-            mainList.setMainListCheckMode(false);
+        if(mainList.isListCheckMode()) {
+            mainList.setListCheckMode(false);
             return true;
         }
         return false;
     }
 
     @Override
-    public void showMore() { mainMenu.show(); }
-
-    @Override
     public void handleMessage(Message msg) {
         switch (msg.what) {
             case MainMessages.MSG_REFRESH_LIST:
-                mainList.refesh();
+                mainList.refresh();
                 break;
             case MainMessages.MSG_LIST_LOAD_FINISH:
                 refreshLayout.finishRefresh();
@@ -243,7 +247,7 @@ public class HomeFragment extends Fragment implements IMainFragment {
         mainList.clear();
         ArrayList<ImageItem> items = listDataService.getImageList();
         for(ImageItem imageItem : items)
-            mainList.addImageToItem(imageItem.path, false);
+            mainList.addImageToItem(imageItem, false);
         mainList.notifyChange();
 
         new Timer().schedule(new TimerTask() {
@@ -289,12 +293,12 @@ public class HomeFragment extends Fragment implements IMainFragment {
     private void onClearClick() {
         new CommonDialog(getContext())
                 .setTitle(resources.getString(R.string.text_would_you_want_clear_list))
-                .setMessage(resources.getText(R.string.text_all_list_wiil_be_clear))
-                .setNegative(resources.getText(R.string.action_cancel))
-                .setPositive(resources.getText(R.string.action_sure_delete))
+                .setMessage(resources.getText(R.string.text_all_list_will_be_clear))
+                .setNegative(resources.getText(R.string.action_sure_clear))
+                .setPositive(resources.getText(R.string.action_cancel))
                 .setOnClickBottomListener(new CommonDialog.OnClickBottomListener() {
                     @Override
-                    public void onPositiveClick(CommonDialog dialog) {
+                    public void onNegativeClick(CommonDialog dialog) {
                         //clear in listDataService
                         listDataService.clearImageItems();
                         //clear
@@ -302,7 +306,7 @@ public class HomeFragment extends Fragment implements IMainFragment {
                         dialog.dismiss();
                     }
                     @Override
-                    public void onNegativeClick(CommonDialog dialog) { dialog.dismiss(); }
+                    public void onPositiveClick(CommonDialog dialog) { dialog.dismiss(); }
                 })
                 .show();
     }
@@ -314,26 +318,29 @@ public class HomeFragment extends Fragment implements IMainFragment {
         startActivityForResult(intent, Codes.REQUEST_CODE_PANO);
     }
     private void onShareImageClick() {
-        final List<MainList.MainListItem> sel = mainList.getSelectedItems();
+        final List<MainListItem> sel = mainList.getSelectedItems();
         if(sel.size() > 0)
             FileUtils.shareFile(getContext(), sel.get(0).getFilePath());
+
+        mainList.setListCheckMode(false);
     }
     private void onDeleteImageClick() {
-        final List<MainList.MainListItem> sel = mainList.getSelectedItems();
-        if(sel.size() > 0){
+        final List<MainListItem> sel = mainList.getSelectedItems();
+        if(sel.size() > 0) {
             new CommonDialog(getContext())
                     .setTitle(resources.getString(R.string.text_sure_delete_pano))
-                    .setMessage(String.format(resources.getString(R.string.text_youcan_remove_choosed_images), sel.size()))
-                    .setNegative(resources.getText(R.string.action_cancel))
-                    .setPositive(resources.getText(R.string.action_sure_delete))
+                    .setMessage(String.format(resources.getString(R.string.text_you_can_remove_choosed_images), sel.size()))
+                    .setNegative(resources.getText(R.string.action_sure_delete))
+                    .setPositive(resources.getText(R.string.action_cancel))
                     .setCheckText(resources.getText(R.string.text_also_delete_files))
+                    .setCanCancelable(true)
                     .setOnClickBottomListener(new CommonDialog.OnClickBottomListener() {
                         @Override
-                        public void onPositiveClick(CommonDialog dialog) {
+                        public void onNegativeClick(CommonDialog dialog) {
                             //delete files
                             if(dialog.isCheckBoxChecked()) {
                                 int deleteFileCount = 0;
-                                for (MainList.MainListItem item : sel) {
+                                for (MainListItem item : sel) {
                                     File file = new File(item.getFilePath());
                                     if(file.exists() && file.canWrite() && file.delete())
                                         deleteFileCount++;
@@ -341,24 +348,51 @@ public class HomeFragment extends Fragment implements IMainFragment {
                                 ToastUtils.show(String.format(getString(R.string.text_file_delete_count), deleteFileCount));
                             }
                             //delete in listDataService
-                            for(MainList.MainListItem item : sel)
-                                listDataService.removeImageItem(item.getFilePath());
+                            for(MainListItem item : sel)
+                                listDataService.removeImageItem(item.getImageItem());
                             //del
                             mainList.deleteItems(sel);
+                            mainList.setListCheckMode(false);
                             dialog.dismiss();
                         }
                         @Override
-                        public void onNegativeClick(CommonDialog dialog) { dialog.dismiss(); }
+                        public void onPositiveClick(CommonDialog dialog) { dialog.dismiss(); }
                     })
                     .show();
-        }else ToastUtils.show(R.string.text_choose_some_file_to_del);
+        }
     }
-    private void onOpenImageWithImageClick() {
-        final List<MainList.MainListItem> sel = mainList.getSelectedItems();
+    private void onOpenImageWithClick() {
+        final List<MainListItem> sel = mainList.getSelectedItems();
         if(sel.size() == 1)
             FileUtils.openFile(getActivity(), sel.get(0).getFilePath());
-        else
-            ToastUtils.show(resources.getText(R.string.text_choose_one_file_to_open));
+
+        mainList.setListCheckMode(false);
+    }
+    private void onAddImageToClick() {
+        final List<MainListItem> sel = mainList.getSelectedItems();
+        if(sel.size() > 0) {
+            AppDialogs.showChooseGalleryDialog(handler, getActivity(), listDataService, galleryId -> {
+
+                //添加到对应相册
+                ImageItem imageItem;
+                for(MainListItem item : sel) {
+                    imageItem = item.getImageItem();
+                    if(!imageItem.isInBelongGalleries(galleryId))
+                        imageItem.belongGalleries.add(galleryId);
+                }
+
+                //发送消息到相册界面进行相册缩略图刷新
+                Message message = new Message();
+                message.what = MainMessages.MSG_REFRESH_GALLERY_ITEM;
+                message.obj = galleryId;
+                handler.sendMessage(message);
+
+                ToastUtils.show(R.string.text_add_success);
+
+                //关闭选择模式
+                mainList.setListCheckMode(false);
+            });
+        }
     }
 
     //====================================================

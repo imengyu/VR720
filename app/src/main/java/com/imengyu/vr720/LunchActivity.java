@@ -15,12 +15,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceManager;
 
 import com.imengyu.vr720.dialog.CommonDialog;
-import com.imengyu.vr720.dialog.CommonDialogs;
+import com.imengyu.vr720.dialog.AppDialogs;
 import com.imengyu.vr720.utils.StorageDirUtils;
 
 public class LunchActivity extends AppCompatActivity {
 
     private static final int REQUEST_CODE = 179;
+    private static final int REQUEST_CODE_SETTINGS = 180;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,15 +34,10 @@ public class LunchActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
             //耗时任务，比如加载网络数据
-            StorageDirUtils.testAndCreateStorageDirs();
+            StorageDirUtils.testAndCreateStorageDirs(getApplicationContext());
             //转回UI线程
-            runOnUiThread(() -> {
-                //检查是否同意许可以及请求权限
-                testAgreementAllowed((b) -> {
-                    if(checkPermission())
-                        runMainActivity();
-                });
-            });
+            //检查是否同意许可以及请求权限
+            runOnUiThread(this::runPermissionAndAgreement);
         }).start();
     }
 
@@ -51,7 +47,7 @@ public class LunchActivity extends AppCompatActivity {
     private void testAgreementAllowed(TestAgreementAllowedCallback callback) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         if(!prefs.getBoolean("app_agreement_allowed", false)) {
-            CommonDialogs.showPrivacyPolicyAndAgreement(this, (allowed) -> {
+            AppDialogs.showPrivacyPolicyAndAgreement(this, (allowed) -> {
                 if(allowed) {
                     SharedPreferences.Editor editor = prefs.edit();
                     editor.putBoolean("app_agreement_allowed", true);
@@ -62,11 +58,18 @@ public class LunchActivity extends AppCompatActivity {
         }else callback.testAgreementAllowedCallback(true);
     }
 
+    private void runPermissionAndAgreement() {
+        //检查是否同意许可以及请求权限
+        testAgreementAllowed((b) -> {
+            if(checkPermission())
+                runMainActivity();
+        });
+    }
 
     //权限申请
     //=================
 
-    private String[] permissions = {
+    private final String[] permissions = {
             Manifest.permission.READ_EXTERNAL_STORAGE,
             Manifest.permission.WRITE_EXTERNAL_STORAGE
     };
@@ -88,9 +91,9 @@ public class LunchActivity extends AppCompatActivity {
     private void showDialogTipUserRequestPermission() {
         new CommonDialog(this)
                 .setTitle(getString(R.string.text_no_storage_permission))
-                .setMessage(getString(R.string.text_storage_permission_useage))
+                .setMessage(getString(R.string.text_storage_permission_usage))
                 .setPositive(getString(R.string.action_open_now))
-                .setNegative(getString(R.string.action_cancel))
+                .setNegative(getString(R.string.action_cancel_and_quit))
                 .setOnClickBottomListener(new CommonDialog.OnClickBottomListener() {
                     @Override
                     public void onPositiveClick(CommonDialog dialog) {
@@ -112,15 +115,15 @@ public class LunchActivity extends AppCompatActivity {
         requestPermissions(this.permissions, REQUEST_CODE);
     }
     // 提示用户去应用设置界面手动开启权限
-    private void showDialogTipUserGoToAppSettting() {
+    private void showDialogTipUserGoToAppSettings() {
 
         // 跳转到应用设置界面
         new CommonDialog(this)
                 .setDialogCancelable(false)
-                .setTitle(getString(R.string.text_no_storage_permission))
+                .setTitle(getString(R.string.text_denied_storage_permission))
                 .setMessage(getString(R.string.text_storage_permission_open_intro))
-                .setPositive(getString(R.string.action_open_now))
-                .setNegative(getString(R.string.action_cancel))
+                .setPositive(getString(R.string.action_go_and_set))
+                .setNegative(getString(R.string.action_cancel_and_quit))
                 .setOnClickBottomListener(new CommonDialog.OnClickBottomListener() {
                     @Override
                     public void onPositiveClick(CommonDialog dialog) {
@@ -144,7 +147,7 @@ public class LunchActivity extends AppCompatActivity {
         Uri uri = Uri.fromParts("package", getPackageName(), null);
         intent.setData(uri);
 
-        startActivityForResult(intent, 123);
+        startActivityForResult(intent, REQUEST_CODE_SETTINGS);
     }
     // 跳转到主界面
     private void runMainActivity() {
@@ -163,11 +166,13 @@ public class LunchActivity extends AppCompatActivity {
                     if (!b) {
                         // 用户还是想用我的 APP 的
                         // 提示用户去应用设置界面手动开启权限
-                        showDialogTipUserGoToAppSettting();
+                        showDialogTipUserGoToAppSettings();
                     } else
                         finish();
                 }else runMainActivity();
             }
+        } else if (requestCode == REQUEST_CODE_SETTINGS) {
+            runPermissionAndAgreement();
         }
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }

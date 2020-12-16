@@ -1,21 +1,23 @@
 <resources>
     <string name="app_name">720全景图查看器</string>
-    <string name="app_itroduction">一款精简的全景图浏览软件</string>
+    <string name="app_introduction">一款精简的全景图浏览软件</string>
 
     <!-- titles -->
     <string name="navigation_drawer_open">开启侧边栏</string>
     <string name="navigation_drawer_close">关闭侧边栏</string>
     <string name="nav_header_title">一款精简的 720 全景图浏览软件</string>
-    <string name="nav_header_subtitle">720 Pano On Android</string>
+    <string name="nav_header_subtitle">720 Panorama viewer on Android</string>
     <string name="nav_header_desc">导航标题</string>
     <string name="nav_header_soft">软件</string>
 
+    <string name="title_activity_launcher">720全景图查看器</string>
     <string name="title_activity_main">VR720</string>
     <string name="title_activity_settings">设置</string>
     <string name="title_activity_about">关于 VR720</string>
-    <string name="title_activity_pano">全景图浏览</string>
+    <string name="title_activity_pano">查看720度全景图</string>
     <string name="title_activity_feedback">提交软件反馈</string>
     <string name="title_activity_help">VR720 帮助文档</string>
+    <string name="title_activity_gallery">相册</string>
     <string name="title_reminder">温馨提示</string>
     <string name="title_home">我的全景图</string>
     <string name="title_gallery">分类收藏夹</string>
@@ -24,6 +26,7 @@
     <string name="version_name">V1.2</string>
 
     <!-- actions -->
+    <string name="action_new_gallery">新建分类收藏夹</string>
     <string name="action_import_pano">导入全景图</string>
     <string name="action_settings">设置</string>
     <string name="action_about">关于本软件</string>
@@ -32,25 +35,33 @@
 
     <string name="action_ok">确定</string>
     <string name="action_cancel">取消</string>
+    <string name="action_cancel_and_quit">取消并退出</string>
     <string name="action_delete">删除</string>
     <string name="action_sure_delete">确定删除</string>
+    <string name="action_sure_clear">确定清空</string>
     <string name="action_select_all">全选</string>
     <string name="action_clear">清空列表</string>
     <string name="action_sort">排序方式</string>
-    <string name="action_sort_name">按名称排序</string>
-    <string name="action_sort_date">按修改日期排序</string>
-    <string name="action_sort_size">按大小排序</string>
+    <string name="action_sort_name">名称</string>
+    <string name="action_sort_date">修改日期</string>
+    <string name="action_sort_create_date">创建日期</string>
+    <string name="action_sort_size">文件大小</string>
+    <string name="action_sort_custom">自定义排序</string>
     <string name="action_move_out_list">移出列表</string>
     <string name="action_view_file_info">查看文件信息</string>
-    <string name="action_openwith_text">其他应用打开</string>
+    <string name="action_open_with_text">其他应用打开</string>
     <string name="action_share">分享</string>
+    <string name="action_rename">重命名</string>
     <string name="action_delete_file">删除文件</string>
     <string name="action_back_main">返回主界面</string>
     <string name="action_open_now">立即开启</string>
+    <string name="action_go_and_set">前往设置</string>
     <string name="action_help">帮助文档</string>
     <string name="action_shot">截图</string>
     <string name="action_pano_gyro">手机陀螺仪</string>
     <string name="action_add_to">添加到</string>
+    <string name="action_cancel_load">取消加载</string>
+    <string name="action_continue_load">继续加载</string>
 
     <!-- small texts -->
     <string name="text_tip">提示</string>
@@ -66,8 +77,12 @@
     <string name="text_core_ver">内核版本：</string>
     <string name="text_copyright">
         © 2020 By 梦欤 All rights reserved. 
-        <br /> <a href="https://imengyu.top">imengyu.top</a>
+        \n<a href="https://imengyu.top">imengyu.top</a>
     </string>
+    <string name="text_enter_gallery_name">输入分类收藏夹名称</string>
+
+    <string name="text_panorama_size_not_right_warning_text">您准备浏览的这张全景图看起来并不是正常比例的全景图像，继续浏览可能会导致图像变形等问题，是否继续加载？</string>
+    <string name="text_panorama_size_not_right">图像不是正常比例的全景图</string>
 
     <string name="text_vr_mode">VR模式</string>
     <string name="text_more">更多</string>
@@ -80,18 +95,22 @@
     <string name="text_mode_source">原图</string>
     <string name="text_mode_mercator">全景</string>
     <string name="text_loading_wait">正在加载，请稍后</string>
-    <string name="text_unknow_pano">未知全景文件</string>
-    <string name="text_unknow_size">未知大小</string>
+    <string name="text_un_know_pano">未知全景文件</string>
+    <string name="text_un_know_size">未知大小</string>
     <string name="text_un_know">未知</string>
     <string name="text_end">到底啦</string>
     <string name="text_press_once_more_to_quit">再按一次退出程序</string>
     <string name="text_would_you_want_clear_list">是否要清空列表？</string>
-    <string name="text_all_list_wiil_be_clear">当前列表的图像将会被清空，但是不会删除源文件。</string>
+    <string name="text_all_list_will_be_clear">当前列表以及分类中的图像将会被清空，但是不会删除源文件。</string>
+    <string name="text_gallery_list_will_be_clear">所选分类收藏夹的图像将会被清空，但是不会删除源文件。</string>
+    <string name="text_also_delete_from_main_list">同时从主页以及其他相册中移除(不会删除源文件)</string>
     <string name="text_file_delete_count">成功删除 %d 个文件</string>
     <string name="text_open_way">打开方式</string>
+    <string name="text_rename_gallery">重命名分类收藏夹</string>
 
     <string name="text_more_actions">更多操作</string>
     <string name="text_i_new">我知道了</string>
+    <string name="text_i_like_it">我喜欢</string>
 
     <string name="text_delete_success">删除成功</string>
     <string name="text_delete_failed">文件删除失败</string>
@@ -110,24 +129,58 @@
     <string name="text_share_image_title">分享这张全景图</string>
     <string name="text_choose_program_to_open">选择对应的软件打开该图像</string>
     <string name="text_image_cannot_open">抱歉，你的系统不能打开此图像</string>
+    <string name="text_not_provide_path">没有提供图像路径</string>
+    <string name="text_path_copied_to_clipboard">图像路径已复制到剪贴板</string>
+    <string name="text_no_video_or_image">没有全景图或全景视频</string>
 
     <string name="text_sure_delete_this_image">您真的要删除这张图像吗？</string>
     <string name="text_sure_delete_pano">是否要删除选中的全景图？</string>
-    <string name="text_youcan_remove_choosed_images">你可以把已选择的 %d 个全景图从此列表删除或一并删除文件</string>
+    <string name="text_sure_delete_gallery">是否要删除选中的分类收藏夹？</string>
+    <string name="text_you_can_remove_choosed_images">你可以把已选择的 %d 个全景图从此列表删除，或一并删除源文件，源文件删除之后不能撤销。</string>
+    <string name="text_you_can_remove_choose_images_from_gallery">你可以把已选择的 %d 个全景图从此分类收藏夹删除，此操作不会删除源文件</string>
     <string name="text_choose_some_file_to_del">请选择一些你要删除的文件</string>
     <string name="text_choose_one_file_to_open">请选择一个你要打开的文件</string>
 
     <string name="text_this_is_first_image">已经是第一张图片了哦</string>
     <string name="text_this_is_last_image">已经是最后一张图片了哦</string>
 
+    <string name="text_added_to_i_like">全景图已经收藏到我的喜欢</string>
+    <string name="text_removed_from_i_like">全景图已经从我的喜欢移除</string>
+
+    <string name="text_i_like">我的喜欢</string>
+    <string name="text_videos">视频</string>
+    <string name="text_count_video">个全景视频</string>
+    <string name="text_count_image">个全景图</string>
+    <string name="text_no_image">收藏夹内没有全景图</string>
+    <string name="text_choose_gallery">选择分类收藏夹</string>
+    <string name="text_choose_move_method">选择添加方式</string>
+    <string name="text_do_not_ask_me_again">下次不要再询问我</string>
+
+    <string name="text_method_move">移动到对应收藏夹</string>
+    <string name="text_method_copy">复制到对应收藏夹</string>
+
+    <string name="text_add_success_to_gallery_with_count">成功添加 %d 项目至分类收藏夹</string>
+    <string name="text_add_success">添加成功！</string>
+
     <string name="text_gyro_not_support">您的设备不支持陀螺仪</string>
     <string name="text_gyro_cant_use_in_mode">此模式不支持陀螺仪旋转</string>
 
-    <string name="main_empty_text">空空如也\n点击下面的 “+” 添加一些全景图吧！</string>
+    <string name="text_main_empty">
+        这里空空如也，一张全景图都没有呢
+        <br/>\n点击下面的 “+” 导入一些全景图吧！
+    </string>
 
     <string name="text_no_storage_permission">存储权限不可用</string>
-    <string name="text_storage_permission_useage">由于本程序需要读取本地文件才能为您打开全景图\n否则，您将无法正常使用本软件</string>
-    <string name="text_storage_permission_open_intro">请在-应用设置-权限-中，允许本程序使用存储权限来允许本程序读取本地文件</string>
+    <string name="text_denied_storage_permission">您手动拒绝了存储权限</string>
+    <string name="text_storage_permission_usage">本程序需要获取读取本地文件的权限才能为您打开全景图，以及保存必要的缓存以及设置等\n
+        如果您不授予程序必要的权限，软件将无法正常使用。</string>
+    <string name="text_storage_permission_open_intro">
+        您可能在刚才或之前手动拒绝了授予本程序使用 “读取文件或存储”的权限，系统不会再次询问您是否允许，您需要手动允许权限。
+        \n如果您需要继续使用本应用，那么请开启必要的权限。
+        \n如果不开启权限，应用就不能读取您的全景图，更谈不上浏览了，本应用就变成了一个完全没有用的东西，建议马上卸载掉。
+        \n请在 “应用设置”>“权限” 中，允许本程序使用 “读取文件或存储”
+        权限来允许本程序读取本地文件。
+    </string>
 
     <string name="text_logo">标题Logo</string>
     <string name="text_soft_version">当前软件版本：</string>
@@ -144,6 +197,10 @@
         在浏览较大全景图（大于4096x2048）时不会压缩而是以文件最高清晰度显示，
         虽然能有更好的效果，但这可能会增加硬件的负担。
     </string>
+    <string name="settings_key_do_not_check_pano_normal_size">不检查全景图的正常比例</string>
+    <string name="settings_summary_do_not_check_pano_normal_size">
+        如果全景图的比例不是正常的 720 度全景图，软件浏览可能会出现变形的情况，因此软件会给出提示，您可以开启此选项禁用提示
+    </string>
     <string name="settings_key_about">关于软件</string>
     <string name="settings_key_check_update">检查更新</string>
     <string name="settings_key_auto_update">自动更新软件</string>
@@ -153,7 +210,7 @@
     <string name="settings_key_enable_non_fullscreen">全景页面显示状态栏</string>
 
     <!-- agreement -->
-    <string name="text_agreement_base_welecome">
+    <string name="text_agreement_base_welcome">
         欢迎使用 720全景图查看器 ！
         \n我们非常重视您的隐私和个人信息保护。
         \n在您使用 720全景图查看器 前，请认真阅读 <a href="https://imengyu.top/linkJump?to=vr720_argeement">《用户协议》</a> 及 <a href="https://imengyu.top/linkJump?to=privacy_policy">《隐私政策》</a> ，您同意并接受全部条款后方可开始使用“720全景图查看器”。

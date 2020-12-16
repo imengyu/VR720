@@ -7,13 +7,10 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.view.ActionMode;
-import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.PopupMenu;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -27,12 +24,10 @@ import com.google.android.material.navigation.NavigationView;
 import com.hjq.toast.ToastUtils;
 import com.imengyu.vr720.adapter.MyFragmentAdapter;
 import com.imengyu.vr720.config.MainMessages;
-import com.imengyu.vr720.dialog.CommonDialogs;
+import com.imengyu.vr720.dialog.AppDialogs;
 import com.imengyu.vr720.fragment.GalleryFragment;
 import com.imengyu.vr720.fragment.HomeFragment;
 import com.imengyu.vr720.fragment.IMainFragment;
-import com.imengyu.vr720.list.MainList;
-import com.imengyu.vr720.model.GalleryItem;
 import com.imengyu.vr720.model.TitleSelectionChangedCallback;
 import com.imengyu.vr720.service.ListDataService;
 import com.imengyu.vr720.utils.StatusBarUtils;
@@ -84,7 +79,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private int currentTabPos = 0;
     private HomeFragment homeFragment;
     private GalleryFragment galleryFragment;
-    private List<Fragment> fragments = new ArrayList<>();
+    private final List<Fragment> fragments = new ArrayList<>();
 
     private boolean currentTitleIsSelectMode = false;
     private int currentTitleSelectCount = 0;
@@ -136,36 +131,33 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         //两个Fragment
         homeFragment = new HomeFragment(handler, toolbar, listDataService);
-        galleryFragment = GalleryFragment.newInstance();
+        galleryFragment = new GalleryFragment(handler, toolbar, listDataService);
 
         //两个Fragment的选择模式标题栏回调
-        TitleSelectionChangedCallback titleSelectionChangedCallback = new TitleSelectionChangedCallback() {
-            @Override
-            public void onTitleSelectionChangedCallback(boolean isSelectionMode, int selCount, boolean isAll) {
-                currentTitleIsSelectMode = isSelectionMode;
-                currentTitleSelectCount = selCount;
+        TitleSelectionChangedCallback titleSelectionChangedCallback = (isSelectionMode, selCount, isAll) -> {
+            currentTitleIsSelectMode = isSelectionMode;
+            currentTitleSelectCount = selCount;
 
-                if(isSelectionMode) {
+            if(isSelectionMode) {
 
-                    DrawableCompat.setTint(toolbar.getRightButton().getForeground(),
-                            isAll ?
-                                    resources.getColor(R.color.colorPrimary, null) :
-                                    Color.BLACK);
+                DrawableCompat.setTint(toolbar.getRightButton().getForeground(),
+                        isAll ?
+                                resources.getColor(R.color.colorPrimary, null) :
+                                Color.BLACK);
 
-                    toolbar.setTitle(selCount > 0 ?
-                            String.format(getString(R.string.text_choosed_items), selCount) :
-                            resources.getString(R.string.text_please_choose_item));
-                    toolbar.setLeftButtonIconResource(R.drawable.ic_close);
-                    toolbar.setRightButtonIconResource(R.drawable.ic_check_all);
-                    toolbar.setCustomViewsVisible(View.GONE);
-                }
-                else {
-                    DrawableCompat.setTint(toolbar.getRightButton().getForeground(), Color.BLACK);
-                    toolbar.setTitle("");
-                    toolbar.setLeftButtonIconResource(R.drawable.ic_menu);
-                    toolbar.setRightButtonIconResource(R.drawable.ic_more);
-                    toolbar.setCustomViewsVisible(View.VISIBLE);
-                }
+                toolbar.setTitle(selCount > 0 ?
+                        String.format(getString(R.string.text_choosed_items), selCount) :
+                        resources.getString(R.string.text_please_choose_item));
+                toolbar.setLeftButtonIconResource(R.drawable.ic_close);
+                toolbar.setRightButtonIconResource(R.drawable.ic_check_all);
+                toolbar.setCustomViewsVisible(View.GONE);
+            }
+            else {
+                DrawableCompat.setTint(toolbar.getRightButton().getForeground(), Color.BLACK);
+                toolbar.setTitle("");
+                toolbar.setLeftButtonIconResource(R.drawable.ic_menu);
+                toolbar.setRightButtonIconResource(R.drawable.ic_more);
+                toolbar.setCustomViewsVisible(View.VISIBLE);
             }
         };
 
@@ -189,6 +181,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             }
             @Override
             public void onPageSelected(int position) {
+
+                //退出选择模式
+                currentFragment.setTitleSelectionQuit();
+
                 currentTabPos = position;
                 currentFragment = (IMainFragment) fragments.get(position);
                 switch (position) {
@@ -233,7 +229,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         toolbar.addCustomView(buttonTabGallery);
     }
     private void initList() {
-        listDataService = new ListDataService(this);
+        listDataService = ((VR720Application)getApplication()).getListDataService();
         listDataService.loadList();
     }
 
@@ -288,13 +284,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (id == R.id.nav_import) {
             handler.sendEmptyMessage(MainMessages.MSG_ADD_IMAGE);
         } else if (id == R.id.nav_manage) {
-            CommonDialogs.showSettings(this);
+            AppDialogs.showSettings(this);
         } else if (id == R.id.nav_help) {
-            CommonDialogs.showHelp(this);
+            AppDialogs.showHelp(this);
         } else if (id == R.id.nav_send) {
-            CommonDialogs.showFeedBack(this);
+            AppDialogs.showFeedBack(this);
         } else if (id == R.id.nav_about) {
-            CommonDialogs.showAbout(this);
+            AppDialogs.showAbout(this);
         } else if (id == R.id.nav_quit) {
             quit();
         }
@@ -317,7 +313,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
 
         @Override
-        public void handleMessage(Message msg) {
+        public void handleMessage(@NonNull Message msg) {
             for(Fragment fragment : mTarget.get().fragments)
                 ((IMainFragment)fragment).handleMessage(msg);
         }

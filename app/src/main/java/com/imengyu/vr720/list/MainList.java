@@ -6,47 +6,43 @@ import android.database.DataSetObserver;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.CheckBox;
 import android.widget.ListView;
-import android.widget.TextView;
-
-import androidx.annotation.NonNull;
 
 import com.imengyu.vr720.R;
+import com.imengyu.vr720.adapter.MainListAdapter;
 import com.imengyu.vr720.config.MainMessages;
-import com.imengyu.vr720.utils.DateUtils;
+import com.imengyu.vr720.model.ImageItem;
+import com.imengyu.vr720.model.OnListCheckableChangedListener;
+import com.imengyu.vr720.model.list.MainListItem;
+import com.imengyu.vr720.service.ListImageCacheService;
 import com.imengyu.vr720.utils.FileSizeUtil;
 import com.imengyu.vr720.utils.FileUtils;
 import com.imengyu.vr720.utils.ImageUtils;
-import com.imengyu.vr720.widget.MainThumbnailImageView;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
 
 /**
  * 主列表控制
  */
-public class MainList {
+public class MainList extends SelectableListSolver<MainListItem> {
 
-    public MainList(Context context) {
+    public MainList(Context context, ListImageCacheService listImageCacheService) {
         this.context = context;
+        this.listImageCacheService = listImageCacheService;
         resources = context.getResources();
     }
 
     public void init(Handler handler, ListView listView) {
         this.handler = handler;
 
-        mainListAdapter = new MainListAdapter(context, R.layout.item_main, mainListItems);
+        mainListAdapter = new MainListAdapter(this, context, R.layout.item_main, mainListItems);
         mainListAdapter.registerDataSetObserver(new DataSetObserver() {
 
             private boolean nextChangedDoNotNotify = false;
@@ -81,114 +77,20 @@ public class MainList {
             }
         });
 
+        super.init(mainListAdapter, mainListItems);
+        super.setListOnNotifyChangeListener(this::notifyChange);
+
         listView.setAdapter(mainListAdapter);
         listView.setChoiceMode(AbsListView.CHOICE_MODE_NONE);
     }
 
-    private Resources resources;
-    private Context context;
+    private final Resources resources;
+    private final Context context;
+    private final ListImageCacheService listImageCacheService;
     private Handler handler;
 
-    private final List<MainListItem> selectedItems = new ArrayList<>();
-
-    public List<MainListItem> getSelectedItems() { return selectedItems; }
-    public int getSelectedItemCount() { return selectedItems.size(); }
-    public void clearSelectedItems() {
-        selectedItems.clear();
-        for (MainListItem item : mainListItems)
-            item.setChecked(false);
-        notifyChange();
-        notifyCheckItemCountChanged();
-    }
-    public void selectAllItems() {
-        for (MainListItem item : mainListItems) {
-            if(!item.isChecked()) {
-                item.setChecked(true);
-                selectedItems.add(item);
-            }
-        }
-        notifyChange();
-        notifyCheckItemCountChanged();
-    }
-    public boolean isMainListCheckMode() {
-        return mainListAdapter.isCheckable();
-    }
-    public void setMainListCheckMode  (boolean checkMod) {
-        if(checkMod != mainListAdapter.isCheckable()) {
-            mainListAdapter.setCheckable(checkMod);
-            mainListAdapter.notifyDataSetChanged();
-        }
-    }
-
-    //====================================================
-    //主列表事件
-    //====================================================
-
-    //图片点击事件
-    private final View.OnClickListener mainListBaseOnClickListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View view) {
-            int i = (int)view.getTag();
-            if(mainListAdapter.isCheckable()) {
-                MainListItem item = mainListAdapter.getItem(i);
-                if(item != null) {
-                    if(item.isChecked()) {
-                        item.setChecked(false);
-                        selectedItems.remove(item);
-                    }else {
-                        item.setChecked(true);
-                        if(!selectedItems.contains(item))
-                            selectedItems.add(item);
-                    }
-                    notifyChange();
-                    notifyCheckItemCountChanged();
-                }
-            } else
-                mainListOnItemClickListener.onItemClick(null, view, i, 0);
-        }
-    };
-    //图片长按事件
-    private final View.OnLongClickListener mainListBaseOnLongClickListener = new View.OnLongClickListener() {
-        @Override
-        public boolean onLongClick(View view) {
-            if(!mainListAdapter.isCheckable()) {
-                setMainListCheckMode(true);
-                int i = (int)view.getTag();
-                MainListItem item = mainListAdapter.getItem(i);
-                if(item != null) {
-                    item.setChecked(true);
-                    if (!selectedItems.contains(item))
-                        selectedItems.add(item);
-                    notifyCheckItemCountChanged();
-                }
-            }
-            return true;
-        }
-    };
-
-    private AdapterView.OnItemClickListener mainListOnItemClickListener;
-    private OnMainListCheckItemCountChangedListener mainListCheckItemCountChangedListener;
-
-    public void setMainListCheckableChangedListener(OnMainListCheckableChangedListener mainListCheckableChangedListener) {
-        mainListAdapter.setMainListCheckableChangedListener(mainListCheckableChangedListener);
-    }
-    public void setMainListOnItemClickListener(AdapterView.OnItemClickListener onItemClickListener) {
-        mainListOnItemClickListener = onItemClickListener;
-    }
-    public void setMainListCheckItemCountChangedListener(OnMainListCheckItemCountChangedListener mainListCheckItemCountChangedListener) {
-        this.mainListCheckItemCountChangedListener = mainListCheckItemCountChangedListener;
-    }
-
-    public interface OnMainListCheckableChangedListener {
-        void onMainListCheckableChangedListener(boolean checkable);
-    }
-    public interface OnMainListCheckItemCountChangedListener {
-        void onMainListCheckItemCountChangedListener(int checkedCount);
-    }
-
-    private void notifyCheckItemCountChanged() {
-        if(mainListCheckItemCountChangedListener!=null)
-            mainListCheckItemCountChangedListener.onMainListCheckItemCountChangedListener(selectedItems.size());
+    public Resources getResources() {
+        return resources;
     }
 
     //====================================================
@@ -200,9 +102,11 @@ public class MainList {
 
     public ArrayList<CharSequence> getMainListPathItems() {
         ArrayList<CharSequence> list = new ArrayList<>();
-        for (MainListItem li : mainListItems)
-            if(li.filePath != null)
-                list.add(li.filePath);
+        for (MainListItem li : mainListItems) {
+            String filePath = li.getFilePath();
+            if (filePath != null)
+                list.add(filePath);
+        }
         return list;
     }
     public List<MainListItem> getMainListItems() {
@@ -214,218 +118,22 @@ public class MainList {
     public int getMainListItemCount() { return mainListItems.size(); }
 
     /**
-     * 列表条目绑定
+     * 缩略图加载
      */
-    private static class ViewHolder {
-        MainThumbnailImageView imageView;
-        TextView textView;
-        CheckBox checkMark;
-    }
-    /**
-     * 主列表数据
-     */
-    public static class MainListItem {
-
-        public static final int ITEM_TYPE_NORMAL = 827;
-        public static final int ITEM_TYPE_TEXT = 828;
-
-        private String filePath;
-        private String fileName;
-        private String fileSize;
-        private Drawable thumbnail;
-        private boolean thumbnailLoading;
-        private boolean thumbnailLoadingStarted;
-        private boolean thumbnailFail;
-        private boolean checked;
-        private int checkeIndex;
-        private long fileSizeValue;
-        private long fileModifyDate;
-        private int forceItemType;
-
-        public MainListItem(String itemText){
-            this.forceItemType = ITEM_TYPE_TEXT;
-            this.fileName = itemText;
-        }
-        public MainListItem(String filePath, String fileName, String fileSize) {
-            this.filePath = filePath;
-            this.fileName = fileName;
-            this.fileSize = fileSize;
-            this.forceItemType = ITEM_TYPE_NORMAL;
-        }
-
-        public Drawable getThumbnail() {
-            return thumbnail;
-        }
-        public void setThumbnail(Drawable thumbnail) {
-            this.thumbnail = thumbnail;
-        }
-        public String getFilePath() {
-            return filePath;
-        }
-        public void setFilePath(String filePath) {
-            this.filePath = filePath;
-        }
-        public String getFileName() {
-            return fileName;
-        }
-        public void setFileName(String fileName) {
-            this.fileName = fileName;
-        }
-        public String getFileSize() {
-            return fileSize;
-        }
-        public void setFileSize(String fileSize) {
-            this.fileSize = fileSize;
-        }
-        public boolean isChecked() {
-            return checked;
-        }
-        public void setChecked(boolean checked) {
-            this.checked = checked;
-        }
-        public int getCheckeIndex() {
-            return checkeIndex;
-        }
-        public void setCheckeIndex(int checkeIndex) {
-            this.checkeIndex = checkeIndex;
-        }
-        public boolean isThumbnailLoading() {
-            return thumbnailLoading;
-        }
-        public void setThumbnailLoading(boolean thumbnailLoading) {
-            this.thumbnailLoading = thumbnailLoading;
-        }
-        public boolean isThumbnailFail() {
-            return thumbnailFail;
-        }
-        public void setThumbnailFail(boolean thumbnailFail) {
-            this.thumbnailFail = thumbnailFail;
-        }
-        public long getFileSizeValue() {
-            return fileSizeValue;
-        }
-        public void setFileSizeValue(long fileSizeValue) {
-            this.fileSizeValue = fileSizeValue;
-        }
-        public long getFileModifyDate() {
-            return fileModifyDate;
-        }
-        public void setFileModifyDate(long fileModifyDate) {
-            this.fileModifyDate = fileModifyDate;
-        }
-        public boolean isThumbnailLoadingStarted() {
-            return thumbnailLoadingStarted;
-        }
-        public void setThumbnailLoadingStarted(boolean thumbnailLoadingStarted) {
-            this.thumbnailLoadingStarted = thumbnailLoadingStarted;
-        }
-        public int getForceItemType() {
-            return forceItemType;
-        }
-        public void setForceItemType(int forceItemType) {
-            this.forceItemType = forceItemType;
-        }
-    }
-    /**
-     * 主列表适配器
-     */
-    public class MainListAdapter extends ArrayAdapter<MainListItem> {
-
-        private boolean mCheckable;
-        private OnMainListCheckableChangedListener mainListCheckableChangedListener;
-
-        MainListAdapter(Context context, int layoutId, List<MainListItem> list) {
-            super(context, layoutId, list);
-        }
-
-        void setCheckable(boolean mCheckable) {
-            this.mCheckable = mCheckable;
-            if (this.mainListCheckableChangedListener != null)
-                this.mainListCheckableChangedListener.onMainListCheckableChangedListener(mCheckable);
-        }
-
-        boolean isCheckable() { return mCheckable; }
-
-        void setMainListCheckableChangedListener(OnMainListCheckableChangedListener mainListCheckableChangedListener) {
-            this.mainListCheckableChangedListener = mainListCheckableChangedListener;
-        }
-
-        /**
-         * 缩略图加载
-         */
-        void loadThumbnail(MainListItem item) {
-            //在背景线程进行缩略图加载
-            new Thread(() -> {
-                try {
-                    item.thumbnail = new BitmapDrawable(resources, ImageUtils.revitionImageSize(item.filePath, 800, 400));
-                    item.setThumbnailLoading(false);
-                    notifyChange();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    item.setThumbnailLoading(false);
-                    item.setThumbnailFail(true);
-                    notifyChange();
-                }
-            }).start();
-        }
-
-        @NonNull
-        @Override
-        public View getView(int position, View convertView, @NonNull ViewGroup parent) {
-            final MainListItem item = getItem(position);
-
-            ViewHolder viewHolder;
-
-            if (convertView == null) {
-                convertView = LayoutInflater.from(getContext()).inflate(R.layout.item_main, parent, false);
-                viewHolder = new ViewHolder();
-                viewHolder.textView = convertView.findViewById(R.id.text_item);
-                viewHolder.imageView = convertView.findViewById(R.id.img_item);
-                viewHolder.checkMark = convertView.findViewById(R.id.check_item);
-
-                viewHolder.imageView.setOnLongClickListener(mainListBaseOnLongClickListener);
-                viewHolder.imageView.setOnClickListener(mainListBaseOnClickListener);
-
-                convertView.setTag(viewHolder);
+    public void loadThumbnail(MainListItem item) {
+        //在背景线程进行缩略图加载
+        new Thread(() -> {
+            Drawable drawable = listImageCacheService.loadImageThumbnailCache(item.getFilePath());
+            if(drawable != null) {
+                item.setThumbnail(drawable);
+                item.setThumbnailLoading(false);
+                notifyChange();
             } else {
-                viewHolder = (ViewHolder) convertView.getTag();
+                item.setThumbnailLoading(false);
+                item.setThumbnailFail(true);
+                notifyChange();
             }
-            if(item != null) {
-                if (item.getForceItemType() == MainListItem.ITEM_TYPE_NORMAL) {
-                    viewHolder.imageView.setChecked(item.isChecked());
-                    if (item.isThumbnailFail())
-                        viewHolder.imageView.setImageResource(R.drawable.ic_noprob);
-                    else if (item.isThumbnailLoading()) {
-                        viewHolder.imageView.setImageResource(R.drawable.ic_tumb);
-
-                        if (!item.isThumbnailLoadingStarted()) {
-                            item.setThumbnailLoadingStarted(true);
-                            loadThumbnail(item);
-                        }
-                    } else viewHolder.imageView.setImageDrawable(item.getThumbnail());
-
-                    viewHolder.imageView.setTag(position);
-                    viewHolder.imageView.setVisibility(View.VISIBLE);
-                    viewHolder.imageView.setImageText(item.getFileName());
-
-                    if(mainSortType == MAIN_SORT_DATE)
-                        viewHolder.imageView.setImageSize(DateUtils.format(new Date(item.getFileModifyDate()), DateUtils.FORMAT_SHORT));
-                    else viewHolder.imageView.setImageSize(item.getFileSize());
-
-                    viewHolder.textView.setVisibility(View.GONE);
-
-                    viewHolder.checkMark.setChecked(item.isChecked());
-                    viewHolder.checkMark.setVisibility(mCheckable ? View.VISIBLE : View.GONE);
-                }
-                else if (item.getForceItemType() == MainListItem.ITEM_TYPE_TEXT) {
-                    viewHolder.imageView.setVisibility(View.GONE);
-                    viewHolder.textView.setVisibility(View.VISIBLE);
-                    viewHolder.checkMark.setVisibility(View.GONE);
-                    viewHolder.textView.setText(item.getFileName());
-                }
-            }
-            return convertView;
-        }
+        }).start();
     }
 
     //====================================================
@@ -459,17 +167,18 @@ public class MainList {
     }
     /**
      * 条目添加
-     * @param filePath 文件路径
+     * @param imageItem 条目
      * @param notify 是否通知更新列表
      */
-    public void addImageToItem(String filePath, boolean notify) {
-        File f = new File(filePath);
+    public void addImageToItem(ImageItem imageItem, boolean notify) {
+        File f = new File(imageItem.path);
         if (f.exists()) {
 
-            if(existsImageItem(filePath))
+            if(existsImageItem(imageItem.path))
                 return;
 
-            final MainListItem newItem = new MainListItem(filePath, FileUtils.getFileName(filePath), FileSizeUtil.getAutoFileOrFilesSize(filePath));
+            final MainListItem newItem = new MainListItem(imageItem);
+
             newItem.setThumbnailLoading(true);
             newItem.setThumbnailFail(false);
             newItem.setFileModifyDate(f.lastModified());
@@ -491,14 +200,14 @@ public class MainList {
      * 删除一个项目
      * @param item 项目
      */
-    public void deleteItem(MainList.MainListItem item) {
+    public void deleteItem(MainListItem item) {
         mainListItems.remove(item);
         mainListAdapter.notifyDataSetChanged();
     }
     /**
      * 删除某些项目
      */
-    public void deleteItems(List<MainList.MainListItem> items) {
+    public void deleteItems(List<MainListItem> items) {
         mainListItems.removeAll(items);
         mainListAdapter.notifyDataSetChanged();
     }
@@ -507,12 +216,6 @@ public class MainList {
      */
     public void notifyChange() {
         handler.sendEmptyMessage(MainMessages.MSG_REFRESH_LIST);
-    }
-    /**
-     * 强制刷新列表
-     */
-    public void refesh() {
-        mainListAdapter.notifyDataSetChanged();
     }
 
     //====================================================

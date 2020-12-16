@@ -3,8 +3,11 @@ package com.imengyu.vr720.utils;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
+import android.provider.MediaStore;
+import android.util.Log;
 import android.widget.Toast;
 import androidx.core.content.FileProvider;
 
@@ -15,6 +18,8 @@ import java.io.File;
 
 public class FileUtils {
 
+    private static final String TAG = "FileUtils";
+
     public static String getFileName(String pathandname) {
         int start = pathandname.lastIndexOf("/");
         int end = pathandname.lastIndexOf(".");
@@ -23,6 +28,14 @@ public class FileUtils {
         } else {
             return null;
         }
+    }
+
+    public static String getFileNameWithExt(String path) {
+        int start = path.lastIndexOf("/");
+        if (start != -1)
+            return path.substring(start + 1);
+        else
+            return path;
     }
 
     public static boolean deleteFile(String path) {
@@ -68,4 +81,5 @@ public class FileUtils {
         shareIntent = Intent.createChooser(shareIntent, context.getString(R.string.text_share_image_title));
         context.startActivity(shareIntent);
     }
+
 }

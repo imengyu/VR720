@@ -165,19 +165,29 @@ void Logger::LogOutput(LogLevel logLevel, const char* str, const char* srcStr, s
 }
 void Logger::CloseLogFile()
 {
-	if (logFile) {
+	if (logFile != nullptr) {
 		fclose(logFile);
 		logFile = nullptr;
 	}
 }
 
 Logger* globalStaticLogger = nullptr;
+int globalSecurityCheck = 0;
 
-Logger* Logger::GetStaticInstance() { return globalStaticLogger; }
+Logger* Logger::GetStaticInstance() {
+	return globalStaticLogger;
+}
 void Logger::InitConst() {
 	globalStaticLogger = new Logger("VR720Native");
 	globalStaticLogger->SetLogOutPut(LogOutPutConsolne);
+	globalSecurityCheck = 0x15;
 }
-void Logger::DestroyConst() { delete globalStaticLogger; }
+void Logger::DestroyConst() {
+	if (globalSecurityCheck != 0x15)
+		return;
+	if (globalStaticLogger != nullptr)
+		delete globalStaticLogger;
+	globalStaticLogger = nullptr;
+}
 
 
