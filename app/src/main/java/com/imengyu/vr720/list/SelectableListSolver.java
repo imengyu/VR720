@@ -95,8 +95,8 @@ public class SelectableListSolver<T extends CheckableListItem> {
                     item.setChecked(true);
                     if (!selectedItems.contains(item))
                         selectedItems.add(item);
-                    notifyCheckItemCountChanged();
                 }
+                notifyCheckItemCountChanged();
             }
             return true;
         }

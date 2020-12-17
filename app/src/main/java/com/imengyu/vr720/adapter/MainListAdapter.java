@@ -1,21 +1,17 @@
 package com.imengyu.vr720.adapter;
 
 import android.content.Context;
-import android.graphics.drawable.BitmapDrawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 
 import androidx.annotation.NonNull;
 
 import com.imengyu.vr720.R;
 import com.imengyu.vr720.list.MainList;
-import com.imengyu.vr720.model.OnListCheckableChangedListener;
 import com.imengyu.vr720.model.holder.MainListViewHolder;
 import com.imengyu.vr720.model.list.MainListItem;
 import com.imengyu.vr720.utils.DateUtils;
-import com.imengyu.vr720.utils.ImageUtils;
 
 import java.util.Date;
 import java.util.List;

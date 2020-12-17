@@ -3,7 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:minHeight="200dp" >
 
     <com.imengyu.vr720.widget.MainThumbnailImageView
         android:id="@+id/img_item"
@@ -12,18 +13,18 @@
         android:layout_marginLeft="10dp"
         android:layout_marginTop="10dp"
         android:layout_marginRight="10dp"
+        android:clickable="true"
+        android:focusable="true"
         android:minHeight="200dp"
         android:saveEnabled="true"
-        android:scaleType="fitXY"
-        android:clickable="true"
+        android:scaleType="centerCrop"
         app:imageRoundHeight="10dp"
         app:imageRoundWidth="10dp"
         app:imageSize="@string/text_un_know_size"
         app:imageText=""
         app:imageTextColor="@android:color/white"
         app:imageTextSize="15dp"
-        app:srcCompat="@drawable/ic_noprob"
-        android:focusable="true" />
+        app:srcCompat="@drawable/ic_noprob" />
 
     <CheckBox
         android:id="@+id/check_item"

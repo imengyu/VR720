@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/colorPanoBarBackground"
+    android:focusable="true"
+    android:orientation="vertical">
+
+    <RelativeLayout
+        android:id="@+id/pano_info_title"
+        style="@style/FileInfoDarkItem"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="fill|fill_horizontal"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_alignParentStart="true"
+            android:layout_marginEnd="30dp"
+            android:text="@string/text_file_info"
+            android:textColor="@android:color/white" />
+
+        <Button
+            android:id="@+id/button_close_pano_info"
+            style="@style/ButtonTransParent"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:foreground="@drawable/ic_file_close"
+            android:foregroundTint="@android:color/white" />
+    </RelativeLayout>
+
+    <RelativeLayout
+        style="@style/FileInfoDarkItem"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="fill|fill_horizontal"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_alignParentStart="true"
+            android:text="@string/text_image_size"
+            android:textColor="@android:color/white" />
+
+        <TextView
+            android:id="@+id/text_pano_info_size"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="100dp"
+            android:textAlignment="textEnd"
+            android:text="@string/text_placeholder"
+            android:textColor="@android:color/white" />
+    </RelativeLayout>
+
+    <RelativeLayout
+        style="@style/FileInfoDarkItem"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="fill|fill_horizontal"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_alignParentStart="true"
+            android:text="@string/text_image_date"
+            android:textColor="@android:color/white" />
+
+        <TextView
+            android:id="@+id/text_pano_info_image_time"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="100dp"
+            android:textAlignment="textEnd"
+            android:text="@string/text_placeholder"
+            android:textColor="@android:color/white" />
+    </RelativeLayout>
+
+    <RelativeLayout
+        style="@style/FileInfoDarkItem"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="fill|fill_horizontal"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_alignParentStart="true"
+            android:textAlignment="textStart"
+            android:text="@string/text_file_size"
+            android:textColor="@android:color/white" />
+
+        <TextView
+            android:id="@+id/text_pano_info_file_size"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="100dp"
+            android:textAlignment="textEnd"
+            android:text="@string/text_placeholder"
+            android:textColor="@android:color/white" />
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/layout_info_path"
+        style="@style/FileInfoDarkItem"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="fill|fill_horizontal"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_alignParentStart="true"
+            android:text="@string/text_file_path"
+            android:textColor="@android:color/white" />
+
+        <TextView
+            android:id="@+id/text_pano_info_file_path"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="80dp"
+            android:textAlignment="textEnd"
+            android:text="@string/text_placeholder"
+            android:textColor="@android:color/white" />
+    </RelativeLayout>
+
+    <RelativeLayout
+        style="@style/FileInfoDarkItem"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="fill|fill_horizontal"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_alignParentStart="true"
+            android:text="@string/text_image_shutter_time"
+            android:textColor="@android:color/white" />
+
+        <TextView
+            android:id="@+id/text_pano_info_shutter_time"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+
+            android:layout_marginStart="100dp"
+            android:textAlignment="textEnd"
+            android:text="@string/text_placeholder"
+            android:textColor="@android:color/white" />
+    </RelativeLayout>
+
+    <RelativeLayout
+        style="@style/FileInfoDarkItem"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="fill|fill_horizontal"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_alignParentStart="true"
+            android:text="@string/text_image_exposure_bias_value"
+            android:textColor="@android:color/white" />
+
+        <TextView
+            android:id="@+id/text_pano_info_exposure_bias_value"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="100dp"
+            android:textAlignment="textEnd"
+            android:text="@string/text_placeholder"
+            android:textColor="@android:color/white" />
+    </RelativeLayout>
+
+    <RelativeLayout
+        style="@style/FileInfoDarkItem"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_alignParentStart="true"
+            android:text="@string/text_image_iso_sensitivity"
+            android:textColor="@android:color/white" />
+
+        <TextView
+            android:id="@+id/text_pano_info_iso_sensitivit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="100dp"
+            android:textAlignment="textEnd"
+            android:text="@string/text_placeholder"
+            android:textColor="@android:color/white" />
+    </RelativeLayout>
+
+</LinearLayout>

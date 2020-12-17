@@ -132,6 +132,8 @@ public class NativeVR720Renderer {
     private native void updateGyroValue(long nativePtr, float x, float y, float z, float w);
     private native void updateDebugValue(long nativePtr, float x, float y, float z, float w, float v, float u);
     private native void setEnableFullChunks(long nativePtr, boolean enable);
+    private native void setCachePath(long nativePtr, String path);
+    private native void setEnableCache(long nativePtr, boolean enable);
     private native void onResume(long nativePtr);
     private native void onPause(long nativePtr);
 
@@ -155,6 +157,22 @@ public class NativeVR720Renderer {
      * 关闭当前文件
      */
     public void closeFile() { closeFile(mainNativePtr); }
+
+    /**
+     * 设置是否启用缓存
+     * @param enableCache 是否启用缓存
+     */
+    public void setEnableCache(boolean enableCache) {
+        setEnableCache(mainNativePtr, enableCache);
+    }
+
+    /**
+     * 设置缓存目录
+     * @param path 缓存目录路径
+     */
+    public void setCachePath(String path) {
+        setCachePath(mainNativePtr, path);
+    }
 
     /**
      * 进行移动视图

@@ -15,21 +15,35 @@ import com.imengyu.vr720.BuildConfig;
 import com.imengyu.vr720.R;
 
 import java.io.File;
+import java.text.DecimalFormat;
 
+/**
+ * 文件工具类
+ */
 public class FileUtils {
 
     private static final String TAG = "FileUtils";
 
-    public static String getFileName(String pathandname) {
-        int start = pathandname.lastIndexOf("/");
-        int end = pathandname.lastIndexOf(".");
+    /**
+     * 从文件路径获取文件名（不包括扩展名）
+     * @param path 文件路径
+     * @return 文件名（不包括扩展名）
+     */
+    public static String getFileName(String path) {
+        int start = path.lastIndexOf("/");
+        int end = path.lastIndexOf(".");
         if (start != -1 && end != -1) {
-            return pathandname.substring(start + 1, end);
+            return path.substring(start + 1, end);
         } else {
-            return null;
+            return path;
         }
     }
 
+    /**
+     * 从文件路径获取文件名（包括扩展名）
+     * @param path 文件路径
+     * @return 文件名（包括扩展名）
+     */
     public static String getFileNameWithExt(String path) {
         int start = path.lastIndexOf("/");
         if (start != -1)
@@ -38,21 +52,73 @@ public class FileUtils {
             return path;
     }
 
+    /**
+     * 删除文件
+     * @param path 文件路径
+     * @return 返回是否成功
+     */
     public static boolean deleteFile(String path) {
         File file = new File(path);
         if (file.exists()) {
-            return file.delete();
+            try {
+                return file.delete();
+            }catch (Exception e) {
+                Log.e(TAG, String.format("Delete file %s failed : %s", path, e.toString()));
+            }
         }
         return false;
     }
 
-    public static void openFile(Context context, String file) {
+    /**
+     * 获取文件夹大小
+     * @param fileDir 文件夹路径
+     * @return 返回文件夹大小（包括子文件夹）字节
+     */
+    public static long getDirSize(File fileDir){
+        File[] files = fileDir.listFiles();
+        long fileSize = 0;
+        for (File file :files) {
+            if (file.isFile())
+                fileSize += file.length();
+            else
+                fileSize += getDirSize(file);
+        }
+        return fileSize;
+    }
+
+    /**
+     * 将文件大小转为可读的字符串
+     * @param fileSize 文件大小（字节）
+     * @return 可读的字符串
+     */
+    public static String getReadableFileSize(long fileSize){
+        double fileSizeDouble = 0;
+        DecimalFormat decimalFormat = new DecimalFormat("0.00");
+        String sizeStr;
+        if(fileSize >= 1073741824){
+            fileSizeDouble = Math.round(fileSize / 1073741824.0 * 100)/100.0;
+            sizeStr = decimalFormat.format(fileSizeDouble) + "GB";
+        }else if(fileSize >= 1048576) {
+            fileSizeDouble = Math.round(fileSize / 1048576.0 * 100) / 100.0;
+            sizeStr = decimalFormat.format(fileSizeDouble) + "MB";
+        }else{
+            fileSizeDouble = Math.round(fileSize / 1024.0 * 100) / 100.0;
+            sizeStr = decimalFormat.format(fileSizeDouble) + "KB";
+        }
+        return sizeStr;
+    }
+
+    /**
+     * 使用系统选择文件打开方式
+     * @param context 上下文
+     * @param file 文件路径
+     */
+    public static void openFileWithApp(Context context, String file) {
         try {
             Intent intent = new Intent();
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             intent.setAction(Intent.ACTION_VIEW);
-            //解决 Android N 7.0 上 报错：android.os.FileUriExposedException
-            //判断是否是AndroidN以及更高的版本
+            //解决 Android N 7.0 上 使用 fileProvider 共享文件
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 Uri contentUri = FileProvider.getUriForFile(context, BuildConfig.APPLICATION_ID + ".fileProvider", new File(file));
@@ -66,6 +132,11 @@ public class FileUtils {
         }
     }
 
+    /**
+     * 分享文件
+     * @param context 上下文
+     * @param file 文件路径
+     */
     public static void shareFile(Context context, String file) {
 
         Intent shareIntent = new Intent();

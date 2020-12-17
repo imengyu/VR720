@@ -15,6 +15,9 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatDialog;
+
 import com.imengyu.vr720.R;
 import com.imengyu.vr720.utils.AlertDialogTool;
 
@@ -80,8 +83,14 @@ public class CommonDialog extends Dialog {
     initEvent();
 
     AlertDialogTool.setDialogWindowAnimations(this, R.style.DialogBottomPopup);
-    AlertDialogTool.setDialogGravity(this, Gravity.BOTTOM);
+    AlertDialogTool.setDialogGravity(this, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
     AlertDialogTool.setDialogSize(this, WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT);
+  }
+
+  @NonNull
+  @Override
+  public Bundle onSaveInstanceState() {
+    return super.onSaveInstanceState();
   }
 
   /**
@@ -146,7 +155,7 @@ public class CommonDialog extends Dialog {
     } else {
       imageIv.setVisibility(View.GONE);
     }
-    /**
+    /*
      * 只显示一个按钮的时候隐藏取消按钮，回掉只执行确定的事件
      */
     if (isSingle){

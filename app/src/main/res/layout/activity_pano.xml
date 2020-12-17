@@ -6,6 +6,7 @@
     android:layout_height="match_parent"
     android:background="@android:color/background_dark"
     android:padding="0dp"
+    android:id="@+id/activity_pano"
     tools:context=".PanoActivity">
 
     <com.imengyu.vr720.core.NativeVR720GLSurfaceView
@@ -23,12 +24,32 @@
         layout="@layout/content_pano_loading" />
 
     <include
-        android:id="@+id/pano_toolbar_view"
+        android:id="@+id/pano_tools"
         layout="@layout/content_pano_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:visibility="visible"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <include
+        android:id="@+id/pano_info"
+        layout="@layout/content_pano_info"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="visible"
+        app:layout_constraintBottom_toTopOf="@+id/pano_tools"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <include
+        android:id="@+id/pano_menu"
+        layout="@layout/content_pano_menu"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="visible"
+        app:layout_constraintBottom_toTopOf="@+id/pano_tools"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 

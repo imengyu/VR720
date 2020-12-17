@@ -197,7 +197,7 @@ void CCPanoramaRenderer::CreateMainModelFlatMesh(CCMesh* mesh) const {
     float ustep = 1.0f / (float)sphereSegmentX, vstep = 1.0f / (float)sphereSegmentY;
     float u, v = 0;
 
-    for (int j = 0; j <= sphereSegmentY; j++) {
+    for (int j = 0; j < sphereSegmentY; j++) {
         u = 0;
         for (int i = 0; i <= sphereSegmentX; i++) {
             mesh->positions.push_back(glm::vec3(0.5f - u, (0.5f - v) / 2.0f, 0.0f));
@@ -477,7 +477,7 @@ void CCPanoramaRenderer::MoveModelForce(float x, float y) const
 }
 
 void CCPanoramaRenderer::UpdateMercatorControl() {
-    //PrecalcMercator();
+    PrecalcMercator();
 
     CCMesh* mesh = mainFlatModel->Mesh.GetPtr();
     mesh->texCoords.clear();

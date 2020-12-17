@@ -14,7 +14,6 @@ import androidx.core.content.ContextCompat;
 
 import com.imengyu.vr720.R;
 import com.imengyu.vr720.VR720Application;
-import com.imengyu.vr720.list.GalleryList;
 import com.imengyu.vr720.model.holder.GalleryListViewHolder;
 import com.imengyu.vr720.model.list.GalleryListItem;
 import com.imengyu.vr720.service.ListDataService;
@@ -47,12 +46,11 @@ public class SmallGalleryListAdapter extends ArrayAdapter<GalleryListItem> {
             if(drawable != null) {
                 item.setThumbnail(drawable);
                 item.setThumbnailLoading(false);
-                activity.runOnUiThread(this::notifyDataSetChanged);
             } else {
                 item.setThumbnailLoading(false);
                 item.setThumbnailFail(true);
-                activity.runOnUiThread(this::notifyDataSetChanged);
             }
+            activity.runOnUiThread(this::notifyDataSetChanged);
         }).start();
     }
 

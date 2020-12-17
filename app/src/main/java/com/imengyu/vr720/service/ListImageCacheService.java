@@ -86,12 +86,12 @@ public class ListImageCacheService {
         if(imSize.getWidth() >= 4096 || imSize.getHeight() > 2048) {
 
             //已经有文件缓存，直接读取
-            String cacheThumbnailPath = StorageDirUtils.getViewCachePath() + MD5Utils.md5(path);
+            String cacheThumbnailPath = StorageDirUtils.getGalleryCachePath() + MD5Utils.md5(path);
             File cacheThumbnailFile = new File(cacheThumbnailPath);
             if(cacheThumbnailFile.exists())
                 return fastLoadCacheToThumbnail(path, cacheThumbnailPath, false, true);
 
-            Bitmap thumbnail = ImageUtils.revitionImageSize(path, 800, 400);
+            Bitmap thumbnail = ImageUtils.revitionImageSize(path, 600, 300);
             if(thumbnail == null) return null;
 
             //保存缩略图至缓存文件

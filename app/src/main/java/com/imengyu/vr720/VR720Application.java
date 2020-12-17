@@ -5,6 +5,7 @@ import android.util.Log;
 
 import com.imengyu.vr720.core.NativeVR720;
 import com.hjq.toast.ToastUtils;
+import com.imengyu.vr720.service.CacheServices;
 import com.imengyu.vr720.service.ListDataService;
 import com.imengyu.vr720.service.ListImageCacheService;
 
@@ -17,12 +18,16 @@ public class VR720Application extends Application {
 
     private ListDataService listDataService = null;
     private ListImageCacheService listImageCacheService = null;
+    private CacheServices cacheServices = null;
 
     public ListDataService getListDataService() {
         return listDataService;
     }
     public ListImageCacheService getListImageCacheService() {
         return listImageCacheService;
+    }
+    public CacheServices getCacheServices() {
+        return cacheServices;
     }
 
     private boolean nativeDestroyed = true;
@@ -41,6 +46,7 @@ public class VR720Application extends Application {
         //初始化数据服务
         listDataService = new ListDataService(getApplicationContext());
         listImageCacheService = new ListImageCacheService(getApplicationContext());
+        cacheServices = new CacheServices(getApplicationContext());
         //
         ToastUtils.init(this);
         //初始化内核

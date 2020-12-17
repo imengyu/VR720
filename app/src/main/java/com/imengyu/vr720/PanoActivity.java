@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
+import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
@@ -15,22 +16,25 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 import android.util.Size;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
-import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.core.widget.TextViewCompat;
 import androidx.exifinterface.media.ExifInterface;
@@ -48,10 +52,13 @@ import com.imengyu.vr720.dialog.LoadingDialog;
 import com.imengyu.vr720.model.ImageInfo;
 import com.imengyu.vr720.model.ImageItem;
 import com.imengyu.vr720.service.ListDataService;
+import com.imengyu.vr720.utils.AlertDialogTool;
 import com.imengyu.vr720.utils.DateUtils;
 import com.imengyu.vr720.utils.FileSizeUtil;
 import com.imengyu.vr720.utils.FileUtils;
 import com.imengyu.vr720.utils.ImageUtils;
+import com.imengyu.vr720.utils.PixelTool;
+import com.imengyu.vr720.utils.ScreenUtils;
 import com.imengyu.vr720.utils.StatusBarUtils;
 import com.imengyu.vr720.utils.StorageDirUtils;
 import com.imengyu.vr720.widget.MyTitleBar;
@@ -64,7 +71,6 @@ import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -92,7 +98,6 @@ public class PanoActivity extends AppCompatActivity {
         return -1;
     }
 
-    private View pano_bar;
     private View pano_error;
     private View pano_loading;
     private View pano_menu;
@@ -107,15 +112,19 @@ public class PanoActivity extends AppCompatActivity {
     private TextView text_pano_info_exposure_bias_value;
     private TextView text_pano_info_iso_sensitivit;
     private TextView text_sensor_cant_use_in_mode;
+    private TextView text_debug;
     private ImageButton button_prev;
     private ImageButton button_next;
     private SeekBar seek_x;
     private SeekBar seek_y;
     private SeekBar seek_z;
     private MyTitleBar titlebar;
-    private Button button_mode;
     private NativeVR720GLSurfaceView glSurfaceView;
     private ToolbarButton button_like;
+    private ToolbarButton button_short;
+    private ToolbarButton button_mode;
+    private ToolbarButton button_more;
+    private ConstraintLayout activity_pano;
 
     private Drawable iconModeBall;
     private Drawable iconModeLittlePlanet;
@@ -124,13 +133,13 @@ public class PanoActivity extends AppCompatActivity {
     private Drawable iconModeMercator;
     private Drawable iconModeVideoBall;
 
-    private Animation bottom_up;
-    private Animation bottom_down;
-    private Animation fade_hide;
-    private Animation fade_show;
-    private Animation top_down;
-    private Animation top_up;
+    private Animation bottom_up, bottom_down;
+    private Animation fade_hide, fade_show;
+    private Animation top_down, top_up;
+    private Animation left_to_right_out, right_to_left_in;
     private ColorStateList likeColorStateList;
+
+    private Size screenSize;
 
     private String openNextPath;
     private boolean openNextMarked = false;
@@ -147,8 +156,7 @@ public class PanoActivity extends AppCompatActivity {
         requestWindowFeature(Window.FEATURE_NO_TITLE);
 
         //设置全屏
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        ScreenUtils.setFullScreen(this, true);
 
         setContentView(R.layout.activity_pano);
 
@@ -158,6 +166,7 @@ public class PanoActivity extends AppCompatActivity {
         listDataService = ((VR720Application)getApplication()).getListDataService();
         resources = getResources();
         mContext = getApplicationContext();
+        screenSize = ScreenUtils.getScreenSize(this);
 
         ((VR720Application)getApplication()).checkAndInit();
 
@@ -176,6 +185,8 @@ public class PanoActivity extends AppCompatActivity {
         initRenderer();
         initControls();
         initButtons();
+
+        onUpdateScreenOrientation(getResources().getConfiguration());
 
         initialized = true;
         onResume();
@@ -258,14 +269,34 @@ public class PanoActivity extends AppCompatActivity {
     };
     private ScheduledExecutorService pool = null;
 
+    private int updateFpsTick = 0;
+    private final StringBuilder debugString = new StringBuilder();
+
     private void initRenderer() {
 
         renderer = new NativeVR720Renderer(handler);
         renderer.setEnableFullChunks(panoEnableFull);
         renderer.setOnRequestGyroValueCallback(quaternion -> orientationSensor1Provider.getQuaternion(quaternion));
+        renderer.setCachePath(StorageDirUtils.getViewCachePath());
+        renderer.setEnableCache(panoEnableCache);
         glSurfaceView = findViewById(R.id.pano_view);
         glSurfaceView.setNativeRenderer(renderer);
         glSurfaceView.setCaptureCallback(this::screenShotCallback);
+        glSurfaceView.setRendererCallback((gl10) -> {
+            if(debugEnabled) {
+               if(updateFpsTick < 0xffff) {
+                   updateFpsTick++;
+                   if(updateFpsTick % 20 == 0) {
+
+                       //FPS
+                       debugString.append("FPS: ");
+                       debugString.append(glSurfaceView.getFps());
+
+                       handler.sendEmptyMessage(MainMessages.MSG_TEST_VAL);
+                   }
+               } else updateFpsTick = 0;
+            }
+        });
         glSurfaceView.setDragVelocityEnabled(dragVelocityEnabled);
 
         startUpdateThread();
@@ -275,11 +306,13 @@ public class PanoActivity extends AppCompatActivity {
         titlebar.setLeftIconOnClickListener((v) -> onBackPressed());
         titlebar.setRightIconOnClickListener((v) -> shareThisImage());
 
+        activity_pano = findViewById(R.id.activity_pano);
+
         View layout_debug = findViewById(R.id.layout_debug);
-        TextView text_debug = findViewById(R.id.text_debug);
+        text_debug = findViewById(R.id.text_debug);
         if(!debugEnabled)
             text_debug.setVisibility(View.GONE);
-        pano_bar = findViewById(R.id.pano_toolbar_view);
+
         pano_error = findViewById(R.id.pano_error_view);
         pano_error.setVisibility(View.GONE);
         pano_loading = findViewById(R.id.pano_loading_view);
@@ -289,7 +322,11 @@ public class PanoActivity extends AppCompatActivity {
         pano_info.setVisibility(View.GONE);
         pano_menu.setVisibility(View.GONE);
         pano_tools.setVisibility(View.VISIBLE);
-        pano_info.setOnTouchListener((view, motionEvent) -> true);
+        pano_info.setOnTouchListener((view, motionEvent) -> {
+            if (motionEvent.getAction() == MotionEvent.ACTION_UP)
+                view.performClick();
+            return true;
+        });
 
         text_sensor_cant_use_in_mode = findViewById(R.id.text_sensor_cant_use_in_mode);
         text_sensor_cant_use_in_mode.setVisibility(View.GONE);
@@ -314,6 +351,8 @@ public class PanoActivity extends AppCompatActivity {
         fade_show = AnimationUtils.loadAnimation(PanoActivity.this, R.anim.fade_show);
         top_down = AnimationUtils.loadAnimation(PanoActivity.this, R.anim.top_down);
         top_up = AnimationUtils.loadAnimation(PanoActivity.this, R.anim.top_up);
+        right_to_left_in = AnimationUtils.loadAnimation(PanoActivity.this, R.anim.right_to_left_in);
+        left_to_right_out = AnimationUtils.loadAnimation(PanoActivity.this, R.anim.left_to_right_out);
     }
     private void initResources() {
         //加载图标
@@ -334,6 +373,7 @@ public class PanoActivity extends AppCompatActivity {
     }
     private void initSettings() {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        panoEnableCache = sharedPreferences.getBoolean("enable_view_cache", true);
         panoEnableFull = sharedPreferences.getBoolean("enable_full_chunks", false);
         currentPanoMode = sharedPreferences.getInt("pano_mode", 0);
         vrEnabled = sharedPreferences.getBoolean("pano_enable_vr", false);
@@ -342,7 +382,7 @@ public class PanoActivity extends AppCompatActivity {
         debugEnabled = sharedPreferences.getBoolean("show_debug_tool", false);
         dontCheckImageNormalSize = sharedPreferences.getBoolean("do_not_check_pano_normal_size", false);
         if(sharedPreferences.getBoolean("enable_non_fullscreen", false))
-            switchFullScreen(false);
+            ScreenUtils.setFullScreen(this, false);
     }
     private void initButtons() {
 
@@ -389,8 +429,10 @@ public class PanoActivity extends AppCompatActivity {
                     break;
                 case MotionEvent.ACTION_DOWN:
                     lastTouchMoved = false;
-                    if(pano_menu.getVisibility() == View.VISIBLE) showMore();
-                    if(pano_info.getVisibility() == View.VISIBLE) pano_info.setVisibility(View.GONE);
+                    if(panoMenuShow)
+                        setPanoMenuStatus(false, true);
+                    if(panoInfoShow)
+                        setPanoInfoStatus(false, false);
                     break;
                 case MotionEvent.ACTION_UP:
                     if(!lastTouchMoved) {
@@ -416,19 +458,18 @@ public class PanoActivity extends AppCompatActivity {
 
         likeColorStateList = ColorStateList.valueOf(resources.getColor(R.color.colorImageLike, null));
 
-        findViewById(R.id.button_short).setOnClickListener(v -> {
+        button_short = findViewById(R.id.button_short);
+        button_more = findViewById(R.id.button_more);
+        button_like =  findViewById(R.id.button_like);
+
+        button_short.setOnClickListener(v -> {
             if(!fileLoading && fileLoaded)
                 screenShot();
         });
-        findViewById(R.id.button_more).setOnClickListener(v -> {
+        button_more.setOnClickListener(v -> {
             if(!fileLoading && fileLoaded)
-                showMore();
+                setPanoMenuStatus(!panoMenuShow, true);
         });
-        findViewById(R.id.button_close_pano_info).setOnClickListener(v -> {
-            if(!fileLoading && fileLoaded)
-                showTools();
-        });
-        button_like =  findViewById(R.id.button_like);
         button_like.setOnClickListener(v -> {
             if(currentImageItem != null) {
                 if(currentImageItem.isInBelongGalleries(ListDataService.GALLERY_LIST_ID_I_LIKE)) {
@@ -443,10 +484,13 @@ public class PanoActivity extends AppCompatActivity {
             }
         });
 
-        findViewById(R.id.action_view_file_info).setOnClickListener(v -> showFileInfo());
+        findViewById(R.id.button_close_pano_info).setOnClickListener(v -> {
+            if(!fileLoading && fileLoaded)
+                setPanoInfoStatus(false, true);
+        });
+        findViewById(R.id.action_view_file_info).setOnClickListener(v -> setPanoInfoStatus(true, true));
         findViewById(R.id.action_delete_file).setOnClickListener(v -> deleteFile());
         findViewById(R.id.action_openwith_text).setOnClickListener(v -> openWithOtherApp());
-        findViewById(R.id.action_back_main).setOnClickListener(v -> closeImage(true));
         findViewById(R.id.button_back).setOnClickListener(v -> closeImage(true));
 
         findViewById(R.id.layout_info_path).setOnClickListener((v) -> {
@@ -513,6 +557,8 @@ public class PanoActivity extends AppCompatActivity {
                 0,0,0);
     }
     private void updateDebugValue() {
+        debugString.delete(0, debugString.length());
+        text_debug.setText(debugString);
     }
 
     //界面控制
@@ -521,6 +567,7 @@ public class PanoActivity extends AppCompatActivity {
     private Size currentImageSize = new Size(0,0);
     private ImageItem currentImageItem = null;
     private int currentPanoMode = 0;
+    private boolean panoEnableCache = true;
     private boolean panoEnableFull = false;
     private boolean vrEnabled = false;
     private boolean gyroEnabled = false;
@@ -544,7 +591,7 @@ public class PanoActivity extends AppCompatActivity {
                 break;
             case NativeVR720Renderer.PanoramaMode_PanoramaCylinder:
                 button_mode.setText(getString(R.string.text_mode_rectilinear));
-                button_mode.setCompoundDrawables(null, iconModeBall, null, null);
+                button_mode.setCompoundDrawables(null, iconModeRectiliner, null, null);
                 break;
             case NativeVR720Renderer.PanoramaMode_PanoramaAsteroid:
                 button_mode.setText(getString(R.string.text_mode_little_planet));
@@ -588,33 +635,6 @@ public class PanoActivity extends AppCompatActivity {
             text_sensor_cant_use_in_mode.setVisibility(View.GONE);
         }
     }
-    private void showTools() {
-        pano_info.setVisibility(View.GONE);
-        pano_menu.setVisibility(View.GONE);
-        pano_tools.startAnimation(bottom_up);
-        pano_tools.setVisibility(View.VISIBLE);
-    }
-    private void showMore() {
-        if(pano_menu.getVisibility() == View.GONE) {
-            pano_menu.startAnimation(bottom_up);
-            pano_menu.setVisibility(View.VISIBLE);
-        } else {
-            pano_menu.startAnimation(fade_hide);
-            new Timer().schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    runOnUiThread(() -> pano_menu.setVisibility(View.GONE));
-                }
-            }, 200);
-
-        }
-    }
-    private void showFileInfo() {
-        pano_tools.setVisibility(View.GONE);
-        pano_menu.setVisibility(View.GONE);
-        pano_info.startAnimation(bottom_up);
-        pano_info.setVisibility(View.VISIBLE);
-    }
     private void deleteFile() {
         new CommonDialog(this)
             .setTitle2(getString(R.string.text_sure_delete_this_image))
@@ -644,7 +664,7 @@ public class PanoActivity extends AppCompatActivity {
             .show();
     }
     private void openWithOtherApp() {
-        FileUtils.openFile(this, filePath);
+        FileUtils.openFileWithApp(this, filePath);
     }
     private void shareThisImage() {
         FileUtils.shareFile(this, filePath);
@@ -660,19 +680,20 @@ public class PanoActivity extends AppCompatActivity {
         glSurfaceView.startCapture();
     }
     private void screenShotCallback(Bitmap b) {
+
         //保存图像到SCREENSHOT文件夹
-        ImageUtils.SaveImageResult result = ImageUtils.saveImageToStorageWithAutoName(
-                StorageDirUtils.getScreenShotsStoragePath(), b);
+        ImageUtils.SaveImageResult result = ImageUtils.saveImageToGalleryWithAutoName(this, b);
         //显示
         runOnUiThread(() -> {
             captureLoadingDialog.cancel();
             captureLoadingDialog = null;
 
             if(result.success)
-                ToastUtils.show(String.format(getString(R.string.text_image_save_success), result.path));
+                ToastUtils.show(getString(R.string.text_image_save_success));
             else
                 ToastUtils.show(String.format(getString(R.string.text_image_save_failed), result.error));
         });
+
     }
     private void updatePrevNextBtnState() {
         if(fileList == null) {
@@ -705,35 +726,25 @@ public class PanoActivity extends AppCompatActivity {
     private boolean currentCanPrev = false;
     private LoadingDialog captureLoadingDialog = null;
 
-    /*
-     *  标题栏开启关闭与全屏
-     */
-
     private boolean toolbarOn = true;
-    private void switchFullScreen(boolean full){
-        if(full){
-            WindowManager.LayoutParams attrs = getWindow().getAttributes();
-            attrs.flags |= WindowManager.LayoutParams.FLAG_FULLSCREEN;
-            getWindow().setAttributes(attrs);
-            getWindow().addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
-        }else{
-            WindowManager.LayoutParams attrs = getWindow().getAttributes();
-            attrs.flags &= (~WindowManager.LayoutParams.FLAG_FULLSCREEN);
-            getWindow().setAttributes(attrs);
-            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
-        }
-    }
+    private boolean panoInfoShow = false;
+    private boolean panoMenuShow = false;
+    private boolean isLandscape = false;
+
+    /*
+     *  标题栏开启关闭
+     */
     private void switchToolBar() {
-        if(toolbarOn && pano_tools.getVisibility() != View.VISIBLE) {
-            pano_menu.setVisibility(View.GONE);
-            pano_info.setVisibility(View.GONE);
-            showTools();
-        }
-        toolbarOn = !toolbarOn;
+        if(toolbarOn && pano_tools.getVisibility() != View.VISIBLE)
+            setPanoInfoStatus(false, false);
+        setToolBarStatus(!toolbarOn);
+    }
+    private void setToolBarStatus(boolean show) {
+        toolbarOn = show;
         if (toolbarOn) {
-            pano_bar.startAnimation(bottom_up);
+            pano_tools.startAnimation(bottom_up);
+            pano_tools.setVisibility(View.VISIBLE);
             titlebar.startAnimation(top_down);
-            pano_bar.setVisibility(View.VISIBLE);
             titlebar.setVisibility(View.VISIBLE);
 
             if(currentCanNext) {
@@ -746,9 +757,9 @@ public class PanoActivity extends AppCompatActivity {
             }
 
         } else {
-            pano_bar.startAnimation(bottom_down);
+            pano_tools.startAnimation(bottom_down);
+            pano_tools.setVisibility(View.GONE);
             titlebar.startAnimation(top_up);
-            pano_bar.setVisibility(View.GONE);
             titlebar.setVisibility(View.GONE);
 
             if(currentCanNext) {
@@ -761,6 +772,65 @@ public class PanoActivity extends AppCompatActivity {
             }
         }
     }
+    private void setPanoMenuStatus(boolean show, boolean anim) {
+        panoMenuShow = show;
+        if(show) {
+            if(anim)
+                pano_menu.startAnimation(isLandscape ? right_to_left_in : bottom_up);
+            pano_menu.setVisibility(View.VISIBLE);
+        } else {
+            if(anim)
+                pano_menu.startAnimation(isLandscape ? left_to_right_out : fade_hide);
+            pano_menu.setVisibility(View.GONE);
+        }
+    }
+    private void setPanoInfoStatus(boolean show, boolean anim) {
+        panoInfoShow = show;
+        if(show) {
+            setPanoMenuStatus(false, true);
+
+            if(isLandscape && toolbarOn)
+                switchToolBar();
+            else {
+                pano_tools.startAnimation(fade_hide);
+                pano_tools.setVisibility(View.GONE);
+            }
+
+            if(anim)
+                pano_info.startAnimation(bottom_up);
+            pano_info.setVisibility(View.VISIBLE);
+
+        } else {
+
+            if(anim)
+                pano_info.startAnimation(isLandscape ? left_to_right_out : bottom_down);
+            pano_info.setVisibility(View.GONE);
+
+            if(!isLandscape) {
+                if(anim)
+                    pano_tools.startAnimation(isLandscape ? right_to_left_in : bottom_up);
+                pano_tools.setVisibility(View.VISIBLE);
+            }
+        }
+    }
+    private void flushToolStatus() {
+        if (toolbarOn) {
+            pano_tools.setVisibility(View.VISIBLE);
+            titlebar.setVisibility(View.VISIBLE);
+
+            if(currentCanNext) button_next.setVisibility(View.VISIBLE);
+            if(currentCanPrev) button_prev.setVisibility(View.VISIBLE);
+
+        } else {
+            pano_tools.setVisibility(View.GONE);
+            titlebar.setVisibility(View.GONE);
+
+            if(currentCanNext) button_next.setVisibility(View.GONE);
+            if(currentCanPrev) button_prev.setVisibility(View.GONE);
+        }
+        pano_menu.setVisibility(panoMenuShow ? View.VISIBLE : View.GONE);
+        pano_info.setVisibility(panoInfoShow ? View.VISIBLE : View.GONE);
+    }
 
     /**
      * 主线程handler
@@ -769,6 +839,7 @@ public class PanoActivity extends AppCompatActivity {
         private final WeakReference<PanoActivity> mTarget;
 
         MainHandler(PanoActivity target) {
+            super(Looper.myLooper());
             mTarget = new WeakReference<>(target);
         }
 
@@ -812,10 +883,11 @@ public class PanoActivity extends AppCompatActivity {
         renderer.setPanoramaMode(currentPanoMode);
 
         titlebar.setTitle(FileUtils.getFileName(filePath));
-        titlebar.setVisibility(View.VISIBLE);
         pano_loading.setVisibility(View.GONE);
-        pano_bar.setVisibility(View.VISIBLE);
-        pano_tools.setVisibility(View.VISIBLE);
+
+        setPanoInfoStatus(false, false);
+        setPanoMenuStatus(false, false);
+        setToolBarStatus(true);
     }
     private void onRendererMessage(int msg) {
         switch (msg) {
@@ -853,8 +925,8 @@ public class PanoActivity extends AppCompatActivity {
                 fileLoaded = false;
                 titlebar.setTitle(getString(R.string.text_loading_wait));
                 pano_loading.setVisibility(View.VISIBLE);
-                pano_menu.setVisibility(View.GONE);
-                pano_info.setVisibility(View.GONE);
+                setPanoInfoStatus(false, false);
+                setPanoMenuStatus(false, false);
                 pano_error.setVisibility(View.GONE);
                 break;
             }
@@ -920,6 +992,80 @@ public class PanoActivity extends AppCompatActivity {
     public void onBackPressed() {
         if(!closeMarked) closeImage(true);
         else super.onBackPressed();
+    }
+
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        onUpdateScreenOrientation(newConfig);
+        AlertDialogTool.notifyConfigurationChangedForDialog(this);
+    }
+
+    ConstraintSet mConstraintSet = new ConstraintSet();
+
+    private void onUpdateScreenOrientation(Configuration newConfig) {
+        if(newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
+            isLandscape = false;
+
+            button_like.setTextVisible(true);
+            button_short.setTextVisible(true);
+            button_mode.setTextVisible(true);
+            button_more.setTextVisible(true);
+
+            mConstraintSet.clone(activity_pano);
+            mConstraintSet.clear(R.id.pano_info);
+            mConstraintSet.clear(R.id.pano_menu);
+
+            mConstraintSet.connect(R.id.pano_menu, ConstraintSet.RIGHT, ConstraintSet.PARENT_ID, ConstraintSet.RIGHT);
+            mConstraintSet.connect(R.id.pano_info, ConstraintSet.RIGHT, ConstraintSet.PARENT_ID, ConstraintSet.RIGHT);
+            mConstraintSet.connect(R.id.pano_menu, ConstraintSet.LEFT, ConstraintSet.PARENT_ID, ConstraintSet.LEFT);
+            mConstraintSet.connect(R.id.pano_info, ConstraintSet.LEFT, ConstraintSet.PARENT_ID, ConstraintSet.LEFT);
+            mConstraintSet.connect(R.id.pano_menu, ConstraintSet.BOTTOM, R.id.pano_tools, ConstraintSet.TOP);
+            mConstraintSet.connect(R.id.pano_info, ConstraintSet.BOTTOM, R.id.pano_tools, ConstraintSet.TOP);
+            mConstraintSet.applyTo(activity_pano);
+
+            ViewGroup.LayoutParams layoutParams = pano_info.getLayoutParams();
+            layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
+            layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+            pano_info.setLayoutParams(layoutParams);
+            layoutParams = pano_menu.getLayoutParams();
+            layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
+            layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+            pano_menu.setLayoutParams(layoutParams);
+
+        }
+        else if(newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            isLandscape = true;
+
+            button_like.setTextVisible(false);
+            button_short.setTextVisible(false);
+            button_mode.setTextVisible(false);
+            button_more.setTextVisible(false);
+
+            mConstraintSet.clone(activity_pano);
+            mConstraintSet.clear(R.id.pano_info);
+            mConstraintSet.clear(R.id.pano_menu);
+            mConstraintSet.connect(R.id.pano_info, ConstraintSet.RIGHT, ConstraintSet.PARENT_ID, ConstraintSet.RIGHT);
+            mConstraintSet.connect(R.id.pano_info, ConstraintSet.TOP, ConstraintSet.PARENT_ID, ConstraintSet.TOP);
+            mConstraintSet.connect(R.id.pano_info, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM);
+
+            mConstraintSet.connect(R.id.pano_menu, ConstraintSet.RIGHT, ConstraintSet.PARENT_ID, ConstraintSet.RIGHT, PixelTool.dp2px(this, 36));
+            mConstraintSet.connect(R.id.pano_menu, ConstraintSet.BOTTOM, R.id.pano_tools, ConstraintSet.TOP, 20);
+
+            mConstraintSet.applyTo(activity_pano);
+
+            ViewGroup.LayoutParams layoutParams = pano_info.getLayoutParams();
+            layoutParams.width = (int)(screenSize.getHeight() / 2.4);
+            layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT;
+            pano_info.setLayoutParams(layoutParams);
+
+            layoutParams = pano_menu.getLayoutParams();
+            layoutParams.width = screenSize.getHeight() / 3;
+            layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+            pano_menu.setLayoutParams(layoutParams);
+        }
+
+        flushToolStatus();
     }
 
     //主图片处理逻辑
@@ -1038,6 +1184,7 @@ public class PanoActivity extends AppCompatActivity {
                                         dontCheckImageNormalSize = true;
                                     //继续加载
                                     renderer.openFile(path);
+                                    dialog.dismiss();
                                 }
                             })
                             .show();

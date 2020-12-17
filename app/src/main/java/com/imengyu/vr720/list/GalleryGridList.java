@@ -92,6 +92,9 @@ public class GalleryGridList extends SelectableListSolver<MainListItem> {
     public void notifyChange() {
         handler.sendEmptyMessage(MainMessages.MSG_REFRESH_LIST);
     }
+    public void notifyChange(int delay) {
+        handler.sendEmptyMessageDelayed(MainMessages.MSG_REFRESH_LIST, delay);
+    }
     public void loadItemThumbnail(MainListItem item) {
         //在背景线程进行缩略图加载
         new Thread(() -> {
@@ -99,12 +102,11 @@ public class GalleryGridList extends SelectableListSolver<MainListItem> {
             if(drawable != null) {
                 item.setThumbnail(drawable);
                 item.setThumbnailLoading(false);
-                notifyChange();
             } else {
                 item.setThumbnailLoading(false);
                 item.setThumbnailFail(true);
-                notifyChange();
             }
+            notifyChange(500);
         }).start();
     }
     /**

@@ -9,6 +9,7 @@ import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.drawable.Drawable;
@@ -25,6 +26,7 @@ public class MainThumbnailImageView extends AppCompatImageView {
     private Paint paint;
     private Paint paint0;
     private Paint paintTextBackground;
+    private Paint paintBorder;
     private String imageText = "";
     private String imageSize = "未知";
     private int imageTextColor = Color.WHITE;
@@ -75,13 +77,18 @@ public class MainThumbnailImageView extends AppCompatImageView {
         paint.setStrokeWidth(5);
         paint.setTextSize(imageTextSize);
 
+        paintBorder = new Paint();
+        paintBorder.setColor(Color.WHITE);
+        paintBorder.setAntiAlias(true);
+        paintBorder.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_OUT));
+
         paintTextBackground = new Paint();
         paintTextBackground.setAntiAlias(true);
         paintTextBackground.setStyle(Paint.Style.FILL);
         paintTextBackground.setColor(Color.WHITE);
         LinearGradient mShader = new LinearGradient(
                 0, 0,
-                0, PixelTool.dpToPx(context, imageTextSize + 5),
+                0, PixelTool.dp2px(context, imageTextSize + 5),
                 context.getResources().getColor(R.color.colorTextBgEnd, null),
                 context.getResources().getColor(R.color.colorTextBgStart, null),
                     Shader.TileMode.MIRROR);
@@ -96,11 +103,11 @@ public class MainThumbnailImageView extends AppCompatImageView {
         super.draw(canvas2);
 
         //文字背景
-        canvas2.drawRect(0,getHeight() - PixelTool.dpToPx(context, imageTextSize + 5),
+        canvas2.drawRect(0,getHeight() - PixelTool.dp2px(context, imageTextSize + 5),
                 getWidth(), getHeight() , paintTextBackground);
 
         //圆角
-        drawRound(canvas2, paint);
+        drawRound(canvas2, paintBorder);
 
         //文字
         if(!imageText.isEmpty()) {

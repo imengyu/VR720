@@ -7,11 +7,13 @@ import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
+import android.view.ViewGroup;
 
 import androidx.appcompat.widget.AppCompatButton;
 import androidx.core.widget.TextViewCompat;
 
 import com.imengyu.vr720.R;
+import com.imengyu.vr720.utils.PixelTool;
 
 public class ToolbarButton extends AppCompatButton {
 
@@ -33,6 +35,12 @@ public class ToolbarButton extends AppCompatButton {
     private int normalColor = Color.WHITE;
     private int hoverColor = Color.RED;
     private int disableColor = Color.GRAY;
+
+    public void setTextVisible(boolean visible) {
+        ViewGroup.LayoutParams layoutParams = getLayoutParams();
+        layoutParams.height = PixelTool.dp2px(getContext(), visible ? 70 : 43);
+        setLayoutParams(layoutParams);
+    }
 
     private ColorStateList normalColorStateList = null;
     private ColorStateList hoverColorStateList = null;

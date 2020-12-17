@@ -11,7 +11,6 @@ import android.view.MotionEvent;
 import android.view.VelocityTracker;
 
 import com.imengyu.vr720.core.representation.Quaternion;
-import com.imengyu.vr720.core.representation.Vector3f;
 
 import java.nio.IntBuffer;
 import java.util.TimerTask;
@@ -31,21 +30,13 @@ public class NativeVR720GLSurfaceView extends GLSurfaceView {
 
     public NativeVR720GLSurfaceView(Context context) {
         super(context);
-        init(context);
     }
     public NativeVR720GLSurfaceView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        init(context);
-    }
-    private void init(Context context) {
-        this.context = context;
-
-
     }
 
     private NativeVR720Renderer nativeVR720Renderer = null;
     private RendererWrapper renderer = null;
-    private Context context;
     private boolean dragVelocityEnabled = true;
 
     /**
@@ -99,9 +90,19 @@ public class NativeVR720GLSurfaceView extends GLSurfaceView {
     public void setCaptureCallback(OnCaptureCallback callback) {
         captureCallback = callback;
     }
+    /**
+     * 设置渲染回调
+     * @param rendererCallback 回调
+     */
+    public void setRendererCallback(OnRendererCallback rendererCallback) {
+        this.rendererCallback = rendererCallback;
+    }
 
     public interface OnCaptureCallback {
         void onCaptureCallback(Bitmap bitmap);
+    }
+    public interface OnRendererCallback {
+        void onRender(GL10 gl10);
     }
 
     /**
@@ -145,6 +146,7 @@ public class NativeVR720GLSurfaceView extends GLSurfaceView {
     private ScheduledExecutorService pool = null;
     private boolean isTakePic = false;
     private OnCaptureCallback captureCallback = null;
+    private OnRendererCallback rendererCallback = null;
 
     //context
     //********************************
@@ -255,15 +257,25 @@ public class NativeVR720GLSurfaceView extends GLSurfaceView {
         }
         @Override
         public void onDrawFrame(GL10 gl10) {
+
+            //更新陀螺仪数据
             if(nativeVR720Renderer.getGyroEnable()) {
                 nativeVR720Renderer.requestGyroValue(gyroQuaternion);
                 nativeVR720Renderer.updateGyroValue(gyroQuaternion.x(),
                         gyroQuaternion.y(), gyroQuaternion.z(), gyroQuaternion.w());
             }
+
+            //绘制
             nativeVR720Renderer.onDrawFrame();
+
+            //刷新FPS
             nativeVR720GLSurfaceView.calculateFrameRate();
             nativeVR720Renderer.onUpdateFps((float) nativeVR720GLSurfaceView.framesPerSecond);
             //System.out.println("onDrawFrame: " + gl10.glGetError());
+
+            //渲染回调
+            if(nativeVR720GLSurfaceView.rendererCallback != null)
+                nativeVR720GLSurfaceView.rendererCallback.onRender(gl10);
 
             //截屏控制
             if (nativeVR720GLSurfaceView.isTakePic) {

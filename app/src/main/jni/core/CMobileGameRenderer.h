@@ -33,22 +33,22 @@ public:
 
 	void SetOpenFilePath(const char* path);
 	void DoOpenFile();
-	void MarkShouldOpenFile() { should_open_file = true; }
+	void MarkShouldOpenFile() { shouldOpenFile = true; }
 	void MarkCloseFile();
-	bool IsFileOpen();
-	void MarkDestroy() override { should_destroy = true; }
+	bool IsFileOpen() const;
+	void MarkDestroy() override { shouldDestroy = true; }
 	void SwitchMode(PanoramaMode mode);
 	void SetGyroEnabled(bool enable);
 	void SetEnableFullChunkLoad(bool enable);
+	void SetViewCacheEnabled(bool enable) { enableViewCache = enable; }
 	void SetVREnabled(bool enable);
 	void SetMouseDragVelocity(float x, float y);
+	void SetCachePath(char* path) { viewCachePath = path; };
 	void UpdateGyroValue(float x, float y, float z, float w) const;
 	void UpdateDebugValue(float x, float y, float z, float w, float u, float v);
 
-	void WriteDebugText(char* str);
-	char *GetDebugText();
 	PanoramaMode GetMode() { return mode; }
-	const char* GetImageOpenError() { return last_image_error.c_str(); }
+	const char* GetImageOpenError() { return lastImageError.c_str(); }
     CCGUInfo* GetGUInfo() { return uiInfo; }
 	void SetUiEventDistributor( CMobileGameUIEventDistributor*uv) { uiEventDistributor = uv; }
 
@@ -68,6 +68,7 @@ private:
 	Logger* logger;
 
 	std::string currentOpenFilePath;
+    std::string currentFileCachePath;
 
 	bool ReInit() override;
 	bool Init() override;
@@ -79,10 +80,10 @@ private:
 
 	//全景模式
 	PanoramaMode mode = PanoramaMode::PanoramaSphere;
-	CCPanoramaCamera*camera = nullptr;
+	CCPanoramaCamera* camera = nullptr;
 	CCPanoramaRenderer* renderer = nullptr;
-	CCFileManager*fileManager = nullptr;
-	CCTextureLoadQueue*texLoadQueue = nullptr;
+	CCFileManager* fileManager = nullptr;
+	CCTextureLoadQueue* texLoadQueue = nullptr;
 
 	bool gyroEnabled = false;
     bool vREnabled = false;
@@ -92,14 +93,16 @@ private:
 
     CMobileGameUIEventDistributor*uiEventDistributor = nullptr;
     CCGUInfo* uiInfo = nullptr;
-	bool file_opened = false;
+	bool fileOpened = false;
+	std::string viewCachePath;
+	bool enableViewCache = true;
 
-	std::string last_image_error;
+	std::string lastImageError;
 
-	bool render_init_finish = false;
-	bool should_open_file = false;
-	bool should_close_file = false;
-	bool should_destroy = false;
+	bool renderInitFinish = false;
+	bool shouldOpenFile = false;
+	bool shouldCloseFile = false;
+	bool shouldDestroy = false;
 	bool destroying = false;
 	bool needTestImageAndSplit = false;
 	float lastX = 0, lastY = 0, xoffset = 0, yoffset = 0;
@@ -108,14 +111,18 @@ private:
 	bool ShouldUpdateMercatorControl = false;
 
 	void TestSplitImageAndLoadTexture();
+	void TestToLoadTextureImageCache();
 
+    TextureLoadQueueDataResult* LoadMainTexCallback(TextureLoadQueueInfo* info, CCTexture* texture);
 	TextureLoadQueueDataResult* LoadChunkTexCallback(TextureLoadQueueInfo* info, CCTexture* texture);
 	static TextureLoadQueueDataResult* LoadTexCallback(TextureLoadQueueInfo* info, CCTexture* texture, void* data);
 	static void FileCloseCallback(void* data);
 	static void CameraFOVChanged(void* data, float fov);
 	static void CameraOrthoSizeChanged(void* data, float fov);
 
-	bool SplitFullImage = true;
+	bool shouldSplitFullImage = true;
+	bool thisFileShouldSaveCache = false;
+    bool thisFileShouldLoadInCache = false;
 
 	void ReBufferAllData();
 
@@ -127,8 +134,5 @@ private:
 	glm::vec2 VelocityDragLastOffest = glm::vec2(0);
 	bool VelocityDragCurrentIsInSim = false;
 	float VelocityDragCutSensitivity = 5.0f;
-
-	char debugText[256] = { 0 };
-
 };
 

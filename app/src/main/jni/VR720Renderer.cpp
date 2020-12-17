@@ -97,7 +97,7 @@ extern "C" JNIEXPORT jstring JNICALL Java_com_imengyu_vr720_core_NativeVR720Rend
 extern "C" JNIEXPORT jstring JNICALL Java_com_imengyu_vr720_core_NativeVR720Renderer_getDebugText(JNIEnv *env, jobject thiz, jlong native_ptr) {
     GET_VIEW_OR_RET(native_ptr, nullptr);
     auto* gameRenderer = (CMobileGameRenderer*)view->GetRenderer();
-    return CStringHlp::charTojstring(env, gameRenderer->GetDebugText());
+    return nullptr;
 }
 extern "C" JNIEXPORT void JNICALL Java_com_imengyu_vr720_core_NativeVR720Renderer_closeFile(JNIEnv *env, jobject thiz, jlong native_ptr) {
     GET_VIEW(native_ptr);
@@ -164,4 +164,16 @@ extern "C" JNIEXPORT void JNICALL Java_com_imengyu_vr720_core_NativeVR720Rendere
     GET_VIEW(native_ptr);
     auto* gameRenderer = (CMobileGameRenderer*)view->GetRenderer();
     gameRenderer->SetMouseDragVelocity(x, y);
+}
+extern "C" JNIEXPORT void JNICALL Java_com_imengyu_vr720_core_NativeVR720Renderer_setCachePath(JNIEnv *env, jobject thiz, jlong native_ptr, jstring path) {
+    GET_VIEW(native_ptr);
+    auto* gameRenderer = (CMobileGameRenderer*)view->GetRenderer();
+    char* pathStr = CStringHlp::jstringToChar(env, path);
+    gameRenderer->SetCachePath(pathStr);
+    free(pathStr);
+}
+extern "C" JNIEXPORT void JNICALL Java_com_imengyu_vr720_core_NativeVR720Renderer_setEnableCache(JNIEnv *env, jobject thiz, jlong native_ptr, jboolean enable) {
+    GET_VIEW(native_ptr);
+    auto* gameRenderer = (CMobileGameRenderer*)view->GetRenderer();
+    gameRenderer->SetViewCacheEnabled(enable);
 }

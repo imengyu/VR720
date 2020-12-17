@@ -1,10 +1,12 @@
 package com.imengyu.vr720;
 
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.view.ActionMode;
 import android.view.KeyEvent;
@@ -30,6 +32,7 @@ import com.imengyu.vr720.fragment.HomeFragment;
 import com.imengyu.vr720.fragment.IMainFragment;
 import com.imengyu.vr720.model.TitleSelectionChangedCallback;
 import com.imengyu.vr720.service.ListDataService;
+import com.imengyu.vr720.utils.AlertDialogTool;
 import com.imengyu.vr720.utils.StatusBarUtils;
 import com.imengyu.vr720.widget.MyTitleBar;
 import com.imengyu.vr720.widget.ToolbarButton;
@@ -74,17 +77,19 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private MyTitleBar toolbar;
     private DrawerLayout drawerLayout;
 
+    public MyTitleBar getToolbar() {
+        return toolbar;
+    }
+
     private ViewPager mViewPager;
     private IMainFragment currentFragment;
-    private int currentTabPos = 0;
-    private HomeFragment homeFragment;
-    private GalleryFragment galleryFragment;
     private final List<Fragment> fragments = new ArrayList<>();
-
     private boolean currentTitleIsSelectMode = false;
-    private int currentTitleSelectCount = 0;
 
     private ListDataService listDataService = null;
+    public ListDataService getListDataService() {
+        return listDataService;
+    }
 
     private void initDrawer() {
 
@@ -130,13 +135,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         buttonTabGallery.setOnClickListener((v) -> mViewPager.setCurrentItem(1));
 
         //两个Fragment
-        homeFragment = new HomeFragment(handler, toolbar, listDataService);
-        galleryFragment = new GalleryFragment(handler, toolbar, listDataService);
+        HomeFragment homeFragment = new HomeFragment(handler, toolbar, listDataService);
+        GalleryFragment galleryFragment = new GalleryFragment(handler, toolbar, listDataService);
 
         //两个Fragment的选择模式标题栏回调
         TitleSelectionChangedCallback titleSelectionChangedCallback = (isSelectionMode, selCount, isAll) -> {
             currentTitleIsSelectMode = isSelectionMode;
-            currentTitleSelectCount = selCount;
 
             if(isSelectionMode) {
 
@@ -185,7 +189,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 //退出选择模式
                 currentFragment.setTitleSelectionQuit();
 
-                currentTabPos = position;
                 currentFragment = (IMainFragment) fragments.get(position);
                 switch (position) {
                     case 0:
@@ -309,6 +312,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         private final WeakReference<MainActivity> mTarget;
 
         MainHandler(MainActivity target) {
+            super(Looper.myLooper());
             mTarget = new WeakReference<>(target);
         }
 
@@ -320,6 +324,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
     private final MainHandler handler = new MainHandler(this);
 
+    public MainHandler getHandler() {
+        return handler;
+    }
 
     //====================================================
     //Activity 返回值
@@ -335,5 +342,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     @Override
     public void onActionModeStarted(ActionMode mode) {
         super.onActionModeStarted(mode);
+    }
+
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        AlertDialogTool.notifyConfigurationChangedForDialog(this);
+        super.onConfigurationChanged(newConfig);
     }
 }

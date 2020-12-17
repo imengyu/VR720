@@ -1,8 +1,13 @@
 package com.imengyu.vr720.utils;
 
+import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.res.Configuration;
 import android.graphics.Color;
+import android.graphics.Point;
+import android.util.Size;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,13 +23,15 @@ import androidx.core.content.ContextCompat;
 
 import com.imengyu.vr720.R;
 
+import java.util.ArrayList;
+
 /**
  * 弹出框工具类
  */
 public class AlertDialogTool {
 
     public static AlertDialog buildCustomBottomPopupDialog(Context context, View v) {
-        return buildCustomStylePopupDialogGravity(context, v, Gravity.BOTTOM, R.style.DialogBottomPopup, true);
+        return buildCustomStylePopupDialogGravity(context, v, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, R.style.DialogBottomPopup, true);
     }
     public static AlertDialog buildCustomStylePopupDialogGravity(Context context, View v, int gravity, int anim) {
         return buildCustomStylePopupDialogGravity(context, v, gravity, anim, true);
@@ -35,16 +42,9 @@ public class AlertDialogTool {
                 .setCancelable(cancelable)
                 .create();
 
-        Window window = dialog.getWindow();
-        window.setGravity(gravity);
-        window.getDecorView().setPadding(0, 0, 0, 0);
-
-        WindowManager.LayoutParams lp = window.getAttributes();
-        lp.width = WindowManager.LayoutParams.MATCH_PARENT;
-        lp.height = WindowManager.LayoutParams.WRAP_CONTENT;
-
-        window.setAttributes(lp);
-        window.setWindowAnimations(anim);
+        setDialogGravity(dialog, gravity);
+        setDialogPadding(dialog, 0, 0, 0, 0);
+        setDialogSize(dialog, WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT);
 
         return dialog;
     }
@@ -54,116 +54,106 @@ public class AlertDialogTool {
     public static AlertDialog buildBottomPopupDialog(AlertDialog.Builder builder) {
         AlertDialog dialog = builder.create();
 
-        Window window = dialog.getWindow();
-        window.setGravity(Gravity.BOTTOM);
-        window.getDecorView().setPadding(0, 0, 0, 0);
+        setDialogGravity(dialog, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
+        setDialogPadding(dialog, 0, 0, 0, 0);
+        setDialogSize(dialog, WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT);
 
-        WindowManager.LayoutParams lp = window.getAttributes();
-        lp.width = WindowManager.LayoutParams.MATCH_PARENT;
-        lp.height = WindowManager.LayoutParams.WRAP_CONTENT;
-
-        window.setAttributes(lp);
-        window.setWindowAnimations(R.style.DialogBottomPopup);
-
-        return dialog;
-    }
-    public static AlertDialog buildLoadingDialog(Context context, String text, boolean cancelable) {
-
-        LayoutInflater inflater = LayoutInflater.from(context);
-        View v = inflater.inflate(R.layout.dialog_loading, null);
-
-        ((TextView)v.findViewById(R.id.text_title)).setText(text);
-
-        AlertDialog dialog = new AlertDialog.Builder(context, R.style.WhiteRoundDialog)
-                .setView(v)
-                .setCancelable(cancelable)
-                .create();
-
-        Window window = dialog.getWindow();
-        window.setGravity(Gravity.CENTER);
-
-        WindowManager.LayoutParams lp = window.getAttributes();
-        lp.width = WindowManager.LayoutParams.MATCH_PARENT;
-        lp.height = WindowManager.LayoutParams.WRAP_CONTENT;
-
-        window.setAttributes(lp);
-        window.setWindowAnimations(R.style.DialogFadePopup);
+        dialog.getWindow().setWindowAnimations(R.style.DialogBottomPopup);
 
         return dialog;
     }
 
-    public static AlertDialog setDialogButtonBetterStyle(Context context, AlertDialog dialog) {
+    public interface OnDialogConfigurationChangedListener {
+        void onDialogConfigurationChanged(Dialog dialog);
+    }
 
-        Button button = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
-        LinearLayout.LayoutParams cancelBtnPara = null;
-        if(button != null) {
-            cancelBtnPara = (LinearLayout.LayoutParams) button.getLayoutParams();
-            cancelBtnPara.height = ViewGroup.LayoutParams.WRAP_CONTENT;
-            cancelBtnPara.width = ViewGroup.LayoutParams.MATCH_PARENT;
-            cancelBtnPara.setMargins(0, 0, 0, 10);
-            button.setLayoutParams(cancelBtnPara);
-            button.setBackground(ContextCompat.getDrawable(context, R.drawable.btn_round_primary));
-            button.setTextColor(Color.WHITE);
-        }
-        button = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
-        if(button != null) {
+    private static final ArrayList<DialogSizeConfigurationData> receiveConfigurationChangedDialogs = new ArrayList<>();
+    private static class DialogSizeConfigurationData {
+        public Dialog dialog;
+        public int width;
+        public int height;
+        public OnDialogConfigurationChangedListener onDialogConfigurationChangedListener = null;
+    }
 
-            cancelBtnPara = (LinearLayout.LayoutParams) button.getLayoutParams();
-            cancelBtnPara.height = ViewGroup.LayoutParams.WRAP_CONTENT;
-            cancelBtnPara.width = ViewGroup.LayoutParams.MATCH_PARENT;
-            cancelBtnPara.setMargins(0, 0, 0, 10);
-            button.setLayoutParams(cancelBtnPara);
-            button.setBackground(ContextCompat.getDrawable(context, R.drawable.btn_round));
-        }
-        button = dialog.getButton(AlertDialog.BUTTON_NEUTRAL);
-        if(button != null) {
-
-            cancelBtnPara = (LinearLayout.LayoutParams) button.getLayoutParams();
-            cancelBtnPara.height = ViewGroup.LayoutParams.WRAP_CONTENT;
-            cancelBtnPara.width = ViewGroup.LayoutParams.MATCH_PARENT;
-            cancelBtnPara.setMargins(0, 0, 0, 10);
-            button.setLayoutParams(cancelBtnPara);
-            button.setBackground(ContextCompat.getDrawable(context, R.drawable.btn_round));
-        }
-        return dialog;
+    private static boolean isInReceiveConfigurationChangedDialogs(Dialog d) {
+        for(DialogSizeConfigurationData data : receiveConfigurationChangedDialogs)
+            if(data.dialog == d)
+                return true;
+        return false;
+    }
+    private static void deleteReceiveConfigurationChangedDialogs(Dialog d) {
+        DialogSizeConfigurationData needRemove = null;
+        for(DialogSizeConfigurationData data : receiveConfigurationChangedDialogs)
+            if(data.dialog == d) {
+                needRemove = data;
+                break;
+            }
+        if(needRemove != null)
+            receiveConfigurationChangedDialogs.remove(needRemove);
+    }
+    private static void addReceiveConfigurationChangedDialogs(Dialog d, int width, int height) {
+        DialogSizeConfigurationData data = new DialogSizeConfigurationData();
+        data.dialog = d;
+        data.width = width;
+        data.height = height;
+        receiveConfigurationChangedDialogs.add(data);
     }
 
     /**
      * 设置对话框边距
      */
-    public static Dialog setDialogGravity(Dialog dialog, int gravity) {
+    public static void setDialogGravity(Dialog dialog, int gravity) {
         Window window = dialog.getWindow();
         assert window != null;
         window.setGravity(gravity);
         window.getDecorView().setPadding(0, 0, 0, 0);
-        return dialog;
     }
     /**
      * 设置对话框边距
      */
-    public static Dialog setDialogPadding(Dialog dialog, int left, int top, int right, int bottom) {
+    public static void setDialogPadding(Dialog dialog, int left, int top, int right, int bottom) {
         Window window = dialog.getWindow();
         if(window != null) {
             View view = window.getDecorView();
             view.setPadding(left, top, right, bottom);
         }
-        return dialog;
     }
-    public static Dialog setDialogSize(Dialog dialog,int width, int height) {
+    public static void setDialogSize(Dialog dialog, int width, int height) {
         Window window = dialog.getWindow();
+        Context context = dialog.getContext();
         if(window != null) {
             WindowManager.LayoutParams layoutParams = window.getAttributes();
-            layoutParams.height = height;
             layoutParams.width = width;
+
+            if(!isInReceiveConfigurationChangedDialogs(dialog)) {
+                addReceiveConfigurationChangedDialogs(dialog, width, height);
+                dialog.setOnDismissListener(dialog1 -> deleteReceiveConfigurationChangedDialogs((Dialog) dialog1));
+            }
+
+            //设置对话框在宽屏模式下的最宽宽度
+            if(width == ViewGroup.LayoutParams.MATCH_PARENT) {
+                Point point = new Point();
+                context.getDisplay().getRealSize(point);
+                Size screenSize = new Size(point.x, point.y);
+
+                Configuration mConfiguration = context.getResources().getConfiguration(); //获取设置的配置信息
+                if (mConfiguration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                    layoutParams.width = screenSize.getWidth() > PixelTool.dp2px(context, 500) ?
+                            PixelTool.dp2px(context, 500) : width;
+                } else if (mConfiguration.orientation == Configuration.ORIENTATION_PORTRAIT) {
+                    layoutParams.width = width;
+                }
+            }
+
+            layoutParams.height = height;
             window.setAttributes(layoutParams);
         }
-        return dialog;
     }
-    public static Dialog setDialogMargin(Dialog dialog, float vertical, float horizontal) {
-        return setDialogMargin(dialog, vertical, horizontal,
+    public static void setDialogMargin(Dialog dialog, float vertical, float horizontal) {
+        setDialogMargin(dialog, vertical, horizontal,
                 WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT);
     }
-    public static Dialog setDialogMargin(Dialog dialog, float vertical, float horizontal, int width, int height) {
+    public static void setDialogMargin(Dialog dialog, float vertical, float horizontal, int width, int height) {
         Window window = dialog.getWindow();
         if(window != null) {
             WindowManager.LayoutParams layoutParams = window.getAttributes();
@@ -173,12 +163,25 @@ public class AlertDialogTool {
             layoutParams.verticalMargin = vertical;
             window.setAttributes(layoutParams);
         }
-        return dialog;
     }
-    public static Dialog setDialogWindowAnimations(Dialog dialog, int anim) {
+    public static void setDialogWindowAnimations(Dialog dialog, int anim) {
         Window window = dialog.getWindow();
         if(window != null)
             window.setWindowAnimations(anim);
-        return dialog;
+    }
+
+    public static void setOnDialogConfigurationChangedListener(Dialog dialog, OnDialogConfigurationChangedListener onDialogConfigurationChangedListener) {
+        for(DialogSizeConfigurationData data : receiveConfigurationChangedDialogs)
+            if(data.dialog == dialog) {
+                data.onDialogConfigurationChangedListener = onDialogConfigurationChangedListener;
+                break;
+            }
+    }
+    public static void notifyConfigurationChangedForDialog(Activity activity) {
+        for(DialogSizeConfigurationData data : receiveConfigurationChangedDialogs) {
+            setDialogSize(data.dialog, data.width, data.height);
+            if(data.onDialogConfigurationChangedListener != null)
+                data.onDialogConfigurationChangedListener.onDialogConfigurationChanged(data.dialog);
+        }
     }
 }

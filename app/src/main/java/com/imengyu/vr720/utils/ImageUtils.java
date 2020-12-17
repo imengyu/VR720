@@ -1,15 +1,22 @@
 package com.imengyu.vr720.utils;
 
+import android.content.ContentValues;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.util.Size;
 
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -114,25 +121,57 @@ public class ImageUtils
      * @param bitmap 图像
      * @return 返回是否成功
      */
-    public static SaveImageResult saveImageToStorageWithAutoName(String dir, Bitmap bitmap) {
+    public static SaveImageResult saveImageToGalleryWithAutoName(Context context, Bitmap bitmap) {
+
         SimpleDateFormat simpleDate = new SimpleDateFormat("yyyyMMddHHmmss", Locale.getDefault());
         String fileName = String.format("%s.jpg", simpleDate.format(new Date()));
-        String filePath = dir + fileName;
 
         SaveImageResult result = new SaveImageResult();
-        result.path = filePath;
-        try {
-            File file = new File(filePath);
-            FileOutputStream out = new FileOutputStream(file);
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out);
-            out.flush();
-            out.close();
-            result.success = true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            result.error = e.toString();
-            result.success = false;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ContentValues values = new ContentValues();
+            values.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
+            values.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpg");
+            values.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/VR720");
+            values.put(MediaStore.Images.Media.IS_PENDING, true);
+
+            Uri uri = context.getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+            if (uri != null) {
+                try {
+                    OutputStream out = context.getContentResolver().openOutputStream(uri);
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out);
+                    out.flush();
+                    out.close();
+                    values.put(MediaStore.Images.Media.IS_PENDING, false);
+                    context.getContentResolver().update(uri, values, null, null);
+
+                    result.success = true;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    result.error = e.toString();
+                    result.success = false;
+                }
+            }
         }
+        else {
+
+            String filePath = StorageDirUtils.getFileStoragePath() + fileName;
+            result.path = filePath;
+            try {
+                File file = new File(filePath);
+                FileOutputStream out = new FileOutputStream(file);
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out);
+                out.flush();
+                out.close();
+                result.success = true;
+            } catch (Exception e) {
+                e.printStackTrace();
+                result.error = e.toString();
+                result.success = false;
+            }
+
+        }
+
         return result;
     }
 }

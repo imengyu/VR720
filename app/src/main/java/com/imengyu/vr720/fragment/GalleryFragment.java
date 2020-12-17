@@ -21,6 +21,7 @@ import androidx.fragment.app.Fragment;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.imengyu.vr720.GalleryActivity;
+import com.imengyu.vr720.MainActivity;
 import com.imengyu.vr720.R;
 import com.imengyu.vr720.VR720Application;
 import com.imengyu.vr720.config.Codes;
@@ -42,6 +43,18 @@ import java.util.TimerTask;
 
 public class GalleryFragment extends Fragment implements IMainFragment {
 
+    public GalleryFragment() {
+        MainActivity mainActivity = (MainActivity)getActivity();
+        if(mainActivity != null) {
+            listDataService = mainActivity.getListDataService();
+            handler = mainActivity.getHandler();
+            titleBar = mainActivity.getToolbar();
+        } else {
+            listDataService = null;
+            handler = null;
+            titleBar = null;
+        }
+    }
     public GalleryFragment(Handler handler, MyTitleBar titleBar, ListDataService listDataService) {
         this.handler = handler;
         this.titleBar = titleBar;
@@ -55,7 +68,7 @@ public class GalleryFragment extends Fragment implements IMainFragment {
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.layout_gallery, null);
+        return inflater.inflate(R.layout.layout_gallery, container, false);
     }
 
     @Override

@@ -2,6 +2,7 @@ package com.imengyu.vr720.fragment;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.Handler;
@@ -13,8 +14,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AnimationSet;
 import android.view.animation.AnimationUtils;
+import android.widget.GridView;
 import android.widget.LinearLayout;
-import android.widget.ListView;
 import android.widget.PopupMenu;
 
 import androidx.annotation.NonNull;
@@ -25,6 +26,7 @@ import androidx.preference.PreferenceManager;
 import com.donkingliang.imageselector.utils.ImageSelector;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.hjq.toast.ToastUtils;
+import com.imengyu.vr720.MainActivity;
 import com.imengyu.vr720.PanoActivity;
 import com.imengyu.vr720.R;
 import com.imengyu.vr720.VR720Application;
@@ -45,12 +47,23 @@ import com.scwang.smart.refresh.layout.api.RefreshLayout;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
 public class HomeFragment extends Fragment implements IMainFragment {
 
+    public HomeFragment() {
+        MainActivity mainActivity = (MainActivity)getActivity();
+        if(mainActivity != null) {
+            listDataService = mainActivity.getListDataService();
+            handler = mainActivity.getHandler();
+            titleBar = mainActivity.getToolbar();
+        } else {
+            listDataService = null;
+            handler = null;
+            titleBar = null;
+        }
+    }
     public HomeFragment(Handler handler, MyTitleBar titleBar, ListDataService listDataService) {
         this.handler = handler;
         this.titleBar = titleBar;
@@ -64,7 +77,7 @@ public class HomeFragment extends Fragment implements IMainFragment {
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.layout_home, null);
+        return inflater.inflate(R.layout.layout_home, container, false);
     }
 
     @Override
@@ -76,6 +89,8 @@ public class HomeFragment extends Fragment implements IMainFragment {
 
         loadSettings();
         loadList();
+
+        onUpdateScreenOrientation(getResources().getConfiguration());
     }
 
     @Override
@@ -87,6 +102,7 @@ public class HomeFragment extends Fragment implements IMainFragment {
     private Resources resources;
 
     private MainList mainList = null;
+    private GridView grid_main;
     private RefreshLayout refreshLayout;
 
     private void initView(View view) {
@@ -95,7 +111,7 @@ public class HomeFragment extends Fragment implements IMainFragment {
 
         final LinearLayout footerSelection = view.findViewById(R.id.footer_select_main);
         footerSelection.setVisibility(View.GONE);
-        ListView listView = view.findViewById(R.id.listview_main);
+        grid_main = view.findViewById(R.id.grid_main);
 
         final View button_mainsel_openwith = view.findViewById(R.id.button_mainsel_openwith);
         final View button_mainsel_delete = view.findViewById(R.id.button_mainsel_delete);
@@ -108,7 +124,7 @@ public class HomeFragment extends Fragment implements IMainFragment {
         button_mainsel_add_to.setOnClickListener(v -> onAddImageToClick());
 
         mainList = new MainList(getContext(), ((VR720Application)getActivity().getApplication()).getListImageCacheService());
-        mainList.init(handler, listView);
+        mainList.init(handler, grid_main);
         mainList.setListCheckableChangedListener(checkable -> {
             if (checkable) {
                 fab.hide();
@@ -148,13 +164,19 @@ public class HomeFragment extends Fragment implements IMainFragment {
             }
         });
 
-        listView.setDividerHeight(0);
-        listView.setDivider(null);
-        listView.setEmptyView(view.findViewById(R.id.empty_main));
+        grid_main.setEmptyView(view.findViewById(R.id.empty_main));
 
         refreshLayout = view.findViewById(R.id.refreshLayout);
         refreshLayout.setRefreshHeader(new ClassicsHeader(getContext()));
         refreshLayout.setOnRefreshListener(refreshlayout -> loadList());
+    }
+
+    private void onUpdateScreenOrientation(Configuration newConfig) {
+        if(newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
+            grid_main.setNumColumns(1);
+        } else if(newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            grid_main.setNumColumns(2);
+        }
     }
 
     //====================================================
@@ -175,6 +197,12 @@ public class HomeFragment extends Fragment implements IMainFragment {
     //====================================================
     //公共方法
     //====================================================
+
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        onUpdateScreenOrientation(newConfig);
+        super.onConfigurationChanged(newConfig);
+    }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -364,7 +392,7 @@ public class HomeFragment extends Fragment implements IMainFragment {
     private void onOpenImageWithClick() {
         final List<MainListItem> sel = mainList.getSelectedItems();
         if(sel.size() == 1)
-            FileUtils.openFile(getActivity(), sel.get(0).getFilePath());
+            FileUtils.openFileWithApp(getActivity(), sel.get(0).getFilePath());
 
         mainList.setListCheckMode(false);
     }

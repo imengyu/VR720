@@ -1,6 +1,7 @@
 package com.imengyu.vr720.utils;
 
 import android.content.Context;
+import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
@@ -18,11 +19,13 @@ public class StorageDirUtils {
 
     private static final String[] storageDirs = new String[6];
 
+    public static String getStoragePath() {
+        return storagePath;
+    }
     public static String getCachePath() { return cachePath; }
     public static String getViewCachePath() { return storageDirs[4]; }
     public static String getGalleryCachePath() { return storageDirs[5]; }
-    public static String getScreenShotsStoragePath() { return storageDirs[2]; }
-    public static String getCacheStoragePath() { return storageDirs[3]; }
+    public static String getFileStoragePath() { return storageDirs[0]; }
 
     /**
      * 检测并创建存储文件夹
@@ -31,16 +34,20 @@ public class StorageDirUtils {
 
         if(Environment.getExternalStorageState().equalsIgnoreCase(Environment.MEDIA_MOUNTED)) {
             cachePath = context.getExternalCacheDir().getAbsolutePath();
-            storagePath = context.getExternalFilesDir(null).getAbsolutePath();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+                storagePath = context.getExternalFilesDir(null).getAbsolutePath();
+            else
+                storagePath = Environment.getExternalStorageDirectory().getAbsolutePath();
+
         }else {
             cachePath = context.getCacheDir().getAbsolutePath();
             storagePath = "/mnt/sdcard";
         }
 
         storageDirs[0] = storagePath + "/VR720/";
-        storageDirs[1] = storagePath + "/VR720/";
-        storageDirs[2] = storagePath + "/VR720/ScreenShots/";
-        storageDirs[3] = storagePath + "/VR720/Cache/";
+        storageDirs[1] = "";
+        storageDirs[2] = "";
+        storageDirs[3] = "";
         storageDirs[4] = cachePath + "/viewCache/";
         storageDirs[5] = cachePath + "/galleryCache/";
 

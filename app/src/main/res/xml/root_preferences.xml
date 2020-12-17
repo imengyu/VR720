@@ -49,6 +49,13 @@
         <SwitchPreferenceCompat
             app:iconSpaceReserved="false"
             app:defaultValue="true"
+            app:key="enable_view_cache"
+            app:title="@string/settings_key_enable_view_cache"
+            app:summary="@string/settings_summary_enable_view_cache" />
+
+        <SwitchPreferenceCompat
+            app:iconSpaceReserved="false"
+            app:defaultValue="true"
             app:key="enable_drag_velocity"
             app:title="@string/settings_key_enable_drag_velocity" />
 
@@ -78,6 +85,11 @@
             app:key="show_debug_tool"
             app:title="@string/settings_key_show_debug_tool" />
 
+        <Preference
+            app:title="@string/settings_key_clear_cache"
+            app:iconSpaceReserved="false"
+            app:key="settings_key_clear_cache" />
+
     </PreferenceCategory>
 
     <PreferenceCategory
@@ -88,7 +100,6 @@
             app:title="@string/settings_key_about"
             app:iconSpaceReserved="false"
             app:key="app_about" />
-
 
         <Preference
             app:title="@string/settings_key_privacy_policy"

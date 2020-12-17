@@ -13,7 +13,8 @@
         android:paddingStart="20dp"
         android:paddingTop="25dp"
         android:paddingEnd="20dp"
-        android:paddingBottom="25dp">
+        android:paddingBottom="25dp"
+        android:maxWidth="500dp">
 
         <TextView
             android:id="@+id/text_title"

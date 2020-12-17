@@ -1,40 +1,14 @@
 package com.imengyu.vr720;
 
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.os.Bundle;
-
-import com.donkingliang.imageselector.utils.ImageSelector;
-import com.google.android.material.appbar.CollapsingToolbarLayout;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
-import com.hjq.toast.ToastUtils;
-import com.imengyu.vr720.config.Codes;
-import com.imengyu.vr720.config.MainMessages;
-import com.imengyu.vr720.dialog.AppDialogs;
-import com.imengyu.vr720.dialog.CommonDialog;
-import com.imengyu.vr720.fragment.IMainFragment;
-import com.imengyu.vr720.list.GalleryGridList;
-import com.imengyu.vr720.list.GalleryList;
-import com.imengyu.vr720.model.GalleryItem;
-import com.imengyu.vr720.model.ImageItem;
-import com.imengyu.vr720.model.list.GalleryListItem;
-import com.imengyu.vr720.model.list.MainListItem;
-import com.imengyu.vr720.service.ListDataService;
-import com.imengyu.vr720.utils.FileUtils;
-import com.imengyu.vr720.utils.StatusBarUtils;
-import com.imengyu.vr720.widget.MyTitleBar;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-import androidx.core.graphics.drawable.DrawableCompat;
-import androidx.fragment.app.Fragment;
-
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
+import android.util.Size;
 import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
@@ -44,11 +18,31 @@ import android.widget.Button;
 import android.widget.GridView;
 import android.widget.PopupMenu;
 
-import java.io.File;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.drawable.DrawableCompat;
+
+import com.donkingliang.imageselector.utils.ImageSelector;
+import com.hjq.toast.ToastUtils;
+import com.imengyu.vr720.config.Codes;
+import com.imengyu.vr720.config.MainMessages;
+import com.imengyu.vr720.dialog.AppDialogs;
+import com.imengyu.vr720.dialog.CommonDialog;
+import com.imengyu.vr720.list.GalleryGridList;
+import com.imengyu.vr720.model.GalleryItem;
+import com.imengyu.vr720.model.ImageItem;
+import com.imengyu.vr720.model.list.MainListItem;
+import com.imengyu.vr720.service.ListDataService;
+import com.imengyu.vr720.utils.AlertDialogTool;
+import com.imengyu.vr720.utils.FileUtils;
+import com.imengyu.vr720.utils.ScreenUtils;
+import com.imengyu.vr720.utils.StatusBarUtils;
+import com.imengyu.vr720.widget.MyTitleBar;
+
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 public class GalleryActivity extends AppCompatActivity {
 
@@ -65,10 +59,12 @@ public class GalleryActivity extends AppCompatActivity {
         listDataService = ((VR720Application)getApplication()).getListDataService();
         galleryGridList = new GalleryGridList(this, ((VR720Application)getApplication()).getListImageCacheService());
         resources = getResources();
+        screenSize = ScreenUtils.getScreenSize(this);
 
         initView();
         initMenu();
         initGallery();
+        onUpdateScreenOrientation(getResources().getConfiguration());
     }
 
     private int currentGalleryId = 0;
@@ -80,6 +76,9 @@ public class GalleryActivity extends AppCompatActivity {
     private ListDataService listDataService = null;
 
     private MyTitleBar titleBar;
+    private GridView gridView;
+
+    private Size screenSize = null;
 
     //====================================================
     //菜单
@@ -126,11 +125,9 @@ public class GalleryActivity extends AppCompatActivity {
         titleBar.setLeftIconOnClickListener(v -> onBackPressed());
         titleBar.setRightIconOnClickListener((v) -> onMoreClicked());
 
-        GridView gridView = findViewById(R.id.grid_gallery);
+        gridView = findViewById(R.id.grid_gallery);
         gridView.setAdapter(galleryGridList.getListAdapter());
-        View layout_empty = findViewById(R.id.layout_empty);
-
-        gridView.setEmptyView(layout_empty);
+        gridView.setEmptyView(findViewById(R.id.layout_empty));
 
         View layout_selection = findViewById(R.id.layout_selection);
         layout_selection.setVisibility(View.GONE);
@@ -246,40 +243,38 @@ public class GalleryActivity extends AppCompatActivity {
     private void onOpenImageWithClick() {
         final List<MainListItem> sel = galleryGridList.getSelectedItems();
         if(sel.size() == 1)
-            FileUtils.openFile(this, sel.get(0).getFilePath());
+            FileUtils.openFileWithApp(this, sel.get(0).getFilePath());
     }
     private void onAddImageToClick() {
         final List<MainListItem> sel = galleryGridList.getSelectedItems();
         if(sel.size() > 0) {
-            AppDialogs.showChooseGalleryDialog(handler, this, listDataService, galleryId -> {
-
+            AppDialogs.showChooseGalleryDialog(handler, this, listDataService, galleryId ->
                 AppDialogs.showChooseItemDialog(GalleryActivity.this, getString(R.string.text_choose_move_method),
-                        new String[] {
-                                getString(R.string.text_method_move),
-                                getString(R.string.text_method_copy)
-                        } , (choose, i, c) -> {
+                    new String[] {
+                            getString(R.string.text_method_move),
+                            getString(R.string.text_method_copy)
+                    } , (choose, i, c) -> {
 
-                    if(!choose)
-                        return;
+                if(!choose)
+                    return;
 
-                    boolean isMove = i == 0;
+                boolean isMove = i == 0;
 
-                    //添加到对应相册
-                    ImageItem imageItem;
-                    for(MainListItem item : sel) {
-                        imageItem = item.getImageItem();
-                        if(!imageItem.isInBelongGalleries(galleryId))
-                            imageItem.belongGalleries.add(galleryId);
-                        if(isMove)
-                            imageItem.belongGalleries.remove((Object)currentGalleryId);
-                    }
+                //添加到对应相册
+                ImageItem imageItem;
+                for(MainListItem item : sel) {
+                    imageItem = item.getImageItem();
+                    if(!imageItem.isInBelongGalleries(galleryId))
+                        imageItem.belongGalleries.add(galleryId);
+                    if(isMove)
+                        imageItem.belongGalleries.remove((Object)currentGalleryId);
+                }
 
-                    currentGalleryChanged = true;
-                    galleryGridList.setListCheckMode(false);
+                currentGalleryChanged = true;
+                galleryGridList.setListCheckMode(false);
 
-                    ToastUtils.show(R.string.text_add_success);
-                });
-            });
+                ToastUtils.show(R.string.text_add_success);
+            }));
         }
     }
     private void onRenameGalleryClick() {
@@ -354,6 +349,21 @@ public class GalleryActivity extends AppCompatActivity {
         finish();
     }
 
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        onUpdateScreenOrientation(newConfig);
+        AlertDialogTool.notifyConfigurationChangedForDialog(this);
+        super.onConfigurationChanged(newConfig);
+    }
+
+    private void onUpdateScreenOrientation(Configuration newConfig) {
+        if(newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
+            gridView.setNumColumns(3);
+        } else if(newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            gridView.setNumColumns(screenSize.getHeight() / (screenSize.getWidth() / 3));
+        }
+    }
+
     //====================================================
     //handler
     //====================================================
@@ -362,12 +372,15 @@ public class GalleryActivity extends AppCompatActivity {
         private final WeakReference<GalleryActivity> mTarget;
 
         SubHandler(GalleryActivity target) {
+            super(Looper.myLooper());
             mTarget = new WeakReference<>(target);
         }
 
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
+                case MainMessages.MSG_TEST_LIST:
+                    break;
                 case MainMessages.MSG_REFRESH_LIST: {
                     mTarget.get().galleryGridList.refresh();
                     break;

@@ -1,7 +1,9 @@
 package com.imengyu.vr720.dialog;
 
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.os.Handler;
 import android.os.Message;
 import android.text.method.LinkMovementMethod;
@@ -10,9 +12,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.ListAdapter;
 import android.widget.ListView;
-import android.widget.SimpleAdapter;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AlertDialog;
@@ -65,9 +65,9 @@ public class AppDialogs {
 
   public static void showPrivacyPolicyAndAgreement(Activity activity, OnAgreementCloseListener onAgreementCloseListener) {
     LayoutInflater inflater = LayoutInflater.from(activity);
-    View v = inflater.inflate(R.layout.dialog_argeement, null);
+    View v = inflater.inflate(R.layout.dialog_argeement, (ViewGroup) activity.getWindow().getDecorView(), false);
 
-    AlertDialog dialog = AlertDialogTool.buildCustomStylePopupDialogGravity(activity, v, Gravity.BOTTOM, R.style.DialogBottomPopup, false);
+    AlertDialog dialog = AlertDialogTool.buildCustomStylePopupDialogGravity(activity, v, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, R.style.DialogBottomPopup, false);
     dialog.show();
 
     Button btn_ok = v.findViewById(R.id.btn_ok);
@@ -89,7 +89,7 @@ public class AppDialogs {
       text_title.setText(R.string.settings_key_privacy_policy);
     }
 
-    text_base.setMovementMethod(LinkMovementMethod.getInstance()); ;
+    text_base.setMovementMethod(LinkMovementMethod.getInstance());
 
   }
   public static void showChooseGalleryDialog(Handler handler, Activity activity, ListDataService listDataService, OnChooseGalleryListener onChooseGalleryListener) {
@@ -98,7 +98,7 @@ public class AppDialogs {
             R.layout.item_gallery_small, listItems);
 
     LayoutInflater inflater = LayoutInflater.from(activity);
-    View v = inflater.inflate(R.layout.dialog_choose_gallery, null);
+    View v = inflater.inflate(R.layout.dialog_choose_gallery, (ViewGroup) activity.getWindow().getDecorView(), false);
     AlertDialog dialog = AlertDialogTool.buildCustomBottomPopupDialog(activity, v);
 
     ListView list_gallery = v.findViewById(R.id.list_gallery);
@@ -117,6 +117,23 @@ public class AppDialogs {
       listItems.add(nItem);
     }
     smallGalleryListAdapter.notifyDataSetChanged();
+
+    AlertDialogTool.OnDialogConfigurationChangedListener listener = dialog1 -> {
+      //设置横屏时的列表高度
+      Configuration mConfiguration = activity.getResources().getConfiguration();
+      if (mConfiguration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+        ViewGroup.LayoutParams layoutParams = list_gallery.getLayoutParams();
+        layoutParams.height = PixelTool.dp2px(activity, 180);
+        list_gallery.setLayoutParams(layoutParams);
+      } else if (mConfiguration.orientation == Configuration.ORIENTATION_PORTRAIT) {
+        ViewGroup.LayoutParams layoutParams = list_gallery.getLayoutParams();
+        layoutParams.height = PixelTool.dp2px(activity, 380);
+        list_gallery.setLayoutParams(layoutParams);
+      }
+    };
+    AlertDialogTool.setOnDialogConfigurationChangedListener(dialog, listener);
+    listener.onDialogConfigurationChanged(dialog);
+
 
     //按钮事件
     v.findViewById(R.id.btn_cancel).setOnClickListener(view -> dialog.dismiss());
@@ -172,7 +189,7 @@ public class AppDialogs {
     final SimpleListAdapter adapter = new SimpleListAdapter(activity, R.layout.item_simple, listItems);
 
     LayoutInflater inflater = LayoutInflater.from(activity);
-    View v = inflater.inflate(R.layout.dialog_choose_item, null);
+    View v = inflater.inflate(R.layout.dialog_choose_item, (ViewGroup) activity.getWindow().getDecorView(), false);
     AlertDialog dialog = AlertDialogTool.buildCustomBottomPopupDialog(activity, v);
 
     ListView list_simple = v.findViewById(R.id.list_simple);
@@ -181,9 +198,22 @@ public class AppDialogs {
     list_simple.setDivider(null);
     list_simple.setDividerHeight(0);
 
-    ViewGroup.LayoutParams layoutParams = list_simple.getLayoutParams();
-    layoutParams.height = PixelTool.dpToPx(activity, items.length >= 8 ? 430 : items.length * 70);
-    list_simple.setLayoutParams(layoutParams);
+    AlertDialogTool.OnDialogConfigurationChangedListener listener = dialog1 -> {
+      //设置横屏时的列表高度
+      Configuration mConfiguration = activity.getResources().getConfiguration();
+      if (mConfiguration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+        ViewGroup.LayoutParams layoutParams = list_simple.getLayoutParams();
+        layoutParams.height = PixelTool.dp2px(activity, items.length >= 4 ? 200 : items.length * 50);
+        list_simple.setLayoutParams(layoutParams);
+      } else if (mConfiguration.orientation == Configuration.ORIENTATION_PORTRAIT) {
+        ViewGroup.LayoutParams layoutParams = list_simple.getLayoutParams();
+        layoutParams.height = PixelTool.dp2px(activity, items.length >= 8 ? 400 : items.length * 50);
+        list_simple.setLayoutParams(layoutParams);
+      }
+    };
+
+    AlertDialogTool.setOnDialogConfigurationChangedListener(dialog, listener);
+    listener.onDialogConfigurationChanged(dialog);
 
     //添加条目
     listItems.addAll(Arrays.asList(items));

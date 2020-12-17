@@ -9,6 +9,7 @@ import android.os.Handler;
 import android.view.View;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
+import android.widget.GridView;
 import android.widget.ListView;
 
 import com.imengyu.vr720.R;
@@ -39,7 +40,7 @@ public class MainList extends SelectableListSolver<MainListItem> {
         resources = context.getResources();
     }
 
-    public void init(Handler handler, ListView listView) {
+    public void init(Handler handler, GridView gridView) {
         this.handler = handler;
 
         mainListAdapter = new MainListAdapter(this, context, R.layout.item_main, mainListItems);
@@ -60,7 +61,6 @@ public class MainList extends SelectableListSolver<MainListItem> {
                             mainListItems.remove(item);
                     }
                     mainListItems.add(new MainListItem(resources.getString(R.string.text_end)));
-                    mainListItems.add(new MainListItem("\n\n"));
                     nextChangedDoNotNotify=true;
                     mainListAdapter.notifyDataSetChanged();
                 }else if(mainListItems.size() > 0){
@@ -80,8 +80,8 @@ public class MainList extends SelectableListSolver<MainListItem> {
         super.init(mainListAdapter, mainListItems);
         super.setListOnNotifyChangeListener(this::notifyChange);
 
-        listView.setAdapter(mainListAdapter);
-        listView.setChoiceMode(AbsListView.CHOICE_MODE_NONE);
+        gridView.setAdapter(mainListAdapter);
+        gridView.setChoiceMode(AbsListView.CHOICE_MODE_NONE);
     }
 
     private final Resources resources;
@@ -127,12 +127,11 @@ public class MainList extends SelectableListSolver<MainListItem> {
             if(drawable != null) {
                 item.setThumbnail(drawable);
                 item.setThumbnailLoading(false);
-                notifyChange();
             } else {
                 item.setThumbnailLoading(false);
                 item.setThumbnailFail(true);
-                notifyChange();
             }
+            notifyChange(500);
         }).start();
     }
 
@@ -216,6 +215,9 @@ public class MainList extends SelectableListSolver<MainListItem> {
      */
     public void notifyChange() {
         handler.sendEmptyMessage(MainMessages.MSG_REFRESH_LIST);
+    }
+    public void notifyChange(int delay) {
+        handler.sendEmptyMessageDelayed(MainMessages.MSG_REFRESH_LIST, delay);
     }
 
     //====================================================

@@ -5,384 +5,58 @@
     android:layout_height="wrap_content"
     android:background="@color/colorPanoBarBackground"
     android:focusable="true"
-    android:orientation="vertical">
+    android:gravity="center_horizontal">
 
-    <LinearLayout
-        android:id="@+id/pano_menu"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
+    <com.imengyu.vr720.widget.ToolbarButton
+        android:id="@+id/button_like"
+        style="@style/Widget.AppCompat.Button.Borderless"
+        android:layout_width="wrap_content"
+        android:layout_height="70dp"
+        android:layout_marginStart="8dp"
+        android:drawableTop="@drawable/ic_image_ilike"
+        android:text="@string/text_i_like_it"
+        android:textAlignment="center"
+        android:textColor="@android:color/white"
+        app:hoverColor="@color/colorPrimary"
+        app:normalColor="@android:color/white" />
 
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+    <com.imengyu.vr720.widget.ToolbarButton
+        android:id="@+id/button_short"
+        style="@style/Widget.AppCompat.Button.Borderless"
+        android:layout_width="wrap_content"
+        android:layout_height="70dp"
+        android:drawableTop="@drawable/ic_bar_shot"
+        android:text="@string/action_shot"
+        android:textAlignment="center"
+        android:textColor="@android:color/white"
+        app:hoverColor="@color/colorPrimary"
+        app:normalColor="@android:color/white" />
 
-            <Button
-                android:id="@+id/action_pano_gyro"
-                style="@style/ButtonDarkItem"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:drawableStart="@drawable/ic_file_gyro"
-                android:drawableTint="@android:color/white"
-                android:text="@string/action_pano_gyro" />
+    <com.imengyu.vr720.widget.ToolbarButton
+        android:id="@+id/button_mode"
+        style="@style/Widget.AppCompat.Button.Borderless"
+        android:layout_width="wrap_content"
+        android:layout_height="70dp"
+        android:layout_marginStart="4dp"
+        android:drawableTop="@drawable/ic_bar_projection_ball"
+        android:text="@string/text_mode_ball"
+        android:textAlignment="center"
+        android:textColor="@android:color/white"
+        app:activeable="false"
+        app:hoverColor="@color/colorPrimary"
+        app:normalColor="@android:color/white" />
 
-            <TextView
-                android:id="@+id/text_not_support_sensor"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:layout_marginStart="10dp"
-                android:layout_marginEnd="10dp"
-                android:layout_toStartOf="@id/switch_enable_gyro"
-                android:background="@drawable/dialog_white_bg"
-                android:drawablePadding="4dp"
-                android:paddingStart="4dp"
-                android:paddingTop="2dp"
-                android:paddingEnd="7dp"
-                android:paddingBottom="2dp"
-                android:text="@string/text_gyro_not_support"
-                app:drawableLeftCompat="@drawable/ic_warning" />
-
-            <androidx.appcompat.widget.SwitchCompat
-                android:id="@+id/switch_enable_gyro"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:layout_marginStart="0dp"
-                android:layout_marginEnd="10dp" />
-
-        </RelativeLayout>
-
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <Button
-                android:id="@+id/action_pano_vr"
-                style="@style/ButtonDarkItem"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:drawableStart="@drawable/ic_file_vr"
-                android:drawableTint="@android:color/white"
-                android:text="@string/text_vr_mode" />
-
-            <androidx.appcompat.widget.SwitchCompat
-                android:id="@+id/switch_enable_vr"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:layout_marginStart="0dp"
-                android:layout_marginEnd="10dp" />
-
-        </RelativeLayout>
-
-        <Button
-            android:id="@+id/action_view_file_info"
-            style="@style/ButtonDarkItem"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:drawableStart="@drawable/ic_file_info"
-            android:drawableTint="@android:color/white"
-            android:text="@string/action_view_file_info" />
-
-        <Button
-            android:id="@+id/action_openwith_text"
-            style="@style/ButtonDarkItem"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:drawableStart="@drawable/ic_file_open"
-            android:drawableTint="@android:color/white"
-            android:text="@string/action_open_with_text" />
-
-        <Button
-            android:id="@+id/action_delete_file"
-            style="@style/ButtonDarkItem"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:drawableStart="@drawable/ic_file_delete"
-            android:drawableTint="@android:color/white"
-            android:text="@string/action_delete_file" />
-
-        <Button
-            android:id="@+id/action_back_main"
-            style="@style/ButtonDarkItem"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:drawableStart="@drawable/ic_file_close"
-            android:drawableTint="@android:color/white"
-            android:text="@string/action_back_main" />
-
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/pano_info"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
-
-        <RelativeLayout
-            android:id="@+id/pano_info_title"
-            style="@style/FileInfoDarkItem"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="fill|fill_horizontal"
-            android:orientation="horizontal">
-
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:text="@string/text_file_info"
-                android:textColor="@android:color/white" />
-
-            <Button
-                android:id="@+id/button_close_pano_info"
-                style="@style/ButtonTransParent"
-                android:layout_width="30dp"
-                android:layout_height="30dp"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:foreground="@drawable/ic_file_close"
-                android:foregroundTint="@android:color/white" />
-        </RelativeLayout>
-
-        <RelativeLayout
-            style="@style/FileInfoDarkItem"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="fill|fill_horizontal"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:text="@string/text_image_size"
-                android:textColor="@android:color/white" />
-
-            <TextView
-                android:id="@+id/text_pano_info_size"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:layout_marginStart="255dp"
-                android:text="@string/text_placeholder"
-                android:textColor="@android:color/white" />
-        </RelativeLayout>
-
-        <RelativeLayout
-            style="@style/FileInfoDarkItem"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="fill|fill_horizontal"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:text="@string/text_image_date"
-                android:textColor="@android:color/white" />
-
-            <TextView
-                android:id="@+id/text_pano_info_image_time"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:text="@string/text_placeholder"
-                android:textColor="@android:color/white" />
-        </RelativeLayout>
-
-        <RelativeLayout
-            style="@style/FileInfoDarkItem"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="fill|fill_horizontal"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:text="@string/text_file_size"
-                android:textColor="@android:color/white" />
-
-            <TextView
-                android:id="@+id/text_pano_info_file_size"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:text="@string/text_placeholder"
-                android:textColor="@android:color/white" />
-        </RelativeLayout>
-
-        <RelativeLayout
-            android:id="@+id/layout_info_path"
-            style="@style/FileInfoDarkItem"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:clickable="true"
-            android:gravity="fill|fill_horizontal"
-            android:orientation="horizontal"
-            android:focusable="true">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:text="@string/text_file_path"
-                android:textColor="@android:color/white" />
-
-            <TextView
-                android:id="@+id/text_pano_info_file_path"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:layout_marginStart="75dp"
-                android:text="@string/text_placeholder"
-                android:textAlignment="textEnd"
-                android:textColor="@android:color/white" />
-        </RelativeLayout>
-
-        <RelativeLayout
-            style="@style/FileInfoDarkItem"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="fill|fill_horizontal"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:text="@string/text_image_shutter_time"
-                android:textColor="@android:color/white" />
-
-            <TextView
-                android:id="@+id/text_pano_info_shutter_time"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:text="@string/text_placeholder"
-                android:textColor="@android:color/white" />
-        </RelativeLayout>
-
-        <RelativeLayout
-            style="@style/FileInfoDarkItem"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="fill|fill_horizontal"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:text="@string/text_image_exposure_bias_value"
-                android:textColor="@android:color/white" />
-
-            <TextView
-                android:id="@+id/text_pano_info_exposure_bias_value"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:text="@string/text_placeholder"
-                android:textColor="@android:color/white" />
-        </RelativeLayout>
-
-        <RelativeLayout
-            style="@style/FileInfoDarkItem"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:text="@string/text_image_iso_sensitivity"
-                android:textColor="@android:color/white" />
-
-            <TextView
-                android:id="@+id/text_pano_info_iso_sensitivit"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:text="@string/text_placeholder"
-                android:textColor="@android:color/white" />
-        </RelativeLayout>
-
-
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/pano_tools"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_horizontal">
-
-        <com.imengyu.vr720.widget.ToolbarButton
-            android:id="@+id/button_like"
-            style="@style/Widget.AppCompat.Button.Borderless"
-            android:layout_width="wrap_content"
-            android:layout_height="70dp"
-            android:layout_marginStart="8dp"
-            android:drawableTop="@drawable/ic_image_ilike"
-            android:text="@string/text_i_like_it"
-            android:textAlignment="center"
-            android:textColor="@android:color/white"
-            app:hoverColor="@color/colorPrimary"
-            app:normalColor="@android:color/white" />
-
-        <com.imengyu.vr720.widget.ToolbarButton
-            android:id="@+id/button_short"
-            style="@style/Widget.AppCompat.Button.Borderless"
-            android:layout_width="wrap_content"
-            android:layout_height="70dp"
-            android:drawableTop="@drawable/ic_bar_shot"
-            android:text="@string/action_shot"
-            android:textAlignment="center"
-            android:textColor="@android:color/white"
-            app:hoverColor="@color/colorPrimary"
-            app:normalColor="@android:color/white" />
-
-        <com.imengyu.vr720.widget.ToolbarButton
-            android:id="@+id/button_mode"
-            style="@style/Widget.AppCompat.Button.Borderless"
-            android:layout_width="wrap_content"
-            android:layout_height="70dp"
-            android:layout_marginStart="4dp"
-            android:drawableTop="@drawable/ic_bar_projection_ball"
-            android:text="@string/text_mode_ball"
-            android:textAlignment="center"
-            android:textColor="@android:color/white"
-            app:activeable="false"
-            app:hoverColor="@color/colorPrimary"
-            app:normalColor="@android:color/white" />
-
-        <com.imengyu.vr720.widget.ToolbarButton
-            android:id="@+id/button_more"
-            style="@style/Widget.AppCompat.Button.Borderless"
-            android:layout_width="wrap_content"
-            android:layout_height="70dp"
-            android:layout_marginEnd="8dp"
-            android:drawableTop="@drawable/ic_bar_more"
-            android:text="@string/text_more"
-            android:textAlignment="center"
-            android:textColor="@android:color/white"
-            app:hoverColor="@color/colorPrimary"
-            app:normalColor="@android:color/white" />
-
-    </LinearLayout>
+    <com.imengyu.vr720.widget.ToolbarButton
+        android:id="@+id/button_more"
+        style="@style/Widget.AppCompat.Button.Borderless"
+        android:layout_width="wrap_content"
+        android:layout_height="70dp"
+        android:layout_marginEnd="8dp"
+        android:drawableTop="@drawable/ic_bar_more"
+        android:text="@string/text_more"
+        android:textAlignment="center"
+        android:textColor="@android:color/white"
+        app:hoverColor="@color/colorPrimary"
+        app:normalColor="@android:color/white" />
 
 </LinearLayout>

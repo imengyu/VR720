@@ -8,10 +8,10 @@ import androidx.fragment.app.FragmentStatePagerAdapter;
 import java.util.List;
 
 public class MyFragmentAdapter extends FragmentStatePagerAdapter {
-  private List<Fragment> mFragments ;
-  private List<String> mTitles ;
+  private final List<Fragment> mFragments ;
+  private final List<String> mTitles ;
   public MyFragmentAdapter(FragmentManager fm, List<Fragment> fragments, List<String> titles) {
-    super(fm);
+    super(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT);
     mFragments = fragments;
     mTitles = titles;
   }
