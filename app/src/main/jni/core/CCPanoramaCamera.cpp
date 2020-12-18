@@ -221,7 +221,7 @@ float CCPanoramaCamera::GetZoomPercentage() {
 		case CCPanoramaCameraMode::OutRoataround:
 			return (float)(Position.z - RoateNearMax) / (float)(RoateFarMax - RoateNearMax);
 		case CCPanoramaCameraMode::Static:
-			break;
+			return 1.0f;
 	}
 	return 0;
 }

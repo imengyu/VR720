@@ -6,8 +6,7 @@ COpenGLRenderer::COpenGLRenderer()
 {
 }
 COpenGLRenderer::~COpenGLRenderer()
-{
-}
+= default;
 
 bool COpenGLRenderer::Init()
 {
@@ -23,10 +22,10 @@ void COpenGLRenderer::Update()
 {
 
 }
-void COpenGLRenderer::Resize(int Width, int Height)
+void COpenGLRenderer::Resize(int w, int h)
 {
-	this->Width = Width;
-	this->Height = Height;
+	this->Width = w;
+	this->Height = h;
 }
 void COpenGLRenderer::Destroy()
 {
@@ -36,4 +35,12 @@ void COpenGLRenderer::MarkDestroy()
 }
 bool COpenGLRenderer::ReInit() {
 	return false;
+}
+
+int COpenGLRenderer::GetHeight() const {
+    return Height;
+}
+
+int COpenGLRenderer::GetWidth() const {
+	return Width;
 }

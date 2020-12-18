@@ -260,6 +260,30 @@ public class NativeVR720Renderer {
      */
     public void setEnableFullChunks(boolean enable) { setEnableFullChunks(mainNativePtr, enable); }
 
+    public int getVideoState() {
+        return 0;
+    }
+
+    public void updateVideoState(int newState) {
+
+    }
+
+    public boolean getCurrentFileIsVideo() {
+        return false;
+    }
+
+    public int getVideoLength() {
+        return 0;
+    }
+
+    public int getVideoPos() {
+        return 0;
+    }
+
+    public void setVideoPos(int pos) {
+
+    }
+
     /**
      * 恢复事件
      */

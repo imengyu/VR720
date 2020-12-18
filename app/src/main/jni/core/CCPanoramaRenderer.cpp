@@ -22,11 +22,14 @@ void CCPanoramaRenderer::ReInit() {
 
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
+    glEnable(GL_TEXTURE_CUBE_MAP);
+    glEnable(GL_RENDERBUFFER);
     glDisable(GL_DITHER);
     glDisable(GL_DEPTH_TEST);
 
     //Re create shader
     if(shader != nullptr) delete shader;
+    if(shaderCylinder != nullptr) delete shaderCylinder;
     InitShader();
 
     //reload resources
@@ -35,26 +38,40 @@ void CCPanoramaRenderer::ReInit() {
 
     //Re buffer all data
     ReBufferAllData();
+
+    fbo = 0;
+    depthBuffer = 0;
 }
 void CCPanoramaRenderer::Init()
 {
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
+    glEnable(GL_TEXTURE_CUBE_MAP);
+    glEnable(GL_RENDERBUFFER);
     glDisable(GL_DITHER);
     glDisable(GL_DEPTH_TEST);
 
     LoadBuiltInResources();
 
-    std::string vshaderPath = CCAssetsManager::GetResourcePath("shader", "Standard_vertex.glsl");
-    std::string fshaderPath = CCAssetsManager::GetResourcePath("shader", "Standard_fragment.glsl");
+    std::string vShaderPath = CCAssetsManager::GetResourcePath("shader", "Standard_vertex.glsl");
+    std::string fShaderPath = CCAssetsManager::GetResourcePath("shader", "Standard_fragment.glsl");
+
+    std::string vCylinderShaderPath = CCAssetsManager::GetResourcePath("shader", "Cylinder_vertex.glsl");
+    std::string fCylinderShaderPath = CCAssetsManager::GetResourcePath("shader", "Cylinder_fragment.glsl");
 
     globalRenderInfo = new CCRenderGlobal();
 
-    vshaderCode = CCAssetsManager::LoadStringResource(vshaderPath.c_str());
-    fshaderCode = CCAssetsManager::LoadStringResource(fshaderPath.c_str());
+    vShaderCode = CCAssetsManager::LoadStringResource(vShaderPath.c_str());
+    fShaderCode = CCAssetsManager::LoadStringResource(fShaderPath.c_str());
+    vCylinderShaderCode = CCAssetsManager::LoadStringResource(vCylinderShaderPath.c_str());
+    fCylinderShaderCode = CCAssetsManager::LoadStringResource(fCylinderShaderPath.c_str());
 
     InitShader();
     CreateMainModel();
+
+    panoramaCubeMapTex = new CCTexture(GL_TEXTURE_CUBE_MAP);
+    panoramaCubeMapTex->cubeMapSize = 512;
+    panoramaCubeMapTex->CreateGLTexture();
 
     globalRenderInfo->glVendor = (GLubyte*)glGetString(GL_VENDOR);            //返回负责当前OpenGL实现厂商的名字
     globalRenderInfo->glRenderer = (GLubyte*)glGetString(GL_RENDERER);    //返回一个渲染器标识符，通常是个硬件平台
@@ -64,6 +81,8 @@ void CCPanoramaRenderer::Init()
 void CCPanoramaRenderer::Destroy()
 {
     CCRenderGlobal::Destroy();
+
+    if(fbo != 0) glDeleteBuffers(1, &fbo);
 
     if (shader != nullptr) {
         delete shader;
@@ -83,37 +102,51 @@ void CCPanoramaRenderer::Destroy()
 }
 void CCPanoramaRenderer::InitShader() {
 
-    shader = new CCShader(vshaderCode.c_str(), fshaderCode.c_str());
+    shader = new CCShader(vShaderCode.c_str(), fShaderCode.c_str());
 
     globalRenderInfo->viewLoc = shader->GetUniformLocation("view");
     globalRenderInfo->projectionLoc = shader->GetUniformLocation("projection");
     globalRenderInfo->modelLoc = shader->GetUniformLocation("model");
     globalRenderInfo->ourTextrueLoc = shader->GetUniformLocation("ourTexture");
-    globalRenderInfo->useColorLoc = shader->GetUniformLocation("useColor");
-    globalRenderInfo->ourColorLoc = shader->GetUniformLocation("ourColor");
     globalRenderInfo->texOffest = shader->GetUniformLocation("texOffest");
     globalRenderInfo->texTilling = shader->GetUniformLocation("texTilling");
+
+    shaderCylinder = new CCShader(vCylinderShaderCode.c_str(), fCylinderShaderCode.c_str());
+
+    globalRenderInfo->cubeMap = shaderCylinder->GetUniformLocation("cubeMap");
 }
+
+//渲染
+//*************************
 
 void CCPanoramaRenderer::Render(float deltaTime) {
     CCRenderGlobal::SetInstance(globalRenderInfo);
-    CCTexture::UnUse();
+    CCTexture::UnUse(GL_TEXTURE_2D);
+    CCTexture::UnUse(GL_TEXTURE_CUBE_MAP);
+
     shader->Use();
+
+    //墨卡托投影
+    if(renderOn && currentFrameMercatorCylinder) {
+        currentFrameMercatorCylinder = false;
+        RenderMercatorCylinder();
+        return;
+    }
 
     //摄像机矩阵
     if(currentFrameVr) {
-        //VR双屏模式则需要使用不同的屏幕宽高
         currentFrameVr = false;
+        //VR双屏模式则需要使用不同的屏幕宽高
         Renderer->View->CalcMainCameraProjectionWithWH(shader, currentFrameVrW, currentFrameVrH);
-    }else Renderer->View->CalcMainCameraProjection(shader);
-
+    }else
+        Renderer->View->CalcMainCameraProjection( shader);
 
     //模型位置和矩阵映射
     model = mainModel->GetModelMatrix();
     glUniformMatrix4fv(globalRenderInfo->modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
+
     //完整绘制
-    glUniform1i(globalRenderInfo->useColorLoc, 0);
     if (!renderOn)
         return;
 
@@ -126,14 +159,129 @@ void CCPanoramaRenderer::Render(float deltaTime) {
 
     if (renderPanoramaFlat)
         RenderFlat();
+
+    currentFrameMercatorCylinder = false;
 }
+void CCPanoramaRenderer::RenderMercatorCylinder() {
+
+    shader->Use();
+    panoramaCubeMapTex->Use();
+
+    // framebuffer object
+    if (fbo == 0)
+        glGenFramebuffers(1, &fbo);
+    if (depthBuffer == 0)
+        glGenRenderbuffers(1, &depthBuffer);
+
+    //------------------------------------
+
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP,
+                           panoramaCubeMapTex->texture, 0);
+
+    glBindRenderbuffer(GL_RENDERBUFFER, depthBuffer);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, panoramaCubeMapTex->cubeMapSize,
+                          panoramaCubeMapTex->cubeMapSize);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer);
+
+    //------------------------------------
+
+    //Change view port to cube map size
+    glViewport(0, 0, panoramaCubeMapTex->cubeMapSize, panoramaCubeMapTex->cubeMapSize);
+
+    //use capture camera projection
+    CCamera *camera = Renderer->GetMercatorCylinderCaptureCamera();
+
+    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (status != GL_FRAMEBUFFER_COMPLETE)
+        logger->LogWarn2("glCheckFramebufferStatus ret : %04x (%d)", status, status);
+
+    glUniformMatrix4fv(shader->modelLoc, 1, GL_FALSE, glm::value_ptr(mainModel->GetModelMatrix()));
+
+    //Render sphere to cube map
+    for (GLuint face = 0; face < 6; face++) {
+
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                               GL_TEXTURE_CUBE_MAP_POSITIVE_X + face,
+                               panoramaCubeMapTex->texture, 0);
+
+        //Switch camera to one face
+
+        camera->SwitchToFace(face);
+
+        Renderer->View->CalcCameraProjection(camera, shader,
+                                             panoramaCubeMapTex->cubeMapSize,
+                                             panoramaCubeMapTex->cubeMapSize);
+
+        //Clear first
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        //Render
+        RenderThumbnail();
+    }
+
+    status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (status != GL_FRAMEBUFFER_COMPLETE)
+        logger->LogWarn2("glCheckFramebufferStatus ret : %04x (%d)", status, status);
+
+    const GLenum drawBuffers[] = { GL_COLOR_ATTACHMENT0 };
+    glDrawBuffers(1, drawBuffers);
+
+    //------------------------------------
+
+    //set view port back
+    glViewport(0,0, currentFrameVrW, currentFrameVrH);
+
+    //Bind 0, which means render to back buffer, as a result, fbo is unbound
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+    shaderCylinder->Use();
+    CCTexture::UnUse(GL_TEXTURE_2D);
+    panoramaCubeMapTex->Use();
+
+    //------------------------------------
+    // start Normal render >
+
+    //摄像机矩阵
+    if(currentFrameVr) {
+        currentFrameVr = false;
+        Renderer->View->CalcMainCameraProjectionWithWH(shaderCylinder, currentFrameVrW, currentFrameVrH);
+    }else
+        Renderer->View->CalcMainCameraProjection(shaderCylinder);
+
+    RenderFlat();
+}
+void CCPanoramaRenderer::RenderThumbnail() const { mainModel->Render(); }
+void CCPanoramaRenderer::RenderFlat() const {
+    mainFlatModel->Render();
+}
+void CCPanoramaRenderer::RenderFullChunks(float deltaTime)
+{
+    if (renderPanoramaFullTest && !renderPanoramaFullRollTest) {
+        renderPanoramaFullTestTime += deltaTime;
+        if (renderPanoramaFullTestAutoLoop) {
+            if (renderPanoramaFullTestTime > 1) {
+                renderPanoramaFullTestTime = 0;
+                if (renderPanoramaFullTestIndex < (int)fullModels.size() - 1)renderPanoramaFullTestIndex++;
+                else renderPanoramaFullTestIndex = 0;
+            }
+        }
+        fullModels[renderPanoramaFullTestIndex]->model->Render();
+    }
+    else {
+        for (auto m : fullModels) {
+            if (m->model->Visible)  //渲染区块
+                m->model->Render();
+        }
+    }
+}
+
 void CCPanoramaRenderer::LoadBuiltInResources() {
     panoramaCheckTex =
             CCAssetsManager::LoadTexture(
                     CCAssetsManager::GetResourcePath("textures", "checker.jpg").c_str());
-    if(!panoramaCheckTex->Loaded())
-        panoramaCheckTex = nullptr;
-
     panoramaRedCheckTex = CCAssetsManager::LoadTexture(
             CCAssetsManager::GetResourcePath("textures", "red_checker.jpg").c_str());
 
@@ -157,6 +305,7 @@ void CCPanoramaRenderer::ReleaseTexPool() {
 }
 void CCPanoramaRenderer::ReBufferAllData() {
     mainModel->ReBufferData();
+    mainFlatModel->ReBufferData();
     if(!fullModels.empty())
         for (auto m : fullModels) {
             m->model->ReBufferData();
@@ -166,6 +315,8 @@ void CCPanoramaRenderer::ReBufferAllData() {
             if(!m.IsNullptr())
                 m->ReBufferData();
         }
+    if(!panoramaCubeMapTex.IsNullptr())
+        panoramaCubeMapTex->ReBufferData();
 }
 
 //全景模型创建与销毁
@@ -476,75 +627,6 @@ void CCPanoramaRenderer::MoveModelForce(float x, float y) const
     if (mainModel->Position.y > FlatModelMax.y) mainModel->Position.y = FlatModelMax.y;
 }
 
-void CCPanoramaRenderer::UpdateMercatorControl() {
-    PrecalcMercator();
-
-    CCMesh* mesh = mainFlatModel->Mesh.GetPtr();
-    mesh->texCoords.clear();
-
-    float ustep = 1.0f / (float)sphereSegmentX, vstep = 1.0f / (float)sphereSegmentY;
-    float u, v = 0;
-
-    for (int j = 0; j <= sphereSegmentY; j++) {
-        v += vstep;
-        u = 0;
-        for (int i = 0; i <= sphereSegmentX; i++) {
-            u += ustep;
-            mesh->texCoords.push_back(GetMercatorUVPoint(1.0f - u, v));
-        }
-    }
-
-    mesh->ReBufferData();
-}
-void CCPanoramaRenderer::ResetMercatorControl() const {
-    CCMesh* mesh = mainFlatModel->Mesh.GetPtr();
-    mesh->texCoords.clear();
-
-    float ustep = 1.0f / (float)sphereSegmentX, vstep = 1.0f / (float)sphereSegmentY;
-    float u, v = 0;
-
-    for (int j = 0; j <= sphereSegmentY; j++) {
-        v += vstep;
-        u = 0;
-        for (int i = 0; i <= sphereSegmentX; i++) {
-            u += ustep;
-            mesh->texCoords.emplace_back(1.0 - u, v);
-        }
-    }
-    mesh->ReBufferData();
-}
-
-//渲染
-//*************************
-
-void CCPanoramaRenderer::RenderThumbnail() const
-{
-    mainModel->Render();
-}
-void CCPanoramaRenderer::RenderFullChunks(float deltaTime)
-{
-    if (renderPanoramaFullTest && !renderPanoramaFullRollTest) {
-        renderPanoramaFullTestTime += deltaTime;
-        if (renderPanoramaFullTestAutoLoop) {
-            if (renderPanoramaFullTestTime > 1) {
-                renderPanoramaFullTestTime = 0;
-                if (renderPanoramaFullTestIndex < (int)fullModels.size() - 1)renderPanoramaFullTestIndex++;
-                else renderPanoramaFullTestIndex = 0;
-            }
-        }
-        fullModels[renderPanoramaFullTestIndex]->model->Render();
-    }
-    else {
-        for (auto m : fullModels) {
-            if (m->model->Visible)  //渲染区块
-                m->model->Render();
-        }
-    }
-}
-void CCPanoramaRenderer::RenderFlat() const {
-    mainFlatModel->Render();
-}
-
 //更新
 //*************************
 
@@ -553,7 +635,7 @@ void CCPanoramaRenderer::UpdateMainModelTex() const
     if (!panoramaThumbnailTex.IsNullptr()) {
         mainModel->Material->diffuse = panoramaThumbnailTex;
         mainModel->Material->tilling = glm::vec2(1.0f);
-        mainFlatModel->Material->diffuse = panoramaThumbnailTex;
+        mainFlatModel->Material->diffuse = isMercator ? panoramaCubeMapTex : panoramaThumbnailTex;
         mainFlatModel->Material->tilling = glm::vec2(1.0f);
     }
     else {
@@ -621,55 +703,15 @@ glm::vec3 CCPanoramaRenderer::GetSpherePoint(float u, float v, float r)
     float z = r * glm::sin(PI * v) * glm::cos(PI * u * 2);
     return glm::vec3(x, y, z);
 }
-glm::vec2 CCPanoramaRenderer::GetMercatorUVPoint(float u, float v) const
-{
-    constexpr auto PI = glm::pi<float>();
 
-    float λ0 = MercatorControlPoint0.x * PI;
-    float  λ = u * PI;
-    float  ф = v * PI;
-
-    float y = glm::atanh(glm::sin(ф));
-    return glm::vec2(λ - λ0, y);
-
-    /*
-    float λ0 = MercatorControlPoint0.x * PI;
-    float  λ = u * PI;
-    float  ф = v * PI;
-    float  λp = Mercator_λp;
-    float  фp = Mercator_фp;
-    float A = glm::sin(фp) * glm::sin(ф) - glm::cos(фp) * glm::cos(ф) * glm::sin(λ - λ0);
-
-    float x = glm::atan(
-        (glm::tan(ф) * glm::cos(фp) + glm::sin(фp) - glm::sin(λ - λ0)) /
-        (glm::cos(λ - λ0))
-    );
-    float y = glm::atan(A);
-    return glm::vec2(x, y);
-    */
-}
-void CCPanoramaRenderer::PrecalcMercator() {
-    constexpr auto PI = glm::pi<float>();
-
-    float λ0 = MercatorControlPoint0.x * PI;
-    float λ1 = MercatorControlPoint1.x * PI;
-    float λ2 = MercatorControlPoint2.x * PI;
-    float ф1 = MercatorControlPoint1.y * PI;
-    float ф2 = MercatorControlPoint2.y * PI;
-
-    Mercator_λp = glm::atan(
-        (glm::cos(ф1) * glm::sin(ф2) * glm::cos(λ1) - glm::sin(ф1) * glm::cos(ф2) * glm::cos(λ2)) /
-        (glm::sin(ф1) * glm::cos(ф2) * glm::sin(λ2) - glm::cos(ф1) * glm::sin(ф2) * glm::sin(λ1))
-    );
-    Mercator_фp = glm::atan(
-        -((glm::cos(Mercator_λp - λ1)) / glm::tan(ф1))
-    );
-}
-
-void CCPanoramaRenderer::SetCurrentFrameVRValue(int w, int h) {
-    currentFrameVr = true;
+void CCPanoramaRenderer::SetCurrentFrameVRValue(bool isVr, int w, int h) {
+    currentFrameVr = isVr;
     currentFrameVrW = w;
     currentFrameVrH = h;
+}
+void CCPanoramaRenderer::SetIsMercator(bool is) {
+    isMercator = is;
+    mainFlatModel->Material->diffuse = isMercator ? panoramaCubeMapTex : panoramaThumbnailTex;
 }
 
 

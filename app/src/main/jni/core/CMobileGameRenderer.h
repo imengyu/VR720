@@ -62,6 +62,7 @@ public:
 
 	float GetMouseSensitivity();
 	float GetMouseSensitivityInFlat();
+	CCamera* GetMercatorCylinderCaptureCamera() { return cameraMercatorCylinderCapture; }
 
 private:
 
@@ -81,6 +82,7 @@ private:
 	//全景模式
 	PanoramaMode mode = PanoramaMode::PanoramaSphere;
 	CCPanoramaCamera* camera = nullptr;
+	CCamera* cameraMercatorCylinderCapture = nullptr;
 	CCPanoramaRenderer* renderer = nullptr;
 	CCFileManager* fileManager = nullptr;
 	CCTextureLoadQueue* texLoadQueue = nullptr;
@@ -106,9 +108,6 @@ private:
 	bool destroying = false;
 	bool needTestImageAndSplit = false;
 	float lastX = 0, lastY = 0, xoffset = 0, yoffset = 0;
-
-	bool ShouldResetMercatorControl = false;
-	bool ShouldUpdateMercatorControl = false;
 
 	void TestSplitImageAndLoadTexture();
 	void TestToLoadTextureImageCache();

@@ -14,10 +14,10 @@ public :
 	GLint projectionLoc = -1;
 	GLint modelLoc = -1;
 	GLint ourTextrueLoc = -1;
-	GLint ourColorLoc = -1;
-	GLint useColorLoc = -1;
 	GLint texTilling = -1;
 	GLint texOffest = -1;
+
+	GLint cubeMap = -1;
 
 	GLubyte* glVendor = nullptr;
 	GLubyte* glRenderer = nullptr;

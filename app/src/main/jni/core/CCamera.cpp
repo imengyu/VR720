@@ -42,6 +42,32 @@ void CCamera::SetOrthoSizeChangedCallback(CCPanoramaCameraFovChangedCallback cal
 	orthoSizeChangedCallbackData = data;
 }
 
+void CCamera::SwitchToFace(int faceIndex)
+{
+	switch (faceIndex) {
+		case 0:
+			SetEulerAngles(glm::vec3(0, 90, 0));
+			break;
+		case 1:
+			SetEulerAngles(glm::vec3(0, -90, 0));
+			break;
+		case 2:
+			SetEulerAngles(glm::vec3(-90, 180, 0));
+			break;
+		case 3:
+			SetEulerAngles(glm::vec3(90, 180, 0));
+			break;
+		case 4:
+			SetEulerAngles(glm::vec3(0, 180, 0));
+			break;
+		case 5:
+			SetEulerAngles(glm::vec3(0, 0, 0));
+			break;
+		default:
+			break;
+	}
+}
+
 void CCamera::ForceUpdate() {
 }
 void CCamera::Reset()

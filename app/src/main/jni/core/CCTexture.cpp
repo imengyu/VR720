@@ -5,6 +5,9 @@
 #include "stb_image.h"
 
 CCTexture::CCTexture() = default;
+CCTexture::CCTexture(GLuint type) {
+	textureType = type;
+}
 CCTexture::~CCTexture()
 {
 	Destroy();
@@ -27,7 +30,6 @@ bool CCTexture::Load(const char* path)
         LOGWF("Load texture %s failed : %s", path, stbi_failure_reason());
 	return false;
 }
-
 bool CCTexture::Load(BYTE *buffer, size_t bufferSize) {
 	if(!buffer || bufferSize <= 0) {
 		LOGE("CCTexture::Load() had bad param!");
@@ -63,7 +65,7 @@ void CCTexture::LoadBytes(BYTE* data, int w, int h, GLenum type) {
 	}
 
 	//load dT
-    LoadToGl(data, w, h, type);
+	LoadDataToGL(data, w, h, type);
 
     this->width = w;
     this->height = h;
@@ -84,15 +86,11 @@ void CCTexture::Destroy()
 }
 void CCTexture::Use() const
 {
-	glBindTexture(GL_TEXTURE_2D, texture);
+	glBindTexture(textureType, texture);
 }
-void CCTexture::UnUse()
+void CCTexture::UnUse(GLenum type)
 {
-	glBindTexture(GL_TEXTURE_2D, 0);
-}
-bool CCTexture::Loaded() const
-{
-	return texture > 0;
+	glBindTexture(type, 0);
 }
 
 void CCTexture::DoBackupBufferData(BYTE* data, int w, int h, GLenum type)
@@ -120,24 +118,57 @@ void CCTexture::DoBackupBufferData(BYTE* data, int w, int h, GLenum type)
 }
 void CCTexture::ReBufferData()
 {
+	//Recreate texture
+	CreateGLTexture();
+
+	//backup data
     if (backupDataPtr)
-        LoadToGl(backupDataPtr, width, height, backupType);
+		LoadDataToGL(backupDataPtr, width, height, backupType);
 }
-void CCTexture::LoadToGl(BYTE *data, int w, int h, GLenum type) {
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-    alpha = type == GL_RGBA;
+void CCTexture::CreateGLTexture() {
+	glGenTextures(1, &texture);
+	glBindTexture(textureType, texture);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, (GLsizei)w, (GLsizei)h, 0, type, GL_UNSIGNED_BYTE, data);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapS);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	if(textureType == GL_TEXTURE_CUBE_MAP) {
 
-    //glGenerateMipmap(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, 0);
+		//init empty cubemap
+		for ( GLuint face = 0; face < 6; face++) {
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0, GL_RGB8,
+						  cubeMapSize, cubeMapSize, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+		}
+
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	} else {
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapS);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	}
+
+	glBindTexture(0, texture);
 }
+void CCTexture::LoadDataToGL(BYTE *data, int w, int h, GLenum type) {
+
+	if(texture == 0)
+		CreateGLTexture();
+
+    glBindTexture(textureType, texture);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+	alpha = type == GL_RGBA;
+
+	glTexImage2D(textureType, 0, GL_RGB, (GLsizei) w, (GLsizei) h, 0, type, GL_UNSIGNED_BYTE, data);
+    glBindTexture(textureType, 0);
+}
+
+
+
+
 
 

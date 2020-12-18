@@ -1,8 +1,11 @@
 package com.imengyu.vr720.widget;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
+import android.graphics.BlendMode;
+import android.graphics.BlendModeColorFilter;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
@@ -35,6 +38,7 @@ public class MainThumbnailImageView extends AppCompatImageView {
     private int roundHeight = 20;
     private int imageTextSize = 20;
     private Context context;
+    private final BlendModeColorFilter blendModeColorFilter = new BlendModeColorFilter(Color.GRAY, BlendMode.MULTIPLY);
 
     public MainThumbnailImageView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
@@ -88,7 +92,7 @@ public class MainThumbnailImageView extends AppCompatImageView {
         paintTextBackground.setColor(Color.WHITE);
         LinearGradient mShader = new LinearGradient(
                 0, 0,
-                0, PixelTool.dp2px(context, imageTextSize + 5),
+                0, PixelTool.dp2px(context, imageTextSize - 6),
                 context.getResources().getColor(R.color.colorTextBgEnd, null),
                 context.getResources().getColor(R.color.colorTextBgStart, null),
                     Shader.TileMode.MIRROR);
@@ -128,6 +132,7 @@ public class MainThumbnailImageView extends AppCompatImageView {
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
     }
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getActionMasked()) {
@@ -143,7 +148,10 @@ public class MainThumbnailImageView extends AppCompatImageView {
         }
         return super.onTouchEvent(event);
     }
-
+    @Override
+    public boolean performClick() {
+        return super.performClick();
+    }
 
     private void drawRound(Canvas canvas, Paint paint) {
         paint.setColor(Color.WHITE);
@@ -187,7 +195,7 @@ public class MainThumbnailImageView extends AppCompatImageView {
     public void setFilter() {
         Drawable drawable = getDrawable();
         if(drawable != null)
-            drawable.setColorFilter(Color.GRAY, PorterDuff.Mode.MULTIPLY);
+            drawable.setColorFilter(blendModeColorFilter);
     }
     /**
      *   清除滤镜
@@ -198,17 +206,11 @@ public class MainThumbnailImageView extends AppCompatImageView {
             drawable.clearColorFilter();
     }
 
-
-
-    public void setChecked(boolean checked) {
-    }
     public void setImageText(String imageText) {
         this.imageText = imageText;
-        postInvalidate();
     }
     public void setImageSize(String imageSize) {
         this.imageSize = imageSize;
-        postInvalidate();
     }
 
 }

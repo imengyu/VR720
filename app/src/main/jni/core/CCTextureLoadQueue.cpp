@@ -26,7 +26,7 @@ CCTextureLoadQueue::~CCTextureLoadQueue()
 
 CCTexture* CCTextureLoadQueue::Push(CCTexture* texture, int x, int y, int id)
 {
-	if (texture && !texture->Loaded()) {
+	if (texture) {
 		auto* info = new TextureLoadQueueInfo();
 		info->texture = texture;
 		info->x = x;

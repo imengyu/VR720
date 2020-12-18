@@ -310,8 +310,11 @@ public class PanoActivity extends AppCompatActivity {
 
         View layout_debug = findViewById(R.id.layout_debug);
         text_debug = findViewById(R.id.text_debug);
-        if(!debugEnabled)
+        if(!debugEnabled) {
             text_debug.setVisibility(View.GONE);
+        }else {
+            layout_debug.setVisibility(View.VISIBLE);
+        }
 
         pano_error = findViewById(R.id.pano_error_view);
         pano_error.setVisibility(View.GONE);
@@ -557,8 +560,8 @@ public class PanoActivity extends AppCompatActivity {
                 0,0,0);
     }
     private void updateDebugValue() {
+        text_debug.setText(debugString.toString());
         debugString.delete(0, debugString.length());
-        text_debug.setText(debugString);
     }
 
     //界面控制

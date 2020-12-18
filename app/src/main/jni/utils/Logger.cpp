@@ -136,7 +136,7 @@ void Logger::WritePendingLog(const char* str, LogLevel logLevel)
 
 void Logger::LogInternalWithCodeAndLine(LogLevel logLevel, const char* str, const char* file, int line, const char* functon, va_list arg)
 {
-	std::string format1 = CStringHlp::FormatString("%s\n[In] %s (%d) : %s", str, file, line, functon);
+	std::string format1 = CStringHlp::FormatString("%s\n[In] %s:%d : %s", str, file, line, functon);
 	LogInternal(logLevel, format1.c_str(), arg);
 }
 void Logger::LogInternal(LogLevel logLevel, const char* str, va_list arg)

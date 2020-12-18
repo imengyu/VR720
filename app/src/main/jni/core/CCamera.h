@@ -151,11 +151,14 @@ public:
 	 */
 	glm::vec3 World2Screen(const glm::vec3& worldPoint, glm::mat4& model);
 
+	/**
+	 * 设置摄像机面向
+	 * @param faceIndex 0-6，一共六个面
+	 */
+	void SwitchToFace(int faceIndex);
+
 protected:
 	COpenGLView* glView = nullptr;
-
-	// 从更新的CameraEuler的欧拉角计算前向量
-	void updateCameraVectors();
 
 	CCPanoramaCameraFovChangedCallback fovChangedCallback = nullptr;
 	void* fovChangedCallbackData = nullptr;

@@ -53,17 +53,6 @@ public class MainListAdapter extends CheckableListAdapter<MainListItem> {
         }
         if(item != null) {
             if (item.getForceItemType() == MainListItem.ITEM_TYPE_NORMAL) {
-                viewHolder.imageView.setChecked(item.isChecked());
-                if (item.isThumbnailFail())
-                    viewHolder.imageView.setImageResource(R.drawable.ic_noprob);
-                else if (item.isThumbnailLoading()) {
-                    viewHolder.imageView.setImageResource(R.drawable.ic_tumb);
-
-                    if (!item.isThumbnailLoadingStarted()) {
-                        item.setThumbnailLoadingStarted(true);
-                        mainList.loadThumbnail(item);
-                    }
-                } else viewHolder.imageView.setImageDrawable(item.getThumbnail());
 
                 viewHolder.imageView.setTag(position);
                 viewHolder.imageView.setVisibility(View.VISIBLE);
@@ -71,7 +60,20 @@ public class MainListAdapter extends CheckableListAdapter<MainListItem> {
 
                 if(mainList.getMainSortType() == MainList.MAIN_SORT_DATE)
                     viewHolder.imageView.setImageSize(DateUtils.format(new Date(item.getFileModifyDate()), DateUtils.FORMAT_SHORT));
-                else viewHolder.imageView.setImageSize(item.getFileSize());
+                else
+                    viewHolder.imageView.setImageSize(item.getFileSize());
+
+                if (item.isThumbnailFail())
+                    viewHolder.imageView.setImageResource(R.drawable.ic_noprob);
+                else if (item.isThumbnailLoading())
+                    viewHolder.imageView.setImageResource(R.drawable.ic_tumb);
+                else if(item.getThumbnail() != viewHolder.imageView.getDrawable())
+                    viewHolder.imageView.setImageDrawable(item.getThumbnail());
+
+                if (!item.isThumbnailLoadingStarted()) {
+                    item.setThumbnailLoadingStarted(true);
+                    mainList.loadThumbnail(item);
+                }
 
                 viewHolder.textView.setVisibility(View.GONE);
 

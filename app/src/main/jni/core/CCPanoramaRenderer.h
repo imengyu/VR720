@@ -40,11 +40,14 @@ public:
 
     Logger* logger = nullptr;
 
-    std::string vshaderCode;
-    std::string fshaderCode;
+    std::string vShaderCode;
+    std::string fShaderCode;
+    std::string vCylinderShaderCode;
+    std::string fCylinderShaderCode;
 
     CCRenderGlobal* globalRenderInfo = nullptr;
     CCShader* shader = nullptr;
+    CCShader* shaderCylinder = nullptr;
     CCModel* mainModel = nullptr;
     CCModel* mainFlatModel = nullptr;
     float mainModelYRotationBase = 0;
@@ -69,14 +72,14 @@ public:
     float renderPanoramaFullTestTime = 0;
     bool renderPanoramaFullTestAutoLoop = true;
 
-    bool renderDebugWireframe = false;
-    bool renderDebugVector = false;
+    //bool renderDebugWireframe = false;
+    //bool renderDebugVector = false;
 
     bool renderPanoramaFlatXLoop = false;
 
     bool renderPanoramaFullTest = false;
     bool renderPanoramaFullRollTest = false;
-    bool renderPanoramaATest = false;
+    //bool renderPanoramaATest = false;
 
     bool renderOn = false;
 
@@ -84,18 +87,16 @@ public:
     bool renderPanoramaFull = false;
     bool renderPanoramaFlat = false;
 
-
-    CCSmartPtr<CCTexture> uiFailedTex = nullptr;
-    CCSmartPtr<CCTexture> uiLogoTex = nullptr;
-    CCSmartPtr<CCTexture> uiOpenButtonTex = nullptr;
-    CCSmartPtr<CCTexture> uiTitleTex = nullptr;
+    CCSmartPtr<CCTexture> panoramaCubeMapTex = nullptr;
     CCSmartPtr<CCTexture> panoramaRedCheckTex = nullptr;
     CCSmartPtr<CCTexture> panoramaCheckTex = nullptr;
     CCSmartPtr<CCTexture> panoramaThumbnailTex = nullptr;
 
     std::vector< CCSmartPtr<CCTexture>> panoramaTexPool;
 
-    void SetCurrentFrameVRValue(int w, int h);
+    bool currentFrameMercatorCylinder = false;
+
+    void SetCurrentFrameVRValue(bool isVr, int w, int h);
 
     void ReleaseTexPool();
     void ReleaseFullModel();
@@ -108,20 +109,15 @@ public:
     void GyroscopeRotateModel(float x, float y, float z, float w);
     void MoveModel(float xoffset, float yoffset) const;
     void MoveModelForce(float x, float y) const;
-    void UpdateMercatorControl();
-    void ResetMercatorControl() const;
 
     glm::vec2 FlatModelMax = glm::vec2(0.0f);
     glm::vec2 FlatModelMin = glm::vec2(0.0f);
     float FlatModelMoveRato = 1.0f;
 
-    glm::vec2 MercatorControlPoint0 = glm::vec2(0.0f);
-    glm::vec2 MercatorControlPoint1 = glm::vec2(0.0f);
-    glm::vec2 MercatorControlPoint2 = glm::vec2(0.0f);
-
     void UpdateMainModelTex() const;
     void UpdateFullChunksVisible();
     void UpdateFlatModelMinMax(float orthoSize);
+    void SetIsMercator(bool isMercator);
 
 private:
 
@@ -137,6 +133,7 @@ private:
     void RenderThumbnail() const;
     void RenderFullChunks(float deltaTime);
     void RenderFlat() const;
+    void RenderMercatorCylinder();
 
     bool IsInView(glm::vec3 worldPos);
 
@@ -144,15 +141,15 @@ private:
     static glm::vec2 GetSphereUVPoint(float u, float v, short i);
     //获取球面上的点
     static glm::vec3 GetSpherePoint(float u, float v, float r);
-    glm::vec2 GetMercatorUVPoint(float u, float v) const;
-    void PrecalcMercator();
 
-    float Mercator_фp = 0;
-    float Mercator_λp = 0;
+    GLuint fbo = 0;
+    GLuint depthBuffer = 0;
 
+    bool isMercator = false;
     bool currentFrameVr = false;
     int currentFrameVrW = 0;
     int currentFrameVrH = 0;
+
 };
 
 

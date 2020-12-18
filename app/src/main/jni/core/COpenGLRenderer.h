@@ -10,11 +10,14 @@ class COpenGLRenderer
 {
 protected:
 	//宽度和高度
-	int Width, Height;
+	int Width = 0, Height = 0;
 
 public:
 	COpenGLRenderer();
 	~COpenGLRenderer();
+
+	int GetWidth() const;
+	int GetHeight() const;
 
 	/**
 	 * 重新初始化
@@ -54,6 +57,9 @@ public:
 	 */
 	virtual void MarkDestroy();
 
-	COpenGLView * View;
+	/**
+	 * 所属 View
+	 */
+	COpenGLView * View = nullptr;
 };
 

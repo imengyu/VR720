@@ -6,6 +6,9 @@ class CCTexture
 {
 public:
 	CCTexture();
+
+	CCTexture(GLuint type);
+
 	~CCTexture();
 
 	/**
@@ -55,12 +58,7 @@ public:
 	/**
 	 * 取消使用当前贴图
 	 */
-	static void UnUse();
-	/**
-	 * 获取贴图是否加载
-	 * @return 是否加载
-	 */
-	bool Loaded() const;
+	static void UnUse(GLenum type);
 
 	//设置是否缓存
 	bool backupData = false;
@@ -76,15 +74,28 @@ public:
 	GLuint wrapS = GL_REPEAT;
 	//获取或设置贴图纵轴重复类型
 	GLuint wrapT = GL_REPEAT;
+	//贴图类型
+	GLuint textureType = GL_TEXTURE_2D;
+	//立方贴图大小
+	GLuint cubeMapSize = 256;
 
+	/**
+	 * 重新创建贴图并填充数据
+	 */
 	void ReBufferData();
+
+	/**
+	 * 创建OpenGL贴图
+	 */
+	void CreateGLTexture();
 
 protected:
 	BYTE* backupDataPtr = nullptr;
 	size_t backupDataLength = 0;
 	GLenum backupType = 0;
 
-	void LoadToGl(BYTE* data, int width, int height, GLenum type);
+	void LoadDataToGL(BYTE* data, int width, int height, GLenum type);
 	void DoBackupBufferData(BYTE* data, int width, int height, GLenum type);
+
 };
 
