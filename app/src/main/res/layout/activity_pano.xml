@@ -92,7 +92,8 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/ic_prev" />
+        app:srcCompat="@drawable/ic_prev"
+        android:contentDescription="@string/action_prev_page" />
 
     <ImageButton
         android:id="@+id/button_next"
@@ -104,63 +105,95 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/ic_next" />
+        app:srcCompat="@drawable/ic_next"
+        android:contentDescription="@string/action_next_page" />
 
     <LinearLayout
         android:id="@+id/layout_debug"
-        android:layout_width="0dp"
-        android:layout_height="200dp"
-        android:layout_marginBottom="80dp"
+        android:layout_width="200dp"
+        android:layout_height="109dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="8dp"
         android:background="@color/colorPanoBarBackground"
         android:orientation="vertical"
-        android:padding="20dp"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toStartOf="parent">
+        android:padding="10dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/text_debug">
 
-        <TextView
-            android:id="@+id/textView6"
+        <Button
+            android:id="@+id/button_debug_close"
+            style="@style/ButtonTransParent"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:foreground="@drawable/ic_close"
+            android:foregroundTint="@android:color/white" />
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
-            android:layout_marginBottom="5dp"
-            android:text="x:"
-            android:textColor="@android:color/white" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-        <SeekBar
-            android:id="@+id/seek_x"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            <TextView
+                android:id="@+id/textView6"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:layout_marginBottom="5dp"
+                android:text="X:"
+                android:textColor="@android:color/white" />
 
-        <TextView
-            android:id="@+id/textView7"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
-            android:layout_marginBottom="5dp"
-            android:text="y:"
-            android:textColor="@android:color/white" />
+            <SeekBar
+                android:id="@+id/seek_x"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
 
-        <SeekBar
-            android:id="@+id/seek_y"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+        </LinearLayout>
 
-        <TextView
-            android:id="@+id/textView8"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
-            android:layout_marginBottom="5dp"
-            android:text="z:"
-            android:textColor="@android:color/white" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-        <SeekBar
-            android:id="@+id/seek_z"
+            <TextView
+                android:id="@+id/textView7"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:layout_marginBottom="5dp"
+                android:text="Y:"
+                android:textColor="@android:color/white" />
+
+            <SeekBar
+                android:id="@+id/seek_y"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+        </LinearLayout>
+
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/textView8"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:layout_marginBottom="5dp"
+                android:text="Z:"
+                android:textColor="@android:color/white" />
+
+            <SeekBar
+                android:id="@+id/seek_z"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+        </LinearLayout>
+
     </LinearLayout>
 
     <TextView
@@ -170,12 +203,12 @@
         android:layout_marginTop="16dp"
         android:background="@drawable/dialog_white_bg_transparent"
         android:drawablePadding="4dp"
-        android:drawableTint="@color/colorAccent"
         android:paddingStart="4dp"
         android:paddingTop="2dp"
         android:paddingEnd="7dp"
         android:paddingBottom="2dp"
         android:text="@string/text_gyro_cant_use_in_mode"
+        app:drawableTint="@color/colorAccent"
         app:drawableLeftCompat="@drawable/ic_warning"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

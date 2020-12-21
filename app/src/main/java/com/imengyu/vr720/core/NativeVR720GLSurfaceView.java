@@ -142,7 +142,7 @@ public class NativeVR720GLSurfaceView extends GLSurfaceView {
     //变量
     //********************************
 
-    private int frameExecuteTime = 1000 / 30;
+    private int frameExecuteTime = 1000 / 20;
     private ScheduledExecutorService pool = null;
     private boolean isTakePic = false;
     private OnCaptureCallback captureCallback = null;

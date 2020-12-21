@@ -5,58 +5,121 @@
     android:layout_height="wrap_content"
     android:background="@color/colorPanoBarBackground"
     android:focusable="true"
-    android:gravity="center_horizontal">
+    android:orientation="vertical">
 
-    <com.imengyu.vr720.widget.ToolbarButton
-        android:id="@+id/button_like"
-        style="@style/Widget.AppCompat.Button.Borderless"
-        android:layout_width="wrap_content"
-        android:layout_height="70dp"
-        android:layout_marginStart="8dp"
-        android:drawableTop="@drawable/ic_image_ilike"
-        android:text="@string/text_i_like_it"
-        android:textAlignment="center"
-        android:textColor="@android:color/white"
-        app:hoverColor="@color/colorPrimary"
-        app:normalColor="@android:color/white" />
+    <RelativeLayout
+        android:id="@+id/layout_video_control"
+        android:layout_width="match_parent"
+        android:layout_height="40dp">
 
-    <com.imengyu.vr720.widget.ToolbarButton
-        android:id="@+id/button_short"
-        style="@style/Widget.AppCompat.Button.Borderless"
-        android:layout_width="wrap_content"
-        android:layout_height="70dp"
-        android:drawableTop="@drawable/ic_bar_shot"
-        android:text="@string/action_shot"
-        android:textAlignment="center"
-        android:textColor="@android:color/white"
-        app:hoverColor="@color/colorPrimary"
-        app:normalColor="@android:color/white" />
 
-    <com.imengyu.vr720.widget.ToolbarButton
-        android:id="@+id/button_mode"
-        style="@style/Widget.AppCompat.Button.Borderless"
-        android:layout_width="wrap_content"
-        android:layout_height="70dp"
-        android:layout_marginStart="4dp"
-        android:drawableTop="@drawable/ic_bar_projection_ball"
-        android:text="@string/text_mode_ball"
-        android:textAlignment="center"
-        android:textColor="@android:color/white"
-        app:activeable="false"
-        app:hoverColor="@color/colorPrimary"
-        app:normalColor="@android:color/white" />
+        <Button
+            android:id="@+id/button_video_play_pause"
+            style="@style/ButtonTransParent"
+            android:layout_width="25dp"
+            android:layout_height="25dp"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="0dp"
+            android:foreground="@drawable/ic_play"
+            android:foregroundTint="#FFFFFF" />
 
-    <com.imengyu.vr720.widget.ToolbarButton
-        android:id="@+id/button_more"
-        style="@style/Widget.AppCompat.Button.Borderless"
-        android:layout_width="wrap_content"
-        android:layout_height="70dp"
-        android:layout_marginEnd="8dp"
-        android:drawableTop="@drawable/ic_bar_more"
-        android:text="@string/text_more"
-        android:textAlignment="center"
-        android:textColor="@android:color/white"
-        app:hoverColor="@color/colorPrimary"
-        app:normalColor="@android:color/white" />
+        <SeekBar
+            android:id="@+id/seek_video"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="0dp"
+            android:layout_marginEnd="10dp"
+            android:layout_marginBottom="5dp"
+            android:layout_toEndOf="@id/button_video_play_pause"
+            android:max="100"
+            android:progress="20" />
+
+        <TextView
+            android:id="@+id/text_video_current_pos"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_marginTop="5dp"
+            android:layout_toEndOf="@id/button_video_play_pause"
+            android:text="@string/text_time_default"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/text_video_length"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_marginTop="5dp"
+            android:layout_marginEnd="15dp"
+            android:text="@string/text_time_default"
+            android:textAlignment="textEnd"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+    </RelativeLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal">
+
+        <com.imengyu.vr720.widget.ToolbarButton
+            android:id="@+id/button_like"
+            style="@style/Widget.AppCompat.Button.Borderless"
+            android:layout_width="wrap_content"
+            android:layout_height="70dp"
+            android:layout_marginStart="8dp"
+            android:drawableTop="@drawable/ic_image_ilike"
+            android:text="@string/text_i_like_it"
+            android:textAlignment="center"
+            android:textColor="@android:color/white"
+            app:hoverColor="@color/colorPrimary"
+            app:normalColor="@android:color/white" />
+
+        <com.imengyu.vr720.widget.ToolbarButton
+            android:id="@+id/button_short"
+            style="@style/Widget.AppCompat.Button.Borderless"
+            android:layout_width="wrap_content"
+            android:layout_height="70dp"
+            android:drawableTop="@drawable/ic_bar_shot"
+            android:text="@string/action_shot"
+            android:textAlignment="center"
+            android:textColor="@android:color/white"
+            app:hoverColor="@color/colorPrimary"
+            app:normalColor="@android:color/white" />
+
+        <com.imengyu.vr720.widget.ToolbarButton
+            android:id="@+id/button_mode"
+            style="@style/Widget.AppCompat.Button.Borderless"
+            android:layout_width="wrap_content"
+            android:layout_height="70dp"
+            android:layout_marginStart="4dp"
+            android:drawableTop="@drawable/ic_bar_projection_ball"
+            android:text="@string/text_mode_ball"
+            android:textAlignment="center"
+            android:textColor="@android:color/white"
+            app:activeable="false"
+            app:hoverColor="@color/colorPrimary"
+            app:normalColor="@android:color/white" />
+
+        <com.imengyu.vr720.widget.ToolbarButton
+            android:id="@+id/button_more"
+            style="@style/Widget.AppCompat.Button.Borderless"
+            android:layout_width="wrap_content"
+            android:layout_height="70dp"
+            android:layout_marginEnd="8dp"
+            android:drawableTop="@drawable/ic_bar_more"
+            android:text="@string/text_more"
+            android:textAlignment="center"
+            android:textColor="@android:color/white"
+            app:hoverColor="@color/colorPrimary"
+            app:normalColor="@android:color/white" />
+
+    </LinearLayout>
 
 </LinearLayout>

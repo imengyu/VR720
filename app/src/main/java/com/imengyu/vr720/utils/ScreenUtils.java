@@ -26,7 +26,7 @@ public class ScreenUtils {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             final WindowInsetsController insetsController = window.getInsetsController();
             if (insetsController != null) {
-                if(fullScreen) insetsController.show(WindowInsets.Type.statusBars());
+                if(!fullScreen) insetsController.show(WindowInsets.Type.statusBars());
                 else insetsController.hide(WindowInsets.Type.statusBars());
             }
         }

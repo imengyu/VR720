@@ -62,6 +62,8 @@
     <string name="action_add_to">添加到</string>
     <string name="action_cancel_load">取消加载</string>
     <string name="action_continue_load">继续加载</string>
+    <string name="action_next_page">下一张</string>
+    <string name="action_prev_page">上一张</string>
 
     <!-- small texts -->
     <string name="text_tip">提示</string>
@@ -81,9 +83,12 @@
         \n<a href="https://imengyu.top">imengyu.top</a>
     </string>
     <string name="text_enter_gallery_name">输入分类收藏夹名称</string>
+    <string name="text_time_default">0:00</string>
 
     <string name="text_panorama_size_not_right_warning_text">您准备浏览的这张全景图看起来并不是正常比例的全景图像，继续浏览可能会导致图像变形等问题，是否继续加载？</string>
     <string name="text_panorama_size_not_right">图像不是正常比例的全景图</string>
+    <string name="text_panorama_video_size_not_right_warning_text">您准备浏览的这个全景视频看起来比例并不是正常的，继续浏览可能会导致图像变形等问题，是否继续加载？</string>
+    <string name="text_panorama_video_size_not_right">全景视频不是正常比例的</string>
 
     <string name="text_vr_mode">VR模式</string>
     <string name="text_more">更多</string>
@@ -216,6 +221,7 @@
     <string name="settings_key_enable_drag_velocity">开启惯性拖动</string>
     <string name="settings_key_show_debug_tool">开启全景调试界面</string>
     <string name="settings_key_enable_non_fullscreen">全景页面显示状态栏</string>
+    <string name="settings_key_enable_keep_screen_on">全景页面中保持屏幕常亮</string>
     <string name="settings_key_enable_view_cache">启用浏览缓存</string>
     <string name="settings_key_clear_cache">清理缓存</string>
     <string name="settings_summary_enable_view_cache">

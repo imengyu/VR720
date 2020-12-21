@@ -68,6 +68,12 @@
         <SwitchPreferenceCompat
             app:iconSpaceReserved="false"
             app:defaultValue="false"
+            app:key="enable_keep_screen_on"
+            app:title="@string/settings_key_enable_keep_screen_on" />
+
+        <SwitchPreferenceCompat
+            app:iconSpaceReserved="false"
+            app:defaultValue="false"
             app:key="do_not_check_pano_normal_size"
             app:title="@string/settings_key_do_not_check_pano_normal_size"
             app:summary="@string/settings_summary_do_not_check_pano_normal_size" />

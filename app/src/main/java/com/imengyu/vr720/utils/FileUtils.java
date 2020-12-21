@@ -77,7 +77,8 @@ public class FileUtils {
     public static long getDirSize(File fileDir){
         File[] files = fileDir.listFiles();
         long fileSize = 0;
-        for (File file :files) {
+        if(files == null) return fileSize;
+        for (File file : files) {
             if (file.isFile())
                 fileSize += file.length();
             else
@@ -92,7 +93,7 @@ public class FileUtils {
      * @return 可读的字符串
      */
     public static String getReadableFileSize(long fileSize){
-        double fileSizeDouble = 0;
+        double fileSizeDouble;
         DecimalFormat decimalFormat = new DecimalFormat("0.00");
         String sizeStr;
         if(fileSize >= 1073741824){
@@ -153,4 +154,34 @@ public class FileUtils {
         context.startActivity(shareIntent);
     }
 
+    private static final String[] videoExtensions = new String[] {
+            "wmv","rm","rmvb","mpg","mpeg","mpe","3gp","mov","mp4","m4v","avi","mkv","flv","vob"
+    };
+
+    /**
+     * 获取文件路径的扩展名是不是支持的图像
+     * @param path 文件路径
+     * @return 返回是不是支持
+     */
+    public static boolean getFileIsImage(String path) {
+        String ext = path.substring(path.lastIndexOf('.') + 1);
+        return ext.equalsIgnoreCase("jpg")
+                || ext.equalsIgnoreCase("jpeg")
+                || ext.equalsIgnoreCase("jfif")
+                || ext.equalsIgnoreCase("pmg")
+                || ext.equalsIgnoreCase("bmp");
+    }
+
+    /**
+     * 获取文件路径的扩展名是不是支持的视频
+     * @param path 文件路径
+     * @return 返回是不是支持
+     */
+    public static boolean getFileIsVideo(String path) {
+        String ext = path.substring(path.lastIndexOf('.') + 1);
+        for(String extVideo : videoExtensions)
+            if(ext.equalsIgnoreCase(extVideo))
+                return true;
+        return false;
+    }
 }

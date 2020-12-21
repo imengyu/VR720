@@ -34,7 +34,7 @@ public class VR720Application extends Application {
 
     public void checkAndInit() {
         if(nativeDestroyed) {
-            NativeVR720.initNative(getAssets());
+            NativeVR720.initNative(getAssets(), getApplicationContext());
             nativeDestroyed = false;
         }
     }
@@ -43,15 +43,16 @@ public class VR720Application extends Application {
     public void onCreate() {
         super.onCreate();
         Log.i(TAG, "onCreate");
+
         //初始化数据服务
         listDataService = new ListDataService(getApplicationContext());
         listImageCacheService = new ListImageCacheService(getApplicationContext());
         cacheServices = new CacheServices(getApplicationContext());
-        //
+
+        //ToastUtils
         ToastUtils.init(this);
         //初始化内核
-        NativeVR720.initNative(getAssets());
-        nativeDestroyed = false;
+        checkAndInit();
     }
 
     @Override

@@ -83,6 +83,7 @@ public class NativeVR720Renderer {
     public static final int MobileGameUIEvent_UiInfoChanged = 3;
     public static final int MobileGameUIEvent_FileClosed = 4;
     public static final int MobileGameUIEvent_DestroyComplete = 5;
+    public static final int MobileGameUIEvent_VideoStateChanged = 6;
 
     //全景模式
     public static final int PanoramaMode_PanoramaSphere = 0;
@@ -93,6 +94,22 @@ public class NativeVR720Renderer {
     public static final int PanoramaMode_PanoramaFull360 = 5;
     public static final int PanoramaMode_PanoramaFullOrginal = 6;
     public static final int PanoramaMode_PanoramaModeMax = 7;
+
+    //视频状态
+    public static final int VideoState_Stop = 0;
+    public static final int VideoState_Playing = 1;
+    public static final int VideoState_Ended = 2;
+    
+    public static final int PROP_IS_FILE_OPEN = 2;
+    public static final int PROP_IS_CURRENT_FILE_OPEN = 3;
+    public static final int PROP_CURRENT_FILE_IS_VIDEO = 4;
+
+    public static final int PROP_VR_ENABLED = 12;
+    public static final int PROP_GYRO_ENABLED = 13;
+    public static final int PROP_FULL_CHUNK_LOAD_ENABLED = 14;
+    public static final int PROP_VIEW_CACHE_ENABLED = 15;
+    public static final int PROP_CACHE_PATH = 16;
+    public static final int PROP_LAST_ERROR = 17;
 
     //C++代码声明
     //***********************************
@@ -115,8 +132,6 @@ public class NativeVR720Renderer {
     private native void onMainThread(long nativePtr);
     private native void onDestroy(long nativePtr);
     private native void openFile(long nativePtr, String path);
-    private native String getLastError(long nativePtr);
-    private native String getDebugText(long nativePtr);
     private native void closeFile(long nativePtr);
     private native void processMouseMove(long nativePtr, float x, float y);
     private native void processMouseDown(long nativePtr, float x, float y);
@@ -124,20 +139,36 @@ public class NativeVR720Renderer {
     private native void processMouseDragVelocity(long nativePtr, float x, float y);
     private native void processViewZoom(long nativePtr, float v);
     private native void processKey(long nativePtr, int key, boolean down);
-    private native boolean isFileOpen(long nativePtr);
     private native int getPanoramaMode(long nativePtr);
     private native void setPanoramaMode(long nativePtr, int mode);
-    private native void setGyroEnable(long nativePtr, boolean enable);
-    private native void setVREnable(long nativePtr, boolean enable);
     private native void updateGyroValue(long nativePtr, float x, float y, float z, float w);
     private native void updateDebugValue(long nativePtr, float x, float y, float z, float w, float v, float u);
-    private native void setEnableFullChunks(long nativePtr, boolean enable);
-    private native void setCachePath(long nativePtr, String path);
-    private native void setEnableCache(long nativePtr, boolean enable);
     private native void onResume(long nativePtr);
     private native void onPause(long nativePtr);
+    private native int getVideoState(long nativePtr);
+    private native void updateVideoState(long nativePtr, int newState);
+    private native int getVideoLength(long nativePtr);
+    private native int getVideoPos(long nativePtr);
+    private native void setVideoPos(long nativePtr, int pos);
+    private native String getProp(long nativePtr, int id);
+    private native void setProp(long nativePtr, int id, String value);
+    private native int getIntProp(long nativePtr, int id);
+    private native void setIntProp(long nativePtr, int id, int value);
+    private native boolean getBoolProp(long nativePtr, int id);
+    private native void setBoolProp(long nativePtr, int id, boolean value);
 
-    public boolean isFileOpen() { return isFileOpen(mainNativePtr); }
+    public void setProp(int id, String value) { setProp(mainNativePtr, id, value); }
+    public String getProp(int id) { return getProp(mainNativePtr, id); }
+    public void setProp(int id, int value) { setIntProp(mainNativePtr, id, value); }
+    public int getIntProp(int id) { return getIntProp(mainNativePtr, id); }
+    public void setProp(int id, boolean value) { setBoolProp(mainNativePtr, id, value); }
+    public boolean getBoolProp(int id) { return getBoolProp(mainNativePtr, id); }
+
+    /**
+     * 获取内核当前是否打开文件
+     * @return 前是否打开文件
+     */
+    public boolean isFileOpen() { return getBoolProp(PROP_IS_FILE_OPEN); }
     /**
      * 打开全景图片文件
      * @param path 文件路径
@@ -147,12 +178,8 @@ public class NativeVR720Renderer {
      * 获取打开文件的错误信息
      * @return 错误信息
      */
-    public String getLastError() { return getLastError(mainNativePtr); }
-    /**
-     * 获取内核的调试字符串
-     * @return 调试字符串
-     */
-    public String getDebugText() { return getDebugText(mainNativePtr); }
+    public String getLastError() { return getProp(PROP_LAST_ERROR); }
+
     /**
      * 关闭当前文件
      */
@@ -162,17 +189,13 @@ public class NativeVR720Renderer {
      * 设置是否启用缓存
      * @param enableCache 是否启用缓存
      */
-    public void setEnableCache(boolean enableCache) {
-        setEnableCache(mainNativePtr, enableCache);
-    }
+    public void setEnableCache(boolean enableCache) { setProp(PROP_VIEW_CACHE_ENABLED, enableCache); }
 
     /**
      * 设置缓存目录
      * @param path 缓存目录路径
      */
-    public void setCachePath(String path) {
-        setCachePath(mainNativePtr, path);
-    }
+    public void setCachePath(String path) { setProp(PROP_CACHE_PATH, path); }
 
     /**
      * 进行移动视图
@@ -230,7 +253,7 @@ public class NativeVR720Renderer {
      * 设置是否启用陀螺仪
      * @param enable 是否启用
      */
-    public void setGyroEnable(boolean enable) { gyroEnable = enable; setGyroEnable(mainNativePtr, enable); }
+    public void setGyroEnable(boolean enable) { gyroEnable = enable; setProp(PROP_GYRO_ENABLED, enable); }
     /**
      * 获取是否启用陀螺仪
      * @return 是否启用
@@ -240,9 +263,7 @@ public class NativeVR720Renderer {
     /**
      * 强制更新陀螺仪参数
      */
-    public void updateGyroValue(float x, float y, float z, float w) {
-        updateGyroValue(mainNativePtr, x,y,z,w);
-    }
+    public void updateGyroValue(float x, float y, float z, float w) { updateGyroValue(mainNativePtr, x,y,z,w); }
 
     public void updateDebugValue(float x, float y, float z, float w, float v, float u) {
         updateDebugValue(mainNativePtr, x,y,z,w,v,u);
@@ -252,37 +273,53 @@ public class NativeVR720Renderer {
      * 设置是否启用VR双屏模式
      * @param enable 是否启用
      */
-    public void setVREnable(boolean enable) { setVREnable(mainNativePtr, enable); }
+    public void setVREnable(boolean enable) { setProp(PROP_VR_ENABLED, enable); }
 
     /**
      * 设置是否启用完整细节加载模式
      * @param enable 是否启用
      */
-    public void setEnableFullChunks(boolean enable) { setEnableFullChunks(mainNativePtr, enable); }
+    public void setEnableFullChunks(boolean enable) { setProp(PROP_FULL_CHUNK_LOAD_ENABLED, enable); }
 
-    public int getVideoState() {
-        return 0;
-    }
+    /**
+     * 获取视频播放器状态
+     * @return 视频播放器状态
+     */
+    public int getVideoState() { return getVideoState(mainNativePtr); }
 
-    public void updateVideoState(int newState) {
+    /**
+     * 设置视频播放器状态
+     * @param newState 新的视频播放器状态
+     */
+    public void updateVideoState(int newState) { updateVideoState(mainNativePtr, newState); }
 
-    }
+    /**
+     * 获取当前打开的文件是不是视频
+     * @return 是不是视频
+     */
+    public boolean getCurrentFileIsVideo() { return getBoolProp(PROP_CURRENT_FILE_IS_VIDEO); }
 
-    public boolean getCurrentFileIsVideo() {
-        return false;
-    }
-
+    /**
+     * 获取当前视频时长
+     * @return 视频时长（毫秒）
+     */
     public int getVideoLength() {
-        return 0;
+        return getVideoLength(mainNativePtr);
     }
 
+    /**
+     * 获取当前视频播放位置
+     * @return 当前视频播放位置（毫秒）
+     */
     public int getVideoPos() {
-        return 0;
+        return getVideoPos(mainNativePtr);
     }
 
-    public void setVideoPos(int pos) {
-
-    }
+    /**
+     * 设置当前视频播放位置
+     * @param pos 视频播放位置（毫秒）
+     */
+    public void setVideoPos(int pos) { setVideoPos(mainNativePtr, pos); }
 
     /**
      * 恢复事件

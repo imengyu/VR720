@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="Encoding">
+    <file url="file://$PROJECT_DIR$/app/src/main/cpp/core/CCFileManager.h" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/cpp/core/CCMesh.h" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/cpp/core/CCMeshLoader.h" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/cpp/core/CCModel.h" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/cpp/core/CCPanoramaCamera.cpp" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/cpp/core/CCPanoramaCamera.h" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/cpp/core/CCTextureLoadQueue.h" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/cpp/core/CColor.h" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/cpp/core/GlUtils.cpp" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/app/src/main/cpp/utils/CStringHlp.h" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/app/src/main/jni/core/CCFileManager.cpp" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/app/src/main/jni/core/CCFileManager.h" charset="GBK" />
     <file url="file://$PROJECT_DIR$/app/src/main/jni/core/CCMesh.h" charset="GBK" />

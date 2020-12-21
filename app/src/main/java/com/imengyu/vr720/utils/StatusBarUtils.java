@@ -24,7 +24,7 @@ public class StatusBarUtils {
     if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
       final WindowInsetsController insetsController = window.getInsetsController();
       if (insetsController != null) {
-        insetsController.show(WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS);
+        insetsController.setSystemBarsAppearance(WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS, WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS);
       }
     } else {
       window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
@@ -43,7 +43,7 @@ public class StatusBarUtils {
     if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
       final WindowInsetsController insetsController = window.getInsetsController();
       if (insetsController != null) {
-        insetsController.hide(WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS);
+        insetsController.setSystemBarsAppearance(0, WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS);
       }
     } else {
       window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
