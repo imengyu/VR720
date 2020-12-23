@@ -44,4 +44,7 @@ typedef unsigned long DWORD;
 typedef unsigned char BYTE;
 typedef unsigned short WORD;
 
+JavaVM* GetGlobalJvm();
+JNIEnv* GetJniEnv();
+
 #endif //STDAFX_H

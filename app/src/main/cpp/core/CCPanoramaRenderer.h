@@ -13,8 +13,6 @@ struct ChunkModel {
     int chunkY;
     float chunkXv;
     float chunkYv;
-    float chunkXvE;
-    float chunkYvE;
     glm::vec3 pointCenter;
     glm::vec3 pointA;
     glm::vec3 pointB;
@@ -23,6 +21,9 @@ struct ChunkModel {
     bool loadMarked = false;
 };
 
+/**
+ * 基础全景渲染器
+ */
 class CCRenderGlobal;
 class CMobileGameRenderer;
 class CCPanoramaRenderer
@@ -58,35 +59,29 @@ public:
 
     int sphereSegmentY = 64;
     int sphereSegmentX = 128;
-    //int sphereSegmentY = 30;
-    //int sphereSegmentX = 15;
     int sphereFullSegmentY = 0;
     int sphereFullSegmentX = 0;
 
-    float panoramaFullViewWidth = 0.2f;
-    float panoramaFullViewHeight = 0.1f;
     int panoramaFullSplitW = 0;
     int panoramaFullSplitH = 0;
+
+    //渲染控制
 
     int renderPanoramaFullTestIndex = 0;
     float renderPanoramaFullTestTime = 0;
     bool renderPanoramaFullTestAutoLoop = true;
-
-    //bool renderDebugWireframe = false;
-    //bool renderDebugVector = false;
-
     bool renderPanoramaFlatXLoop = false;
-
     bool renderPanoramaFullTest = false;
     bool renderPanoramaFullRollTest = false;
-    //bool renderPanoramaATest = false;
-    bool reqLoadBuiltInResources = false;
-
-    bool renderOn = false;
-
     bool renderNoPanoramaSmall = false;
     bool renderPanoramaFull = false;
     bool renderPanoramaFlat = false;
+    //bool renderPanoramaATest = false;
+    bool renderOn = false;
+
+    bool reqLoadBuiltInResources = false;
+
+    //贴图池
 
     CCSmartPtr<CCTexture> panoramaCubeMapTex = nullptr;
     CCSmartPtr<CCTexture> panoramaRedCheckTex = nullptr;
@@ -95,14 +90,22 @@ public:
 
     std::vector< CCSmartPtr<CCTexture>> panoramaTexPool;
 
+    //公共方法
+
     bool currentFrameMercatorCylinder = false;
 
     void SetCurrentFrameVRValue(bool isVr, int w, int h);
+    void SetIsMercator(bool isMercator);
+    void LoadBuiltInResources();
+
+    //数据控制
 
     void ReleaseTexPool();
     void ReleaseFullModel();
     void GenerateFullModel(int chunkW, int chunkH);
     void ReBufferAllData();
+
+    //模型控制
 
     void ResetModel();
     void RotateModel(float xoffset, float yoffset);
@@ -118,30 +121,47 @@ public:
     void UpdateMainModelTex() const;
     void UpdateFullChunksVisible();
     void UpdateFlatModelMinMax(float orthoSize);
-    void SetIsMercator(bool isMercator);
+
+    //渲染墨卡托投影
 
     void RenderPreMercatorCylinder();
     void RenderMercatorCylinder();
 
-    void LoadBuiltInResources();
+    //视频贴图控制
+
+    CCTexture* VideoTexGet() { return panoramaThumbnailTex.GetPtr(); }
+    void VideoTexUpdateRunStatus(bool enable);
+    void VideoTexReset();
+    void VideoTexLock(bool lock);
+
 private:
+
+    //模型创建
+    //*********************************
 
     void CreateMainModel();
     void CreateMainModelFlatMesh(CCMesh* mesh) const;
     glm::vec3  CreateFullModelSphereMesh(ChunkModel* info, int segXStart, int segYStart, int segXEnd, int segYEnd) const;
     void CreateMainModelSphereMesh(CCMesh* mesh) const;
 
+    //资源初始化
+    //*********************************
+
     void ReleaseBuiltInResources();
     void InitShader();
+
+    //渲染函数
+    //*********************************
 
     void RenderThumbnail() const;
     void RenderFullChunks(float deltaTime);
     void RenderFlat() const;
 
-    bool IsInView(glm::vec3 worldPos);
+    //辅助
+    //*********************************
 
-    //获取球面上的UV坐标
-    static glm::vec2 GetSphereUVPoint(float u, float v, short i);
+    //
+    bool IsInView(glm::vec3 worldPos);
     //获取球面上的点
     static glm::vec3 GetSpherePoint(float u, float v, float r);
 
@@ -153,8 +173,10 @@ private:
     int currentFrameVrW = 0;
     int currentFrameVrH = 0;
 
+    //视频贴图控制
 
-
+    bool videoTextureFlushEnabled = false;
+    bool videoTextureLock = false;
 };
 
 

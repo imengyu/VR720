@@ -47,11 +47,19 @@ static int registerNativeMethods(JNIEnv* env) {
     jclass clazz;
 
     clazz = env->FindClass("com/imengyu/vr720/core/NativeVR720");
-    if (clazz == NULL)
+    if (clazz == nullptr)
         return JNI_FALSE;
     if (env->RegisterNatives(clazz, nativeMethods, 5) < 0)
         return JNI_FALSE;
     return JNI_TRUE;
+}
+
+JavaVM* GetGlobalJvm() { return globalJvm; }
+JNIEnv* GetJniEnv() {
+    JNIEnv* env = nullptr;
+    if(globalJvm != nullptr)
+        globalJvm->AttachCurrentThread(&env, nullptr);
+    return env;
 }
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void *reserved) {

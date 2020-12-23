@@ -5,161 +5,125 @@
 #ifndef VR720_CCVIDEOPLAYER_H
 #define VR720_CCVIDEOPLAYER_H
 #include "stdafx.h"
-extern "C" {
-#include "libavcodec/avcodec.h"
-#include "libavformat/avformat.h"
-#include "libswscale/swscale.h"
-#include "libswresample/swresample.h"
-#include "libavutil/opt.h"
-#include "libavutil/imgutils.h"
-#include "libavutil/mathematics.h"
-#include "libavutil/time.h"
-}
+#include "CCPlayerDefine.h"
 #include "CCDecodeQueue.h"
+#include "CCPlayerRender.h"
 #include <pthread.h>
 
-struct CCVideoPlayerExternalData {
-    int64_t start_time;
-    int64_t start_tick;
-    int64_t start_pts ;
-    int64_t apts;  // current apts
-    int64_t vpts;  // current vpts
-    int     apktn; // available audio packet number in pktqueue
-    int     vpktn; // available video packet number in pktqueue
-};
-class CCVideoPlayerInitParams {
-public:
-    bool openSyncmode = true;
-    int autoReconnect = 1000;         // w  播放流媒体时自动重连的超时时间，毫秒为单位
-    int videoVWidth = 0;              // wr video actual width
-    int videoVHeight = 0;             // wr video actual height
-    int videoOWidth = 0;              // r  video output width  (after rotate)
-    int videoOHeight = 0;             // r  video output height (after rotate)
-    int videoFrameRate = 0;           // wr 视频帧率
-    int videoStreamTotal = 0;
-    int audioChannels = 0;
-    int audioSampleRate = 0;
-    int audioStreamTotal = 0;
-    AVCodecID videoCodecId;
-};
+class CCVideoPlayer;
+//播放器事件回调
+typedef void (*CCVideoPlayerEventCallback)(CCVideoPlayer* player, int message, void* customData);
 
-//解码器状态值
-
-#define DECODER_FLAG_PS_A_PAUSE    (1 << 0)  // audio decoding pause
-#define DECODER_FLAG_PS_V_PAUSE    (1 << 1)  // video decoding pause
-#define DECODER_FLAG_PS_R_PAUSE    (1 << 2)  // rendering pause
-#define DECODER_FLAG_PS_F_SEEK     (1 << 3)  // seek flag
-#define DECODER_FLAG_PS_A_SEEK     (1 << 4)  // seek audio
-#define DECODER_FLAG_PS_V_SEEK     (1 << 5)  // seek video
-#define DECODER_FLAG_PS_CLOSE      (1 << 6)  // close player
-#define DECODER_FLAG_PS_RECONNECT  (1 << 7)  // reconnect
-
-//用户可见的播放器状态值
-enum class CCVideoState {
-    NotOpen = 0,
-    Playing = 1,
-    Ended = 2,
-    Opened = 3,
-    Paused = 3,
-    Failed = 4,
-};
-
-enum {
-    SEEK_STEP_FORWARD = 1,
-    SEEK_STEP_BACKWARD,
-};
-
+/**
+ * 简单视频播放器
+ */
 class CCVideoPlayer {
 
-
 public:
+    CCVideoPlayer();
+    CCVideoPlayer(CCVideoPlayerInitParams * initParams);
+
     static void GlobalInit();
     const char* GetLastError();
 
-    int GetStreamTotal(AVMediaType type);
-
-    //
     //初始配置和状态信息
+    //**********************
 
     CCVideoPlayerInitParams InitParams;
 
-    //
-    //Player events
+    //播放器公共方法
+    //**********************
 
     bool OpenVideo(char* filePath);
     bool CloseVideo();
 
     void SetVideoState(CCVideoState newState);
-    void SetVideoPos(int64_t pos, int type);
+    void SetVideoPos(int64_t pos);
+    void SetVideoVolume(int vol);
 
     CCVideoState GetVideoState();
     int64_t GetVideoLength();
     int64_t GetVideoPos();
+    int GetVideoVolume();
+
+
+    //回调
+    //**********************
+
+    void SetPlayerEventCallback(CCVideoPlayerEventCallback callback, void* data) {
+        videoPlayerEventCallback = callback;
+        videoPlayerEventCallbackData = data;
+    }
+    CCVideoPlayerEventCallback GetPlayerEventCallback() { return videoPlayerEventCallback; }
 
 protected:
 
-    AVFormatContext* pFormatCtx;
-
-    AVCodec *aCodec = nullptr;
-    AVCodec *vCodec = nullptr;
-
-    AVCodecContext *vCodecCtx = nullptr;
-    AVCodecContext *aCodecCtx = nullptr;
-
-    int videoIndex = -1;
-    int audioIndex = -1;
-
-    AVRational aStreamTimebase;
-    AVRational vStreamTimebase;
-    AVFrame vFrame;
-    AVFrame aFrame;
-
-    char lastError[64];
+    std::string lastError;
     std::string currentFile;
-
-    int width = 0;
-    int height = 0;
-
-    CCDecodeQueue decodeQueue;
-
-    int seekReq;
-    int64_t seekPos ;
-    int64_t seekDest;
-    int64_t seekVpts;
-    int seekDiff;
-    int seekSidx;
-
-    //Threads
-    pthread_t avdemux_thread;
-    pthread_t adecode_thread;
-    pthread_t vdecode_thread;
-
-    // player init timeout, and init params
-    int64_t readTimeLast;
-    int64_t readTimeout;
-
     CCVideoState playerStatus = CCVideoState::NotOpen;
-    int decoderFlags = 0;
-
-    CCVideoPlayerExternalData internalData;
 
     void SetLastError(const char * str);
 
-private:
+    CCVideoPlayerEventCallback videoPlayerEventCallback = nullptr;
+    void*videoPlayerEventCallbackData = nullptr;
+
+    void CallPlayerEventCallback(int message);
+
+    //解码器相关
+    //**********************
+
+    AVFormatContext * formatContext = nullptr;// 解码信息上下文
+    AVCodec * audioCodec = nullptr;// 解码器
+    AVCodecContext * audioCodecContext = nullptr;// 解码器上下文
+    AVPacket * aPacket = nullptr;  // 待解码包
+    AVFrame * aFrame = nullptr;  // 最终解码数据
+
+    AVCodec * videoCodec = nullptr;// 解码器
+    AVCodecContext * videoCodecContext = nullptr;// 解码器上下文
+    AVPacket * vPacket = nullptr;  // 待解码包
+    AVFrame * vFrame = nullptr;  // 最终解码数据
+
+    int64_t currentTime = 0;
+    int64_t startedTime = -1;// 开始播放的时间
+    long duration = 0;// 总时长
+
+    CCDecodeState decodeState = CCDecodeState::NotInit;// 解码状态
+    CCVideoState videoState = CCVideoState::NotOpen;
+
+    CCDecodeQueue decodeQueue;
+    CCPlayerRender *render = nullptr;
+
+    int videoIndex = -1;// 数据流索引
+    int audioIndex = -1;// 数据流索引
 
     bool InitDecoder();
-    void InitThread();
-    void StartDecoder();
-    void StopDecoder();
     bool DestroyDecoder();
 
-    static void* av_demux_thread_proc(void *param);
-    static void* audio_decode_thread_proc(void *param);
-    static void* video_decode_thread_proc(void *param);
+    void Init(CCVideoPlayerInitParams *initParams);
 
+    CCVideoPlayerExternalData externalData;
 
-    void HandleFSeekOrReconnect(int reconnect);
+private:
+
+    //线程控制
+
+    void StartDecoderThread();
+    void StopDecoderThread() ;
+
+    pthread_t decoderWorkerThread = 0;
+    pthread_t decoderAudioThread = 0;
+    pthread_t decoderVideoThread = 0;
+
+    static void* DecoderWorkerThreadStub(void*param);
+    static void* DecoderVideoThreadStub(void *param);
+    static void* DecoderAudioThreadStub(void *param);
+
+    void* DecoderWorkerThread();
+    void* DecoderVideoThread();
+    void* DecoderAudioThread();
+
+    void StartAll();
+    void StopAll();
 };
-
 
 #endif //VR720_CCVIDEOPLAYER_H

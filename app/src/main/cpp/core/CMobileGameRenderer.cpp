@@ -340,6 +340,9 @@ void CMobileGameRenderer::Resize(int Width, int Height)
 //*************************
 
 void CMobileGameRenderer::MouseCallback(COpenGLView* view, float xpos, float ypos, int button, int type) {
+
+    UNREFERENCED_PARAMETER(button);
+
     auto* renderer = (CMobileGameRenderer*)view->GetRenderer();
     switch (type) {
         case ViewMouseEventType::ViewMouseMouseDown: {
@@ -377,9 +380,13 @@ void CMobileGameRenderer::MouseCallback(COpenGLView* view, float xpos, float ypo
             }
             break;
         }
+        default: break;
     }
 }
 void CMobileGameRenderer::ScrollCallback(COpenGLView* view, float x, float yoffset, int button, int type) {
+    UNREFERENCED_PARAMETER(button);
+    UNREFERENCED_PARAMETER(x);
+
     auto* renderer = (CMobileGameRenderer*)view->GetRenderer();
     if(type == ViewMouseEventType::ViewMouseMouseWhell)
         renderer->camera->ProcessMouseScroll(yoffset);
@@ -598,6 +605,10 @@ void CMobileGameRenderer::SetVRViewPort(int index) {
 //*************************
 
 TextureLoadQueueDataResult* CMobileGameRenderer::LoadMainTexCallback(TextureLoadQueueInfo* info, CCTexture* texture) {
+
+    UNREFERENCED_PARAMETER(info);
+    UNREFERENCED_PARAMETER(texture);
+
     logger->Log("[GameCore] Load main tex: id: -1");
     uiInfo->currentImageLoading = true;
     uiEventDistributor->SendEvent(CCMobileGameUIEvent::UiInfoChanged);
@@ -682,6 +693,8 @@ ORG_LOAD:
     return result;
 }
 TextureLoadQueueDataResult* CMobileGameRenderer::LoadChunkTexCallback(TextureLoadQueueInfo* info, CCTexture* texture) {
+
+    UNREFERENCED_PARAMETER(texture);
 
     if (!fileOpened)
         return nullptr;
@@ -868,6 +881,11 @@ void CMobileGameRenderer::SwitchMode(PanoramaMode panoramaMode)
     }
 }
 void CMobileGameRenderer::UpdateDebugValue(float x, float y, float z, float w, float u, float v) {
+
+    UNREFERENCED_PARAMETER(w);
+    UNREFERENCED_PARAMETER(u);
+    UNREFERENCED_PARAMETER(v);
+
     if(renderer) {
         renderer->mainModel->SetLocalEulerAngles(glm::vec3(x,y,z));
     }
@@ -925,6 +943,7 @@ void CMobileGameRenderer::SetBoolProp(int id, bool value) {
         case PROP_GYRO_ENABLED: SetGyroEnabled(value); break;
         case PROP_FULL_CHUNK_LOAD_ENABLED: SetEnableFullChunkLoad(value); break;
         case PROP_VIEW_CACHE_ENABLED: SetViewCacheEnabled(value); break;
+        default: break;
     }
 }
 bool CMobileGameRenderer::GetBoolProp(int id) {
@@ -936,6 +955,7 @@ bool CMobileGameRenderer::GetBoolProp(int id) {
         case PROP_GYRO_ENABLED: return gyroEnabled;
         case PROP_FULL_CHUNK_LOAD_ENABLED: return fullChunkLoadEnabled;
         case PROP_VIEW_CACHE_ENABLED: return enableViewCache;
+        default: break;
     }
     return false;
 }
@@ -943,13 +963,14 @@ bool CMobileGameRenderer::GetBoolProp(int id) {
 void CMobileGameRenderer::SetProp(int id, char* string) {
     switch (id) {
         case PROP_CACHE_PATH: SetCachePath(string); break;
-
+        default: break;
     }
 }
 const char* CMobileGameRenderer::GetProp(int id) {
     switch (id) {
         case PROP_CACHE_PATH: return viewCachePath.c_str();
         case PROP_LAST_ERROR: return lastImageError.c_str();
+        default: break;
     }
     return nullptr;
 }
@@ -973,6 +994,6 @@ void CMobileGameRenderer::SetVREnabled(bool enable) {
         CMobileGameRenderer::Resize(Width, Height);
 }
 void CMobileGameRenderer::SetViewCacheEnabled(bool enable) { enableViewCache = enable; }
-void CMobileGameRenderer::SetCachePath(char* path) { viewCachePath = path; };
+void CMobileGameRenderer::SetCachePath(char* path) { viewCachePath = path; }
 
 

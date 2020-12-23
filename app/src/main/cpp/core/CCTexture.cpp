@@ -114,12 +114,14 @@ void CCTexture::DoBackupBufferData(BYTE* data, int w, int h, GLenum type)
     backupDataPtr = (BYTE*)malloc(backupDataLength);
     backupType = type;
 
-    memcpy(backupDataPtr, data, backupDataLength);
+    if(data != nullptr)
+    	memcpy(backupDataPtr, data, backupDataLength);
 }
-void CCTexture::ReBufferData()
+void CCTexture::ReBufferData(bool reCreate)
 {
 	//Recreate texture
-	CreateGLTexture();
+	if(reCreate)
+		CreateGLTexture();
 
 	//backup data
     if (backupDataPtr)

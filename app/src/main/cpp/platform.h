@@ -11,6 +11,17 @@
 #define VR720_KEY_ESCAPE 111
 
 #define MAX(a,b) a > b ? a : b
+#define MIN(a,b) a < b ? a : b
+
+#define UNREFERENCED_PARAMETER(P)          (P)
+
+typedef struct tagRECT
+{
+    long left;
+    long top;
+    long right;
+    long bottom;
+} RECT, *PRECT, *NPRECT, *LPRECT;
 
 #endif // !PLATFORM_H
 

@@ -81,13 +81,33 @@ public:
 
 	/**
 	 * 重新创建贴图并填充数据
+	 * @param reCreate 是否重新创建贴图数据
 	 */
-	void ReBufferData();
+	void ReBufferData(bool reCreate);
 
 	/**
 	 * 创建OpenGL贴图
 	 */
 	void CreateGLTexture();
+
+	/**
+	 * 获取备份缓冲区
+	 */
+	void* GetBackupDataPtr() { return backupDataPtr; }
+
+	/**
+	 * 获取备份缓冲区大小
+	 */
+	size_t GetBackupDataLength() { return backupDataLength; }
+
+	/**
+	 * 生成备份缓冲区或者是生成备份缓冲区然后备份数据
+	 * @param data 数据，如果为空则只创建缓冲区不填充数据
+	 * @param width 宽度
+	 * @param height 高度
+	 * @param type GL类型
+	 */
+	void DoBackupBufferData(BYTE* data, int width, int height, GLenum type);
 
 protected:
 	BYTE* backupDataPtr = nullptr;
@@ -95,7 +115,5 @@ protected:
 	GLenum backupType = 0;
 
 	void LoadDataToGL(BYTE* data, int width, int height, GLenum type);
-	void DoBackupBufferData(BYTE* data, int width, int height, GLenum type);
-
 };
 

@@ -64,11 +64,13 @@ find_library(android-lib android)
 find_library(GLESv3-lib GLESv3)
 find_library(log-lib log)
 find_library(z-lib z)
+find_library(OpenSLES-lib OpenSLES)
 
 target_link_libraries(vr720
         ${log-lib}
         ${android-lib}
         ${GLESv3-lib}
+        ${OpenSLES-lib}
         ${z-lib}
         avcodec
         avfilter

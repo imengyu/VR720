@@ -35,14 +35,14 @@ typedef void(*LogCallBack)(const char *str, LogLevel level, void* lparam);
 //快速记录日志
 
 #define LOG Logger::GetStaticInstance()
-#define LOGI(fmt) Logger::GetStaticInstance()->LogInfo(fmt)
-#define LOGW(fmt) Logger::GetStaticInstance()->LogWarn(fmt)
-#define LOGE(fmt) Logger::GetStaticInstance()->LogError(fmt)
-#define LOGD(fmt) Logger::GetStaticInstance()->Log(fmt)
-#define LOGIF(fmt, ...) Logger::GetStaticInstance()->LogInfo(fmt, __VA_ARGS__)
-#define LOGWF(fmt, ...) Logger::GetStaticInstance()->LogWarn(fmt, __VA_ARGS__)
-#define LOGEF(fmt, ...) Logger::GetStaticInstance()->LogError(fmt, __VA_ARGS__)
-#define LOGDF(fmt, ...) Logger::GetStaticInstance()->Log(fmt, __VA_ARGS__)
+#define LOGI(fmt) Logger::GetStaticInstance()->LogInfo2(fmt, 0)
+#define LOGW(fmt) Logger::GetStaticInstance()->LogWarn2(fmt, 0)
+#define LOGE(fmt) Logger::GetStaticInstance()->LogError2(fmt, 0)
+#define LOGD(fmt) Logger::GetStaticInstance()->Log2(fmt, 0)
+#define LOGIF(fmt, ...) Logger::GetStaticInstance()->LogInfo2(fmt, __VA_ARGS__)
+#define LOGWF(fmt, ...) Logger::GetStaticInstance()->LogWarn2(fmt, __VA_ARGS__)
+#define LOGEF(fmt, ...) Logger::GetStaticInstance()->LogError2(fmt, __VA_ARGS__)
+#define LOGDF(fmt, ...) Logger::GetStaticInstance()->Log2(fmt, __VA_ARGS__)
 
 //日志记录
 class Logger

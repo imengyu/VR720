@@ -6,169 +6,164 @@
 #include "CCVideoPlayer.h"
 #include <pthread.h>
 
-// 内部常量定义
-#define DEF_PKT_QUEUE_SIZE 256 // important!! size must be a power of 2
+void CCDecodeQueue::Init(CCVideoPlayerExternalData *data) {
 
-void CCDecodeQueue::Init(size_t queueSize, CCVideoPlayerExternalData *data) {
-    
-    int i ;
+    pthread_mutex_init(&packetRequestLock, nullptr);
+    pthread_mutex_init(&packetReleaseLock, nullptr);
+    pthread_mutex_init(&frameRequestLock, nullptr);
+    pthread_mutex_init(&frameReleaseLock, nullptr);
 
-    fsize = queueSize ? queueSize : DEF_PKT_QUEUE_SIZE;
-    fncur = asize = vsize = fsize;
-
-    // alloc buffer & semaphore
-    bpkts  = (AVPacket* )calloc(fsize, sizeof(AVPacket ));
-    fpkts  = (AVPacket**)calloc(fsize, sizeof(AVPacket*));
-    apkts  = (AVPacket**)calloc(asize, sizeof(AVPacket*));
-    vpkts  = (AVPacket**)calloc(vsize, sizeof(AVPacket*));
-    cmnvars = data;
-    pthread_mutex_init(&lock, NULL);
-    pthread_cond_init (&cond, NULL);
-
-    // check invalid
-    if (!bpkts || !fpkts || !apkts || !vpkts) {
-        LOGE("failed to allocate resources for pktqueue !");
-        exit(0);
-    }
-
-    // init fpkts
-    for (i=0; i<fsize; i++) {
-        fpkts[i] = &bpkts[i];
-    }
+    AllocFramePool(data->InitParams->FramePoolSize);
+    AllocPacketPool(data->InitParams->PacketPoolSize);
 }
 void CCDecodeQueue::Reset() {
-    int i;
-    pthread_mutex_lock(&lock);
-    for (i=0; i<fsize; i++) {
-        fpkts[i] = &bpkts[i];
-        apkts[i] = NULL;
-        vpkts[i] = NULL;
-    }
-    fncur = asize;
-    ancur = vncur = 0;
-    fhead = ftail = 0;
-    ahead = atail = 0;
-    vhead = vtail = 0;
-    pthread_cond_signal(&cond);
-    pthread_mutex_unlock(&lock);
+
 }
 void CCDecodeQueue::Destroy() {
-    int i;
+    videoQueue.clear();
+    audioQueue.clear();
+    videoFrameQueue.clear();
+    audioFrameQueue.clear();
 
-    // unref all packets
-    for (i=0; i<fsize; i++) av_packet_unref(&bpkts[i]);
+    ReleasePacketPool();
+    ReleaseFramePool();
 
-    // close
-    pthread_mutex_destroy(&lock);
-    pthread_cond_destroy (&cond);
-
-    // free
-    free(bpkts);
-    free(fpkts);
-    free(apkts);
-    free(vpkts);
-}
-
-AVPacket *CCDecodeQueue::RequestPacket() {
-    AVPacket *pkt = nullptr;
-    struct timespec ts;
-    int ret = 0;
-    clock_gettime(CLOCK_REALTIME, &ts);
-    ts.tv_nsec += 100*1000*1000;
-    ts.tv_sec  += ts.tv_nsec / 1000000000;
-    ts.tv_nsec %= 1000000000;
-    pthread_mutex_lock(&lock);
-    while (fncur == 0 && (status & TS_STOP) == 0 && ret != ETIMEDOUT)
-        ret = pthread_cond_timedwait(&cond, &lock, &ts);
-    if (fncur != 0) {
-        fncur--;
-        pkt = fpkts[fhead++ & (fsize - 1)];
-        av_packet_unref(pkt);
-        pthread_cond_signal(&cond);
-    }
-    pthread_mutex_unlock(&lock);
-    return (AVPacket *)3453453453;
-}
-void CCDecodeQueue::ReleasePacket(AVPacket *pkt) {
-    struct timespec ts;
-    int ret = 0;
-    clock_gettime(CLOCK_REALTIME, &ts);
-    ts.tv_nsec += 100*1000*1000;
-    ts.tv_sec  += ts.tv_nsec / 1000000000;
-    ts.tv_nsec %= 1000000000;
-    pthread_mutex_lock(&lock);
-    while (fncur == fsize && (status & TS_STOP) == 0 && ret != ETIMEDOUT) ret = pthread_cond_timedwait(&cond, &lock, &ts);
-    if (fncur != fsize) {
-        fncur++;
-        fpkts[ftail++ & (fsize - 1)] = pkt;
-        pthread_cond_signal(&cond);
-    }
-    pthread_mutex_unlock(&lock);
+    pthread_mutex_destroy(&frameReleaseLock);
+    pthread_mutex_destroy(&frameRequestLock);
+    pthread_mutex_destroy(&packetReleaseLock);
+    pthread_mutex_destroy(&packetRequestLock);
 }
 
 void CCDecodeQueue::AudioEnqueue(AVPacket *pkt) {
-    pthread_mutex_lock(&lock);
-    while (ancur == asize && (status & TS_STOP) == 0) pthread_cond_wait(&cond, &lock);
-    if (ancur != asize) {
-        ancur++;
-        apkts[atail++ & (asize - 1)] = pkt;
-        pthread_cond_signal(&cond);
-        cmnvars->apktn = ancur;
-        LOGIF("apktn: %d", cmnvars->apktn);
-    }
-    pthread_mutex_unlock(&lock);
+    audioQueue.emplace_back(pkt);
 }
 AVPacket *CCDecodeQueue::AudioDequeue() {
-    AVPacket *pkt = NULL;
-    struct timespec ts;
-    int ret = 0;
-    clock_gettime(CLOCK_REALTIME, &ts);
-    ts.tv_nsec += 100*1000*1000;
-    ts.tv_sec  += ts.tv_nsec / 1000000000;
-    ts.tv_nsec %= 1000000000;
-    pthread_mutex_lock(&lock);
-    while (ancur == 0 && (status & TS_STOP) == 0 && ret != ETIMEDOUT)
-        ret = pthread_cond_timedwait(&cond, &lock, &ts);
-    if (ancur != 0) {
-        ancur--;
-        pkt = apkts[ahead++ & (asize - 1)];
-        pthread_cond_signal(&cond);
-        cmnvars->apktn = ancur;
-        LOGIF("apktn: %d\n", cmnvars->apktn);
-    }
-    pthread_mutex_unlock(&lock);
+    AVPacket *pkt = audioQueue.front();
+    audioQueue.pop_front();
     return pkt;
+}
+size_t CCDecodeQueue::AudioQueueSize() {
+    return audioQueue.size();
 }
 
 void CCDecodeQueue::VideoEnqueue(AVPacket *pkt) {
-    pthread_mutex_lock(&lock);
-    while (vncur == vsize && (status & TS_STOP) == 0) pthread_cond_wait(&cond, &lock);
-    if (vncur != vsize) {
-        vncur++;
-        vpkts[vtail++ & (vsize - 1)] = pkt;
-        pthread_cond_signal(&cond);
-        cmnvars->vpktn = vncur;
-        LOGIF( "vpktn: %d", cmnvars->vpktn);
-    }
-    pthread_mutex_unlock(&lock);
+    videoQueue.emplace_back(pkt);
 }
-AVPacket *CCDecodeQueue::VideoDequeue() {
-    AVPacket *pkt = NULL;
-    struct timespec ts;
-    int ret = 0;
-    clock_gettime(CLOCK_REALTIME, &ts);
-    ts.tv_nsec += 100*1000*1000;
-    ts.tv_sec  += ts.tv_nsec / 1000000000;
-    ts.tv_nsec %= 1000000000;
-    pthread_mutex_lock(&lock);
-    while (vncur == 0 && (status & TS_STOP) == 0 && ret != ETIMEDOUT) ret = pthread_cond_timedwait(&cond, &lock, &ts);
-    if (vncur != 0) {
-        vncur--;
-        pkt = vpkts[vhead++ & (vsize - 1)];
-        pthread_cond_signal(&cond);
-        cmnvars->vpktn = vncur;
-        LOGIF( "vpktn: %d", cmnvars->vpktn);
-    }
-    pthread_mutex_unlock(&lock);
+AVPacket *CCDecodeQueue::VideoDequeue()   {
+    AVPacket *pkt = videoQueue.front();
+    videoQueue.pop_front();
     return pkt;
+}
+size_t CCDecodeQueue::VideoQueueSize() {
+    return videoQueue.size();
+}
+
+AVFrame *CCDecodeQueue::VideoFrameDequeue() {
+    AVFrame * frame = videoFrameQueue.front();
+    videoFrameQueue.pop_front();
+    return frame;
+}
+void CCDecodeQueue::VideoFrameEnqueue(AVFrame *frame) {
+    videoFrameQueue.push_back(frame);
+}
+AVFrame *CCDecodeQueue::AudioFrameDequeue() {
+    AVFrame * frame = audioFrameQueue.front();
+    audioFrameQueue.pop_front();
+    return frame;
+}
+void CCDecodeQueue::AudioFrameEnqueue(AVFrame *frame) {
+    audioFrameQueue.push_back(frame);
+}
+
+size_t CCDecodeQueue::VideoFrameQueueSize() {
+    return videoFrameQueue.size();
+}
+size_t CCDecodeQueue::AudioFrameQueueSize() {
+    return audioFrameQueue.size();
+}
+
+void CCDecodeQueue::ReleasePacket(AVPacket *pkt) {
+
+    pthread_mutex_lock(&packetReleaseLock);
+
+    if(packetPool.size() >= externalData->InitParams->PacketPoolSize) {
+        av_packet_free(&pkt);
+    } else {
+        av_packet_unref(pkt);
+        packetPool.push_back(pkt);
+    }
+
+    pthread_mutex_unlock(&packetReleaseLock);
+}
+AVPacket* CCDecodeQueue::RequestPacket() {
+
+    pthread_mutex_lock(&packetRequestLock);
+
+    if(packetPool.empty())
+        AllocPacketPool(externalData->InitParams->PacketPoolGrowStep);
+    if(packetPool.empty()) {
+        LOGE("[CCDecodeQueue] Failed to alloc packet pool!");
+        return nullptr;
+    }
+
+    AVPacket * packet = packetPool.front();
+    packetPool.pop_front();
+
+    pthread_mutex_unlock(&packetRequestLock);
+
+    return packet;
+}
+void CCDecodeQueue::AllocPacketPool(int size) {
+    for(int i = 0; i < size; i++)
+        packetPool.push_back(av_packet_alloc());
+}
+void CCDecodeQueue::ReleasePacketPool() {
+    for(auto it = packetPool.begin(); it != packetPool.end(); it++) {
+        AVPacket * packet = *it;
+        av_packet_free(&packet);
+    }
+    packetPool.clear();
+}
+
+void CCDecodeQueue::ReleaseFrame(AVFrame *frame) {
+
+    pthread_mutex_lock(&frameReleaseLock);
+
+    if(framePool.size() >= externalData->InitParams->FramePoolSize) {
+        av_frame_free(&frame);
+    } else {
+        av_frame_unref(frame);
+        framePool.push_back(frame);
+    }
+
+    pthread_mutex_unlock(&frameReleaseLock);
+}
+AVFrame* CCDecodeQueue::RequestFrame() {
+
+    pthread_mutex_lock(&frameRequestLock);
+
+    if(framePool.empty())
+        AllocPacketPool(externalData->InitParams->FramePoolGrowStep);
+    if(framePool.empty()) {
+        LOGE("[CCDecodeQueue] Failed to alloc packet pool!");
+        return nullptr;
+    }
+
+    AVFrame * frame = framePool.front();
+    framePool.pop_front();
+
+    pthread_mutex_unlock(&frameRequestLock);
+
+    return frame;
+}
+void CCDecodeQueue::AllocFramePool(int size) {
+    for(int i = 0; i < size; i++)
+        framePool.push_back(av_frame_alloc());
+}
+void CCDecodeQueue::ReleaseFramePool() {
+    for(auto it = framePool.begin(); it != framePool.end(); it++) {
+        AVFrame * frame = *it;
+        av_frame_free(&frame);
+    }
+    framePool.clear();
 }
