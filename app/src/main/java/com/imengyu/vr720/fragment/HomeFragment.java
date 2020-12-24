@@ -23,14 +23,16 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.preference.PreferenceManager;
 
-import com.donkingliang.imageselector.utils.ImageSelector;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.hjq.toast.ToastUtils;
+import com.huantansheng.easyphotos.EasyPhotos;
+import com.huantansheng.easyphotos.models.album.entity.Photo;
 import com.imengyu.vr720.MainActivity;
 import com.imengyu.vr720.PanoActivity;
 import com.imengyu.vr720.R;
 import com.imengyu.vr720.VR720Application;
 import com.imengyu.vr720.config.Codes;
+import com.imengyu.vr720.config.Constants;
 import com.imengyu.vr720.config.MainMessages;
 import com.imengyu.vr720.dialog.AppDialogs;
 import com.imengyu.vr720.dialog.CommonDialog;
@@ -38,6 +40,7 @@ import com.imengyu.vr720.list.MainList;
 import com.imengyu.vr720.model.ImageItem;
 import com.imengyu.vr720.model.list.MainListItem;
 import com.imengyu.vr720.model.TitleSelectionChangedCallback;
+import com.imengyu.vr720.plugin.GlideEngine;
 import com.imengyu.vr720.service.ListDataService;
 import com.imengyu.vr720.utils.FileUtils;
 import com.imengyu.vr720.widget.MyTitleBar;
@@ -206,12 +209,12 @@ public class HomeFragment extends Fragment implements IMainFragment {
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == Codes.REQUEST_CODE_OPENIMAGE && data != null) {
+        if (requestCode == Codes.REQUEST_CODE_OPEN_IMAGE && data != null) {
             //获取选择器返回的数据
-            ArrayList<String> images = data.getStringArrayListExtra(ImageSelector.SELECT_RESULT);
-            if(images!=null) {
-                for (String path : images)
-                    mainList.addImageToItem(listDataService.addImageItem(path), false);
+            ArrayList<Photo> resultPhotos = data.getParcelableArrayListExtra(EasyPhotos.RESULT_PHOTOS);
+            if(resultPhotos != null) {
+                for (Photo photo : resultPhotos)
+                    mainList.addImageToItem(listDataService.addImageItem(photo.path), false);
                 mainList.sort();
                 mainList.notifyChange();
             }
@@ -276,7 +279,7 @@ public class HomeFragment extends Fragment implements IMainFragment {
         ArrayList<ImageItem> items = listDataService.getImageList();
         for(ImageItem imageItem : items)
             mainList.addImageToItem(imageItem, false);
-        mainList.notifyChange();
+        mainList.sort();
 
         new Timer().schedule(new TimerTask() {
             @Override
@@ -311,12 +314,12 @@ public class HomeFragment extends Fragment implements IMainFragment {
     //====================================================
 
     private void onAddImageClick(){
-        //不限数量的多选
-        ImageSelector.builder()
-                .useCamera(false) // 设置是否使用拍照
-                .setSingle(false)  //设置是否单选
-                .setMaxSelectCount(0) // 图片的最大选择数量，小于等于0时，不限数量。
-                .start(this, Codes.REQUEST_CODE_OPENIMAGE); // 打开相册
+        EasyPhotos.createAlbum(this, false, GlideEngine.getInstance())
+                .setPuzzleMenu(false)
+                .setCount(32)
+                .setVideo(true)
+                .setFileProviderAuthority(Constants.FILE_PROVIDER_NAME)
+                .start(Codes.REQUEST_CODE_OPEN_IMAGE);
     }
     private void onClearClick() {
         new CommonDialog(getContext())

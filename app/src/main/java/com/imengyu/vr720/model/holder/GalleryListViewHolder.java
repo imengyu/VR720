@@ -16,4 +16,5 @@ public class GalleryListViewHolder {
     public TextView text_title;
     public TextView text_subtitle;
     public CheckBox check;
+    public ImageView video_mark;
 }

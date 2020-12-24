@@ -64,8 +64,8 @@ bool Path::CheckInvalidPathChars(std::string path)
 }
 std::string Path::GetExtension(std::string path)
 {
-	if (!path.empty())	return std::string();
-	if(Path::CheckInvalidPathChars(path))	return std::string();
+	if (path.empty())	return std::string();
+	if (Path::CheckInvalidPathChars(path))	return std::string();
 	size_t length = path.size();
 	size_t num = length;
 	while (--num >= 0)
@@ -121,7 +121,7 @@ bool Path::HasExtension(std::string path)
 std::string Path::GetFileNameWithoutExtension(std::string path)
 {
 	path = Path::GetFileName(path);
-	if (!path.empty())
+	if (path.empty())
 		return std::string();
 	size_t length;
 	if ((length = path.find_last_of(L'.')) == -1)

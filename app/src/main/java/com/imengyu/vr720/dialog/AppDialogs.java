@@ -112,6 +112,7 @@ public class AppDialogs {
     addItem.setName(activity.getString(R.string.action_new_gallery));
     listItems.add(addItem);
     for (GalleryItem item : listDataService.getGalleryList()) {
+      if(item.id == ListDataService.GALLERY_LIST_ID_VIDEOS) continue;//跳过视频收藏夹
       GalleryListItem nItem = new GalleryListItem(item);
       nItem.refresh(listDataService);
       listItems.add(nItem);

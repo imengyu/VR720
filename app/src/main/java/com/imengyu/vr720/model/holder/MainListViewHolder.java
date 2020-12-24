@@ -1,6 +1,7 @@
 package com.imengyu.vr720.model.holder;
 
 import android.widget.CheckBox;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.imengyu.vr720.widget.MainThumbnailImageView;
@@ -12,4 +13,5 @@ public class MainListViewHolder {
     public MainThumbnailImageView imageView;
     public TextView textView;
     public CheckBox checkMark;
+    public ImageView videoMark;
 }

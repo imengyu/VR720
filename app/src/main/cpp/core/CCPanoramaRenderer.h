@@ -129,10 +129,12 @@ public:
 
     //视频贴图控制
 
-    CCTexture* VideoTexGet() { return panoramaThumbnailTex.GetPtr(); }
+    CCTexture* VideoTexGet() { return videoTextureFlushEnabled ? panoramaThumbnailTex.GetPtr() : nullptr; }
     void VideoTexUpdateRunStatus(bool enable);
     void VideoTexReset();
     void VideoTexLock(bool lock);
+    void VideoTexMarkDirty();
+    void VideoTexDetermineSize(int *w, int *h) const;
 
 private:
 
@@ -177,6 +179,7 @@ private:
 
     bool videoTextureFlushEnabled = false;
     bool videoTextureLock = false;
+    bool videoTexMarkDirty = false;
 };
 
 

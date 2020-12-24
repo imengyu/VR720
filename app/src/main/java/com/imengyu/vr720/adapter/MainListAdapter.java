@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 
+import com.bumptech.glide.Glide;
 import com.imengyu.vr720.R;
 import com.imengyu.vr720.list.MainList;
 import com.imengyu.vr720.model.holder.MainListViewHolder;
@@ -42,6 +43,7 @@ public class MainListAdapter extends CheckableListAdapter<MainListItem> {
             viewHolder = new MainListViewHolder();
             viewHolder.textView = convertView.findViewById(R.id.text_item);
             viewHolder.imageView = convertView.findViewById(R.id.img_item);
+            viewHolder.videoMark = convertView.findViewById(R.id.video_mark);
             viewHolder.checkMark = convertView.findViewById(R.id.check_item);
 
             viewHolder.imageView.setOnLongClickListener(mainList.getMainListBaseOnLongClickListener());
@@ -57,6 +59,7 @@ public class MainListAdapter extends CheckableListAdapter<MainListItem> {
                 viewHolder.imageView.setTag(position);
                 viewHolder.imageView.setVisibility(View.VISIBLE);
                 viewHolder.imageView.setImageText(item.getFileName());
+                viewHolder.imageView.setLeftTextReserveSpace(item.isVideo());
 
                 if(mainList.getMainSortType() == MainList.MAIN_SORT_DATE)
                     viewHolder.imageView.setImageSize(DateUtils.format(new Date(item.getFileModifyDate()), DateUtils.FORMAT_SHORT));
@@ -68,7 +71,7 @@ public class MainListAdapter extends CheckableListAdapter<MainListItem> {
                 else if (item.isThumbnailLoading())
                     viewHolder.imageView.setImageResource(R.drawable.ic_tumb);
                 else if(item.getThumbnail() != viewHolder.imageView.getDrawable())
-                    viewHolder.imageView.setImageDrawable(item.getThumbnail());
+                    Glide.with(getContext()).load(item.getThumbnail()).into(viewHolder.imageView);
 
                 if (!item.isThumbnailLoadingStarted()) {
                     item.setThumbnailLoadingStarted(true);
@@ -77,6 +80,7 @@ public class MainListAdapter extends CheckableListAdapter<MainListItem> {
 
                 viewHolder.textView.setVisibility(View.GONE);
 
+                viewHolder.videoMark.setVisibility(item.isVideo() ? View.VISIBLE : View.GONE);
                 viewHolder.checkMark.setChecked(item.isChecked());
                 viewHolder.checkMark.setVisibility(isCheckable() ? View.VISIBLE : View.GONE);
             }
@@ -84,6 +88,7 @@ public class MainListAdapter extends CheckableListAdapter<MainListItem> {
                 viewHolder.imageView.setVisibility(View.GONE);
                 viewHolder.textView.setVisibility(View.VISIBLE);
                 viewHolder.checkMark.setVisibility(View.GONE);
+                viewHolder.videoMark.setVisibility(View.GONE);
                 viewHolder.textView.setText(item.getFileName());
             }
         }

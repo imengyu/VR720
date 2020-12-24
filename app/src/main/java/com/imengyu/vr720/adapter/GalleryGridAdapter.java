@@ -55,6 +55,7 @@ public class GalleryGridAdapter extends CheckableListAdapter<MainListItem> {
             viewHolder.image = convertView.findViewById(R.id.image);
             viewHolder.check = convertView.findViewById(R.id.check);
             viewHolder.text_title = convertView.findViewById(R.id.text);
+            viewHolder.video_mark = convertView.findViewById(R.id.video_mark);
 
             viewHolder.view_item.setOnLongClickListener(galleryGridList.getMainListBaseOnLongClickListener());
             viewHolder.view_item.setOnClickListener(galleryGridList.getMainListBaseOnClickListener());
@@ -119,6 +120,7 @@ public class GalleryGridAdapter extends CheckableListAdapter<MainListItem> {
 
             viewHolder.check.setChecked(item.isChecked());
             viewHolder.check.setVisibility(isCheckable() ? View.VISIBLE : View.GONE);
+            viewHolder.video_mark.setVisibility(item.isVideo() ? View.VISIBLE : View.GONE);
         }
         return convertView;
     }

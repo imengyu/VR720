@@ -49,5 +49,16 @@
         android:layout_marginBottom="10dp"
         android:textAlignment="center" />
 
+    <ImageView
+        android:id="@+id/video_mark"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="24dp"
+        android:layout_marginBottom="10dp"
+        android:contentDescription="@string/text_this_is_a_video"
+        app:srcCompat="@drawable/ic_video" />
+
 
 </RelativeLayout>

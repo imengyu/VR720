@@ -1,5 +1,7 @@
 package com.imengyu.vr720.model;
 
+import com.imengyu.vr720.utils.FileUtils;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,11 +12,13 @@ public class ImageItem {
 
     public ImageItem(String path, String belongGalleriesStr) {
         this.path = path;
+        this.isVideo = FileUtils.getFileIsVideo(path);
 
         String[] str = belongGalleriesStr.split(";");
         for(String s : str)
             if(!s.isEmpty())
                 belongGalleries.add(Integer.parseInt(s));
+
     }
 
     public boolean isInBelongGalleries(int id) {

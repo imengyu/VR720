@@ -90,8 +90,9 @@ CCAudioDevice::CCAudioDevice(CCVideoPlayerExternalData *externalData) {
     //初始化播放器
     (*bqPlayerObject)->Realize(bqPlayerObject, SL_BOOLEAN_FALSE);
 
-    (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_BUFFERQUEUE,
-                                    &bqPlayerBufferQueueInterface);
+    (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_BUFFERQUEUE, &bqPlayerBufferQueueInterface);
+    (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_PLAY, &bqPlayerInterface);
+
     //设置回调
     (*bqPlayerBufferQueueInterface)->RegisterCallback(bqPlayerBufferQueueInterface, bqPlayerCallback, this);
 

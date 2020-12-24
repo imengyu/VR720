@@ -4,11 +4,15 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.media.ThumbnailUtils;
 import android.os.Build;
+import android.os.CancellationSignal;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.util.Size;
 
 import com.imengyu.vr720.model.ImageCacheData;
+import com.imengyu.vr720.utils.FileUtils;
 import com.imengyu.vr720.utils.ImageUtils;
 import com.imengyu.vr720.utils.MD5Utils;
 import com.imengyu.vr720.utils.StorageDirUtils;
@@ -69,6 +73,38 @@ public class ListImageCacheService {
         }
 
         cutThumbnailCache();
+
+        if(FileUtils.getFileIsVideo(path)) {
+
+            String cacheThumbnailPath = StorageDirUtils.getGalleryCachePath() + MD5Utils.md5(path);
+            File cacheThumbnailFile = new File(cacheThumbnailPath);
+            if(cacheThumbnailFile.exists())
+                return fastLoadCacheToThumbnail(path, cacheThumbnailPath, false, true);
+
+            Bitmap videoThumbnail = null;
+                    //保存缩略图至缓存文件
+            FileOutputStream saveImgOut = null;
+            try {
+                saveImgOut = new FileOutputStream(cacheThumbnailFile);
+                videoThumbnail = ThumbnailUtils.createVideoThumbnail(new File(path), new Size(300, 150), null);
+                videoThumbnail.compress(Bitmap.CompressFormat.JPEG, 80, saveImgOut);
+                saveImgOut.flush();
+                saveImgOut.close();
+            } catch (Exception e) {
+                Log.e(TAG, String.format("Save video thumbnail cache [%s] failed ! %s", cacheThumbnailPath, e.toString()));
+                return null;
+            }
+
+            ImageCacheData cacheData = new ImageCacheData();
+            cacheData.isFastCache = false;
+            cacheData.filePath = path;
+            cacheData.cacheImagePath = cacheThumbnailPath;
+            cacheData.cacheUseCount = 1;
+            cacheData.isFileCache = true;
+            cacheThumbnailDataLive.add(cacheData);
+            cacheThumbnailDataMap.put(path, cacheData);
+            return new BitmapDrawable(context.getResources(), videoThumbnail);
+        }
 
         //获取图像大小
         Size imSize = null;

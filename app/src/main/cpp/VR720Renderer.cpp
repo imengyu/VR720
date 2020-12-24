@@ -100,11 +100,6 @@ void JNICALL NativeVR720Renderer_setPanoramaMode(JNIEnv *env, jobject thiz, jlon
     auto* gameRenderer = (CMobileGameRenderer*)view->GetRenderer();
     gameRenderer->SwitchMode((PanoramaMode)mode);
 }
-jint JNICALL NativeVR720Renderer_getPanoramaMode(JNIEnv *env, jobject thiz, jlong native_ptr) {
-    GET_VIEW_OR_RET(native_ptr, 0);
-    auto* gameRenderer = (CMobileGameRenderer*)view->GetRenderer();
-    return gameRenderer->GetMode();
-}
 void JNICALL NativeVR720Renderer_updateGyroValue(JNIEnv *env, jobject thiz, jlong native_ptr, jfloat x, jfloat y, jfloat z, jfloat w) {
     GET_VIEW(native_ptr);
     auto* gameRenderer = (CMobileGameRenderer*)view->GetRenderer();
@@ -144,12 +139,12 @@ void JNICALL NativeVR720Renderer_setVideoPos(JNIEnv *env, jobject thiz, jlong na
 void JNICALL NativeVR720Renderer_updateVideoState(JNIEnv *env, jobject thiz, jlong native_ptr, jint new_state) {
     GET_VIEW(native_ptr);
     auto* gameRenderer = (CMobileGameRenderer*)view->GetRenderer();
-    gameRenderer->UpdateVideoState(new_state);
+    gameRenderer->SetVideoState((CCVideoState)new_state);
 }
 jint JNICALL NativeVR720Renderer_getVideoState(JNIEnv *env, jobject thiz, jlong native_ptr) {
     GET_VIEW_OR_RET(native_ptr, 0);
     auto* gameRenderer = (CMobileGameRenderer*)view->GetRenderer();
-    return gameRenderer->GetVideoState();
+    return (jint)gameRenderer->GetVideoState();
 }
 jint JNICALL NativeVR720Renderer_getVideoLength(JNIEnv *env, jobject thiz, jlong native_ptr) {
     GET_VIEW_OR_RET(native_ptr, 0);
@@ -215,7 +210,6 @@ static JNINativeMethod rendererNativeMethods[] = {
         { "processViewZoom", "(JF)V", (void*)NativeVR720Renderer_processViewZoom },
         { "closeFile", "(J)V", (void*)NativeVR720Renderer_closeFile },
         { "setPanoramaMode", "(JI)V", (void*)NativeVR720Renderer_setPanoramaMode },
-        { "getPanoramaMode", "(J)I", (void*)NativeVR720Renderer_getPanoramaMode },
         { "updateGyroValue", "(JFFFF)V", (void*)NativeVR720Renderer_updateGyroValue },
         { "updateDebugValue", "(JFFFFFF)V", (void*)NativeVR720Renderer_updateDebugValue },
         { "onUpdateFps", "(JF)V", (void*)NativeVR720Renderer_onUpdateFps },
@@ -234,9 +228,9 @@ int registerRendererNativeMethods(JNIEnv* env) {
     jclass clazz;
 
     clazz = env->FindClass("com/imengyu/vr720/core/NativeVR720Renderer");
-    if (clazz == NULL)
+    if (clazz == nullptr)
         return JNI_FALSE;
-    if (env->RegisterNatives(clazz, rendererNativeMethods, 33) < 0)
+    if (env->RegisterNatives(clazz, rendererNativeMethods, 32) < 0)
         return JNI_FALSE;
     return JNI_TRUE;
 }

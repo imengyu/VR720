@@ -8,7 +8,8 @@
 #include "CCModel.h"
 #include "CCFileManager.h"
 #include "CCGUInfo.h"
-
+#include "../player/CCVideoPlayer.h"
+#include "../player/CCOpenGLTexVideoDevice.h"
 #include <vector>
 
 //全景模式
@@ -23,6 +24,10 @@ enum PanoramaMode : int16_t {
 	PanoramaModeMax,
 };
 
+#define VideoState_Stop 0
+#define VideoState_Playing 1
+#define VideoState_Ended 2
+
 class CMobileGameUIEventDistributor;
 class CImageLoader;
 class CMobileGameRenderer : public COpenGLRenderer
@@ -35,7 +40,9 @@ public:
 
 	void SetOpenFilePath(const char* path);
 	void DoOpenFile();
-	void MarkShouldOpenFile() { shouldOpenFile = true; }
+	void MarkShouldOpenFile() {
+		shouldOpenFile = true;
+	}
 	void MarkCloseFile();
 	void MarkDestroy() override { shouldDestroy = true; }
 
@@ -44,8 +51,8 @@ public:
 
 	void UpdateGyroValue(float x, float y, float z, float w) const;
 	void UpdateDebugValue(float x, float y, float z, float w, float u, float v);
-	void UpdateVideoState(int newState);
-	void SetVideoPos(int pos);
+	void SetVideoState(CCVideoState newState);
+	void SetVideoPos(int64_t pos);
 
 	void SetIntProp(int id, int value);
 	int GetIntProp(int id);
@@ -54,10 +61,9 @@ public:
 	void SetProp(int id, char* string);
 	const char* GetProp(int id);
 
-	bool GetCurrentFileIsVideo();
-	int GetVideoState();
-	int GetVideoLength();
-	int GetVideoPos();
+	CCVideoState GetVideoState();
+	int64_t GetVideoLength();
+	int64_t GetVideoPos();
 	PanoramaMode GetMode() { return mode; }
 	const char* GetImageOpenError() { return lastImageError.c_str(); }
     CCGUInfo* GetGUInfo() { return uiInfo; }
@@ -129,8 +135,10 @@ private:
 	static void FileCloseCallback(void* data);
 	static void CameraFOVChanged(void* data, float fov);
 	static void CameraOrthoSizeChanged(void* data, float fov);
+	static void VideoPlayerEventCallBack(CCVideoPlayer* player, int message, void* customData);
 
 	bool shouldSplitFullImage = true;
+	bool currentFileIsVideo = false;
 	bool thisFileShouldSaveCache = false;
     bool thisFileShouldLoadInCache = false;
 
@@ -145,16 +153,22 @@ private:
 	bool VelocityDragCurrentIsInSim = false;
 	float VelocityDragCutSensitivity = 5.0f;
 
-	void SetVRViewPort(int index);
 
     void DoOpenAsImage();
 	void DoOpenAsVideo();
 
+	CCVideoPlayerInitParams playerInitParams;
+	CCPlayerRender* playerRender = nullptr;
+	CCVideoPlayer* player = nullptr;
+
 private:
+	void SetVRViewPort(int index);
 	void SetGyroEnabled(bool enable);
 	void SetEnableFullChunkLoad(bool enable);
 	void SetViewCacheEnabled(bool enable);
 	void SetVREnabled(bool enable);
 	void SetCachePath(char* path);
+
+	void VideoPlayerEventCallBack();
 };
 

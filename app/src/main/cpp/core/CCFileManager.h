@@ -26,7 +26,7 @@ typedef void (*CCFileManagerOnCloseCallback)(void* data);
 #define CC_FILE_TYPE_VIDEO_MAX 20
 
 #define CC_IS_FILE_TYPE_IMAGE(x) x < CC_FILE_TYPE_IMG_MAX
-#define CC_IS_FILE_TYPE_VIDEO(x) x < CC_FILE_TYPE_VIDEO_MAX && x > CC_FILE_TYPE_IMG_MAX
+#define CC_IS_FILE_TYPE_VIDEO(x) (x > CC_FILE_TYPE_IMG_MAX && x < CC_FILE_TYPE_VIDEO_MAX)
 
 //文件打开管理
 class COpenGLRenderer;
@@ -60,6 +60,7 @@ public:
 
     CImageLoader* CurrentFileLoader = nullptr;
     ImageType CurrenImageType = ImageType::Unknow;
+    std::string CurrenImagePath;
 
     /**
      *

@@ -6,7 +6,7 @@
 #include "../imageloaders/CImageLoader.h"
 
 void CCFileManager::CloseFile() {
-    logger->Log("[CCFileManager] Closing file");
+    LOGI("[CCFileManager] Closing file");
     if (onCloseCallback)
         onCloseCallback(onCloseCallbackData);
     if (CurrentFileLoader != nullptr) {
@@ -16,9 +16,7 @@ void CCFileManager::CloseFile() {
     }
 }
 std::string CCFileManager::GetCurrentFileName() const {
-    if (CurrentFileLoader) 
-        return Path::GetFileName(CurrentFileLoader->GetPath());
-    return std::string();
+    return Path::GetFileName(CurrenImagePath);
 }
 bool CCFileManager::OpenFile(const char* path) {
     CloseFile();
@@ -26,6 +24,16 @@ bool CCFileManager::OpenFile(const char* path) {
         lastErr = "文件不存在";
         return false;
     }
+
+    CurrenImagePath = path;
+
+    int fileType = CheckCurrentFileType();
+    if(CC_IS_FILE_TYPE_VIDEO(fileType)) {
+        LOGI("[CCFileManager] Skip image check for video file");
+        return true;
+    }
+    LOGDF("[CCFileManager] fileType : %d", fileType);
+
     CurrenImageType = CImageLoader::CheckImageType(path);
     CurrentFileLoader = CImageLoader::CreateImageLoaderAuto(path);
     if (CurrentFileLoader == nullptr) {
@@ -56,21 +64,25 @@ const char* CCFileManager::GetLastError()
     return lastErr.c_str();
 }
 int CCFileManager::CheckCurrentFileType() const {
-    if (CurrentFileLoader) {
-        std::string ext = Path::GetExtension(CurrentFileLoader->GetPath());
-        if(ext == "jpg" || ext == "jpeg") return CC_FILE_TYPE_JPG;
-        else if(ext == "png") return CC_FILE_TYPE_PNG;
-        else if(ext == "bmp") return CC_FILE_TYPE_BMP;
-        else if(ext == "wmv") return CC_FILE_TYPE_WMV;
-        else if(ext == "rm" || ext == "rmvb") return CC_FILE_TYPE_RMVB;
-        else if(ext == "mpg" || ext == "mpeg" || ext == "mpe") return CC_FILE_TYPE_MPG;
-        else if(ext == "3gp") return CC_FILE_TYPE_3GP;
-        else if(ext == "mov") return CC_FILE_TYPE_MOV;
-        else if(ext == "mp4" || ext == "m4v") return CC_FILE_TYPE_MP4;
-        else if(ext == "avi") return CC_FILE_TYPE_AVI;
-        else if(ext == "mkv") return CC_FILE_TYPE_MKV;
-        else if(ext == "flv") return CC_FILE_TYPE_FLV;
-    }
+
+    std::string ext = Path::GetExtension(CurrenImagePath.c_str());
+    LOGDF("CheckCurrentFileType : %s", ext.c_str());
+
+    if(ext == ".jpg" || ext == ".jpeg") return CC_FILE_TYPE_JPG;
+    else if(ext == ".png") return CC_FILE_TYPE_PNG;
+    else if(ext == ".bmp") return CC_FILE_TYPE_BMP;
+    else if(ext == ".wmv") return CC_FILE_TYPE_WMV;
+    else if(ext == ".rm" || ext == ".rmvb") return CC_FILE_TYPE_RMVB;
+    else if(ext == ".mpg" || ext == ".mpeg" || ext == ".mpe") return CC_FILE_TYPE_MPG;
+    else if(ext == ".3gp") return CC_FILE_TYPE_3GP;
+    else if(ext == ".mov") return CC_FILE_TYPE_MOV;
+    else if(ext == ".mp4" || ext == ".m4v") return CC_FILE_TYPE_MP4;
+    else if(ext == ".avi") return CC_FILE_TYPE_AVI;
+    else if(ext == ".mkv") return CC_FILE_TYPE_MKV;
+    else if(ext == ".flv") return CC_FILE_TYPE_FLV;
+
+    if(!ext.empty())
+        LOGWF("[CCFileManager] Un support file ext : %s", ext.c_str());
     return 0;
 }
 

@@ -81,6 +81,7 @@ void CCPanoramaRenderer::Init()
 void CCPanoramaRenderer::Destroy()
 {
     CCRenderGlobal::Destroy();
+    VideoTexUpdateRunStatus(false);
 
     if(fbo != 0) glDeleteBuffers(1, &fbo);
 
@@ -139,16 +140,20 @@ void CCPanoramaRenderer::Render(float deltaTime) {
         currentFrameVr = false;
         //VR双屏模式则需要使用不同的屏幕宽高
         Renderer->View->CalcMainCameraProjectionWithWH(shader, currentFrameVrW, currentFrameVrH);
-    }else
-        Renderer->View->CalcMainCameraProjection( shader);
+    }
+    else Renderer->View->CalcMainCameraProjection( shader);
 
     //模型位置和矩阵映射
     model = mainModel->GetModelMatrix();
     glUniformMatrix4fv(globalRenderInfo->modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
     //视频贴图更新
-    if(videoTextureFlushEnabled && !videoTextureLock && !panoramaThumbnailTex.IsNullptr())
-        panoramaThumbnailTex->ReBufferData(false);
+    if(videoTextureFlushEnabled && !videoTextureLock && !panoramaThumbnailTex.IsNullptr()) {
+        if(videoTexMarkDirty) {
+            videoTexMarkDirty = false;
+            panoramaThumbnailTex->ReBufferData(false);
+        }
+    }
 
     //完整绘制
     if (!renderOn)
@@ -718,10 +723,29 @@ void CCPanoramaRenderer::VideoTexUpdateRunStatus(bool enable) {
     videoTextureFlushEnabled = enable;
 }
 void CCPanoramaRenderer::VideoTexReset() {
-
+    videoTexMarkDirty = false;
+}
+void CCPanoramaRenderer::VideoTexMarkDirty() {
+    videoTexMarkDirty = true;
 }
 void CCPanoramaRenderer::VideoTexLock(bool lock) {
     videoTextureLock = lock;
 }
+
+void CCPanoramaRenderer::VideoTexDetermineSize(int *w, int *h) const {
+    int vw = *w, vh = *h;
+    if(vw >= vh && vw > 4096) {
+        vh = (int) (4096.0 / vw * vh);
+        vw = 4096;
+    } else if(vw < vh && vh > 2048) {
+        vw = (int)(2048.0 / vh * vw);
+        vh = 2048;
+    }
+
+    *w = vw; *h = vh;
+    panoramaThumbnailTex->width = vw;
+    panoramaThumbnailTex->height = vh;
+}
+
 
 

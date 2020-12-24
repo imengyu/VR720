@@ -15,4 +15,5 @@ public class MainMessages {
     public static final int MSG_GALLERY_LIST_ADD_ITEM = 345;
     public static final int MSG_REFRESH_GALLERY_ITEM = 346;
     public static final int MSG_LOAD_VIDEO_INFO = 347;
+    public static final int MSG_RENDER_TICK = 348;
 }

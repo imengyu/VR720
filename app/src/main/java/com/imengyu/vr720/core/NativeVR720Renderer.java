@@ -96,10 +96,15 @@ public class NativeVR720Renderer {
     public static final int PanoramaMode_PanoramaModeMax = 7;
 
     //视频状态
-    public static final int VideoState_Stop = 0;
-    public static final int VideoState_Playing = 1;
-    public static final int VideoState_Ended = 2;
-    
+    public static final int VideoState_Failed = 0;
+    public static final int VideoState_NotOpen = 1;
+    public static final int VideoState_Playing = 2;
+    public static final int VideoState_Ended = 3;
+    public static final int VideoState_Opened = 4;
+    public static final int VideoState_Paused = 4;
+    public static final int VideoState_Loading = 5;
+
+    //属性
     public static final int PROP_IS_FILE_OPEN = 2;
     public static final int PROP_IS_CURRENT_FILE_OPEN = 3;
     public static final int PROP_CURRENT_FILE_IS_VIDEO = 4;
@@ -110,6 +115,8 @@ public class NativeVR720Renderer {
     public static final int PROP_VIEW_CACHE_ENABLED = 15;
     public static final int PROP_CACHE_PATH = 16;
     public static final int PROP_LAST_ERROR = 17;
+    public static final int PROP_VIDEO_VOLUME = 20;
+    public static final int PROP_PANORAMA_MODE = 21;
 
     //C++代码声明
     //***********************************
@@ -139,7 +146,6 @@ public class NativeVR720Renderer {
     private native void processMouseDragVelocity(long nativePtr, float x, float y);
     private native void processViewZoom(long nativePtr, float v);
     private native void processKey(long nativePtr, int key, boolean down);
-    private native int getPanoramaMode(long nativePtr);
     private native void setPanoramaMode(long nativePtr, int mode);
     private native void updateGyroValue(long nativePtr, float x, float y, float z, float w);
     private native void updateDebugValue(long nativePtr, float x, float y, float z, float w, float v, float u);
@@ -163,6 +169,18 @@ public class NativeVR720Renderer {
     public int getIntProp(int id) { return getIntProp(mainNativePtr, id); }
     public void setProp(int id, boolean value) { setBoolProp(mainNativePtr, id, value); }
     public boolean getBoolProp(int id) { return getBoolProp(mainNativePtr, id); }
+
+    /**
+     * 获取播放器音量
+     * @return 播放器音量（0-100）
+     */
+    public int getVolume() { return getIntProp(PROP_VIDEO_VOLUME); }
+
+    /**
+     * 设置播放器音量
+     * @param vol 播放器音量（0-100）
+     */
+    public void setVolume(int vol) { setIntProp(mainNativePtr, PROP_VIDEO_VOLUME, vol); }
 
     /**
      * 获取内核当前是否打开文件
@@ -240,7 +258,7 @@ public class NativeVR720Renderer {
      * 获取当前全景模式
      * @return 全景模式（PANO_MODE_*）
      */
-    public int getPanoramaMode() { return getPanoramaMode(mainNativePtr); }
+    public int getPanoramaMode() { return getIntProp(PROP_PANORAMA_MODE); }
     /**
      * 设置全景模式
      * @param mode 全景模式（PANO_MODE_*）

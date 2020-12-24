@@ -37,6 +37,7 @@ public:
     void AudioEnqueue(AVPacket *pkt);
     AVPacket* AudioDequeue();
 
+    void VideoDrop();
     size_t VideoQueueSize();
     void VideoEnqueue(AVPacket *pkt);
     AVPacket* VideoDequeue();
@@ -44,12 +45,14 @@ public:
     void AudioFrameEnqueue(AVFrame *frame);
     AVFrame* AudioFrameDequeue();
 
+    void VideoFrameDrop();
     void VideoFrameEnqueue(AVFrame *frame);
     AVFrame* VideoFrameDequeue();
 
     size_t VideoFrameQueueSize();
     size_t AudioFrameQueueSize();
 
+    void ClearAll();
 private:
     std::list<AVPacket*> packetPool;
     std::list<AVFrame*> framePool;
@@ -65,6 +68,7 @@ private:
 
     pthread_mutex_t frameRequestLock = PTHREAD_MUTEX_INITIALIZER;
     pthread_mutex_t frameReleaseLock = PTHREAD_MUTEX_INITIALIZER;
+
 
 
 };

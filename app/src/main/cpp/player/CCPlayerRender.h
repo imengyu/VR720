@@ -27,6 +27,16 @@ public:
     virtual CCVideoDevice* GetVideoDevice() { return videoDevice; }
     virtual CCAudioDevice *GetAudioDevice() { return audioDevice; }
 
+    virtual int64_t GetCurVideoDts() { return curVideoDts; }
+    virtual int64_t GetCurVideoPts() { return curVideoPts; }
+    virtual int64_t GetCurAudioDts() { return curAudioDts; }
+    virtual int64_t GetCurAudioPts() { return curAudioPts; }
+
+    virtual void SetVolume(int i);
+    virtual int GetVolume() { return volCur - volZeroDb; }
+
+    virtual void SetSeekDest(int64_t dest);
+
 protected:
 
     virtual CCVideoDevice* CreateVideoDevice();
@@ -37,6 +47,11 @@ private:
     SwrContext *swrContext = NULL;
     SwsContext *swsContext = nullptr;
 
+    int64_t curVideoDts = 0;	//记录当前播放的视频流Packet的DTS
+    int64_t curVideoPts = 0;	//记录当前播放的视频流Packet的DTS
+    int64_t curAudioDts = 0;	//记录当前播放的音频流Packet的DTS
+    int64_t curAudioPts = 0;	//记录当前播放的音频流Packet的DTS
+
     // 输出缓冲
     uint8_t *audioOutBuffer[1] = { nullptr };
     // 重采样后，每个通道包含的采样数
@@ -44,6 +59,22 @@ private:
     int destNbSample = 1024;
     // 重采样以后，一帧数据的大小
     size_t destDataSize = 0;
+
+    //时钟
+    double currentAudioClock = 0;
+    double currentVideoClock = 0;
+
+    //软件音量控制
+    int volZeroDb = 0;
+    int volScaler[256];
+    int volCur = 0;
+
+    int64_t seekDest = 0;
+    bool audioSeeking = false;
+    bool videoSeeking = false;
+
+    //
+    //状态控制
 
     CCVideoPlayerExternalData *externalData;
 
@@ -59,6 +90,10 @@ private:
     static void* RenderAudioThreadStub(void *param);
     void* RenderAudioThread();
     void* RenderVideoThread();
+
+    int SwVolScalerInit(int *scaler, int mindb, int maxdb);
+
+    void SwVolScalerRun(int16_t *buf, int n, int multiplier);
 };
 
 

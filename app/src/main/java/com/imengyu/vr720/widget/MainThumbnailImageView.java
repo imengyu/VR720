@@ -37,6 +37,7 @@ public class MainThumbnailImageView extends AppCompatImageView {
     private int roundWidth = 20;
     private int roundHeight = 20;
     private int imageTextSize = 20;
+    private boolean leftTextReserveSpace = false;
     private Context context;
     private final BlendModeColorFilter blendModeColorFilter = new BlendModeColorFilter(Color.GRAY, BlendMode.MULTIPLY);
 
@@ -117,7 +118,7 @@ public class MainThumbnailImageView extends AppCompatImageView {
         if(!imageText.isEmpty()) {
             paint.setColor(imageTextColor);
             paint.setTextAlign(Paint.Align.LEFT);
-            canvas2.drawText(imageText, 20, getHeight() - imageTextSize + 5, paint);
+            canvas2.drawText(imageText, leftTextReserveSpace ? 130 : 20, getHeight() - imageTextSize + 5, paint);
         }
 
         if(!imageSize.isEmpty()) {
@@ -212,5 +213,7 @@ public class MainThumbnailImageView extends AppCompatImageView {
     public void setImageSize(String imageSize) {
         this.imageSize = imageSize;
     }
-
+    public void setLeftTextReserveSpace(boolean leftTextReserveSpace) {
+        this.leftTextReserveSpace = leftTextReserveSpace;
+    }
 }

@@ -138,6 +138,7 @@
     <string name="text_share_image_title">分享这张全景图</string>
     <string name="text_choose_program_to_open">选择对应的软件打开该图像</string>
     <string name="text_image_cannot_open">抱歉，你的系统不能打开此图像</string>
+    <string name="text_image_not_support">抱歉，我们暂时不支持打开此图像</string>
     <string name="text_not_provide_path">没有提供图像路径</string>
     <string name="text_path_copied_to_clipboard">图像路径已复制到剪贴板</string>
     <string name="text_no_video_or_image">没有全景图或全景视频</string>
@@ -153,6 +154,7 @@
     <string name="text_this_is_first_image">已经是第一张图片了哦</string>
     <string name="text_this_is_last_image">已经是最后一张图片了哦</string>
 
+    <string name="text_this_is_a_video">这是一个全景视频</string>
     <string name="text_added_to_i_like">全景图已经收藏到我的喜欢</string>
     <string name="text_removed_from_i_like">全景图已经从我的喜欢移除</string>
 

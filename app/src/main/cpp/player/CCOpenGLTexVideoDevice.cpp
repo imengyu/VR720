@@ -23,6 +23,7 @@ void CCOpenGLTexVideoDevice::UpdateVideoMode(int w, int h) {
 }
 void CCOpenGLTexVideoDevice::Unlock() {
     renderer->VideoTexLock(false);
+    renderer->VideoTexMarkDirty();
 }
 void CCOpenGLTexVideoDevice::Pause(int pause) {
     renderer->VideoTexUpdateRunStatus(!pause);

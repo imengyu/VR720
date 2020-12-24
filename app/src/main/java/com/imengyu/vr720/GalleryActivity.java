@@ -23,9 +23,11 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.drawable.DrawableCompat;
 
-import com.donkingliang.imageselector.utils.ImageSelector;
 import com.hjq.toast.ToastUtils;
+import com.huantansheng.easyphotos.EasyPhotos;
+import com.huantansheng.easyphotos.models.album.entity.Photo;
 import com.imengyu.vr720.config.Codes;
+import com.imengyu.vr720.config.Constants;
 import com.imengyu.vr720.config.MainMessages;
 import com.imengyu.vr720.dialog.AppDialogs;
 import com.imengyu.vr720.dialog.CommonDialog;
@@ -33,6 +35,7 @@ import com.imengyu.vr720.list.GalleryGridList;
 import com.imengyu.vr720.model.GalleryItem;
 import com.imengyu.vr720.model.ImageItem;
 import com.imengyu.vr720.model.list.MainListItem;
+import com.imengyu.vr720.plugin.GlideEngine;
 import com.imengyu.vr720.service.ListDataService;
 import com.imengyu.vr720.utils.AlertDialogTool;
 import com.imengyu.vr720.utils.FileUtils;
@@ -95,12 +98,12 @@ public class GalleryActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if(item.getItemId() == R.id.action_import_pano) {
-            ImageSelector.builder()
-                    .useCamera(false)
-                    .setSingle(false)
-                    .setMaxSelectCount(0)
-                    .canPreview(false)
-                    .start(this, Codes.REQUEST_CODE_OPENIMAGE);
+            EasyPhotos.createAlbum(this, false, GlideEngine.getInstance())
+                    .setPuzzleMenu(false)
+                    .setCount(32)
+                    .setVideo(true)
+                    .setFileProviderAuthority(Constants.FILE_PROVIDER_NAME)
+                    .start(Codes.REQUEST_CODE_OPEN_IMAGE);
         } else if(item.getItemId() == R.id.action_sort_name) {
             galleryGridList.sort(GalleryGridList.SORT_NAME);
         } else if(item.getItemId() == R.id.action_sort_date) {
@@ -396,12 +399,12 @@ public class GalleryActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        if (requestCode == Codes.REQUEST_CODE_OPENIMAGE && data != null) {
+        if (requestCode == Codes.REQUEST_CODE_OPEN_IMAGE && data != null) {
             //获取选择器返回的数据
-            ArrayList<String> images = data.getStringArrayListExtra(ImageSelector.SELECT_RESULT);
-            if(images!=null) {
-                for (String path : images)
-                    galleryGridList.addItem(new MainListItem(listDataService.addImageItem(path, currentGalleryId)), false);
+            ArrayList<Photo> resultPhotos = data.getParcelableArrayListExtra(EasyPhotos.RESULT_PHOTOS);
+            if(resultPhotos != null) {
+                for (Photo photo : resultPhotos)
+                    galleryGridList.addItem(new MainListItem(listDataService.addImageItem(photo.path, currentGalleryId)), false);
                 galleryGridList.sort();
                 galleryGridList.notifyChange();
             }

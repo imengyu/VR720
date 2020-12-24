@@ -61,7 +61,10 @@ public:
     size_t FramePoolSize = 100;
     size_t FramePoolGrowStep = 10;
 
-
+    /**
+     * 限制FPS
+     */
+    double LimitFps = 30;
 };
 
 /**
@@ -75,6 +78,8 @@ public:
     AVCodecContext *VideoCodecContext = nullptr;
     AVCodecContext *AudioCodecContext = nullptr;
     AVFormatContext *FormatContext = nullptr;
+    double CurrentFps = 0;
+    int64_t StartTime = 0;
 };
 
 //解码器状态值
@@ -95,11 +100,11 @@ enum class CCDecodeState {
     NotInit,
     Preparing,
     Ready,
-    Decoding,
     Paused,
-    Finish,
     Finished,
-    FinishedWithError
+    FinishedWithError,
+    Decoding,
+    Finish,
 };
 
 enum class CCRenderState {
@@ -111,7 +116,18 @@ enum class CCRenderState {
 #define AUDIO_DEST_CHANNEL_COUNTS 2
 #define AUDIO_DEST_CHANNEL_LAYOUT AV_CH_LAYOUT_STEREO
 
+//AAC 1024
 #define ACC_NB_SAMPLES 1024
 
+//播放器事件
+#define PLAYER_EVENT_OPEN_DONE 1
+#define PLAYER_EVENT_CLOSED 2
+#define PLAYER_EVENT_PLAY_DONE 3
+#define PLAYER_EVENT_OPEN_FAIED 4
+#define PLAYER_EVENT_INIT_DECODER_DONE 5
+
+//软件音量
+#define SW_VOLUME_MINDB  -30
+#define SW_VOLUME_MAXDB  +12
 
 #endif //VR720_CCPLAYERDEFINE_H

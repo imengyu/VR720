@@ -538,8 +538,8 @@ public class PanoActivity extends AppCompatActivity {
             if(fileLoaded) {
                 int state = renderer.getVideoState();
                 if(state == NativeVR720Renderer.VideoState_Playing)
-                    renderer.updateVideoState(NativeVR720Renderer.VideoState_Stop);
-                else if(state == NativeVR720Renderer.VideoState_Stop)
+                    renderer.updateVideoState(NativeVR720Renderer.VideoState_Paused);
+                else if(state == NativeVR720Renderer.VideoState_Paused)
                     renderer.updateVideoState(NativeVR720Renderer.VideoState_Playing);
                 else if(state == NativeVR720Renderer.VideoState_Ended) {
                     renderer.setVideoPos(0);
@@ -616,16 +616,19 @@ public class PanoActivity extends AppCompatActivity {
             handler.sendEmptyMessage(MainMessages.MSG_TEST_VAL);
         }
 
+        handler.sendEmptyMessage(MainMessages.MSG_RENDER_TICK);
+    }
+    private void handleRenderTick() {
         //视频控件状态更新
         if(currentVideoPlaying)
             updateVideoControlState();
-
         updateToolbarStateInVideoMode();
     }
 
     //界面控制
     //**********************
 
+    private boolean currentFileHasError = false;
     private boolean currentFileIsVideo = false;
     private int currentVideoLength = 0;
     private boolean currentVideoPlaying = false;
@@ -739,6 +742,8 @@ public class PanoActivity extends AppCompatActivity {
         pano_error.setVisibility(View.VISIBLE);
         pano_loading.setVisibility(View.GONE);
         text_pano_error.setText(err);
+        titlebar.setTitle(getString(R.string.app_name));
+        currentFileHasError = true;
     }
     private void screenShot() {
         captureLoadingDialog = new LoadingDialog(this);
@@ -795,7 +800,7 @@ public class PanoActivity extends AppCompatActivity {
     private void updateVideoControlPlayState() {
         int state = renderer.getVideoState();
         switch (state) {
-            case NativeVR720Renderer.VideoState_Stop:
+            case NativeVR720Renderer.VideoState_Paused:
             case NativeVR720Renderer.VideoState_Ended:
                 currentVideoPlaying = false;
                 break;
@@ -807,7 +812,7 @@ public class PanoActivity extends AppCompatActivity {
         button_video_play_pause.setForeground(currentVideoPlaying ? ic_pause : ic_play);
     }
     private void updateToolbarStateInVideoMode() {
-        if(currentFileIsVideo) {
+        if(currentFileIsVideo && toolbarOn) {
             if(toolbarShowTick > 0)
                 toolbarShowTick --;
             if(toolbarShowTick <= 0)
@@ -949,6 +954,7 @@ public class PanoActivity extends AppCompatActivity {
                 case MainMessages.MSG_QUIT_LATE: mTarget.get().onQuitLate(); break;
                 case MainMessages.MSG_FORCE_PAUSE: mTarget.get().onPause(); break;
                 case MainMessages.MSG_TEST_VAL: mTarget.get().updateDebugValue(); break;
+                case MainMessages.MSG_RENDER_TICK: mTarget.get().handleRenderTick(); break;
                 default: super.handleMessage(msg);
             }
         }
@@ -972,9 +978,9 @@ public class PanoActivity extends AppCompatActivity {
         titlebar.setTitle(FileUtils.getFileName(filePath));
         pano_loading.setVisibility(View.GONE);
 
+        currentFileHasError = false;
         currentFileIsVideo = renderer.getCurrentFileIsVideo();
         if(currentFileIsVideo) {
-            glSurfaceView.setFps(30);//视频需要高FPS
             layout_video_control.setVisibility(View.VISIBLE);
             //写入视频初始信息到UI上
             currentVideoLength = renderer.getVideoLength();
@@ -983,9 +989,9 @@ public class PanoActivity extends AppCompatActivity {
             renderer.updateVideoState(NativeVR720Renderer.VideoState_Playing);
         }
         else {
-            glSurfaceView.setFps(20);//图片则使用默认FPS
             layout_video_control.setVisibility(View.GONE);
         }
+        glSurfaceView.setFps(30);
 
         setPanoInfoStatus(false, false);
         setPanoMenuStatus(false, false);
@@ -1000,8 +1006,7 @@ public class PanoActivity extends AppCompatActivity {
                 if (closeMarked) {
                     Log.i(TAG, "Destroy renderer at FileClosed");
                     renderer.destroy();
-                }
-                if (openNextMarked) {
+                } else if (openNextMarked) {
                     openNextMarked = false;
                     loadFile(openNextPath, false);
                     openNextPath = null;
@@ -1040,7 +1045,7 @@ public class PanoActivity extends AppCompatActivity {
                 fileLoaded = false;
                 fileLoading = false;
                 glSurfaceView.onDestroyComplete();
-                handler.sendEmptyMessageDelayed(MainMessages.MSG_QUIT_LATE, 200);
+                handler.sendEmptyMessage(MainMessages.MSG_QUIT_LATE);
             }
             case NativeVR720Renderer.MobileGameUIEvent_VideoStateChanged: {
                 updateVideoControlPlayState();
@@ -1067,6 +1072,10 @@ public class PanoActivity extends AppCompatActivity {
             captureLoadingDialog.cancel();
             captureLoadingDialog = null;
         }
+
+        //暂停视频
+        if(currentFileIsVideo && renderer.getVideoState() == NativeVR720Renderer.VideoState_Playing)
+            renderer.updateVideoState(NativeVR720Renderer.VideoState_Paused);
 
         saveSettings();
         stopUpdateThread();
@@ -1107,7 +1116,7 @@ public class PanoActivity extends AppCompatActivity {
         AlertDialogTool.notifyConfigurationChangedForDialog(this);
     }
 
-    private ConstraintSet mConstraintSet = new ConstraintSet();
+    private final ConstraintSet mConstraintSet = new ConstraintSet();
 
     private void onUpdateScreenOrientation(Configuration newConfig) {
         if(newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
@@ -1194,11 +1203,16 @@ public class PanoActivity extends AppCompatActivity {
             }
 
             imageInfo.imageFileSize = FileSizeUtil.getAutoFileOrFilesSize(filePath);
-            imageInfo.imageTime = DateUtils.format(new Date((new File(filePath)).lastModified()));
+            String fileTime = DateUtils.format(new Date((new File(filePath)).lastModified()));;
+            imageInfo.imageTime = fileTime;
 
             try {
                 ExifInterface exifInterface = new ExifInterface(filePath);
+
                 imageInfo.imageTime = exifInterface.getAttribute(ExifInterface.TAG_DATETIME);
+                if(imageInfo.imageTime == null)
+                    imageInfo.imageTime = fileTime;
+
                 imageInfo.imageSize = exifInterface.getAttribute(ExifInterface.TAG_IMAGE_WIDTH) +
                         "x" + exifInterface.getAttribute(ExifInterface.TAG_IMAGE_LENGTH);
 
@@ -1212,7 +1226,11 @@ public class PanoActivity extends AppCompatActivity {
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                     imageInfo.imageShutterTime = exifInterface.getAttribute(ExifInterface.TAG_EXPOSURE_TIME);
+                    if(StringUtils.isNullOrEmpty(imageInfo.imageShutterTime))
+                        imageInfo.imageShutterTime = text_un_know;
                     imageInfo.imageExposureBiasValue = exifInterface.getAttribute(ExifInterface.TAG_EXPOSURE_BIAS_VALUE);
+                    if(StringUtils.isNullOrEmpty(imageInfo.imageExposureBiasValue))
+                        imageInfo.imageExposureBiasValue = text_un_know;
                 }else {
                     imageInfo.imageShutterTime = text_un_know;
                     imageInfo.imageExposureBiasValue = text_un_know;
@@ -1307,6 +1325,7 @@ public class PanoActivity extends AppCompatActivity {
         glSurfaceView.setFps(10);
 
         if(FileUtils.getFileIsImage(filePath)) {
+
             //这是图片
             //加载图片基础信息
             loadImageInfo(isFromInitialization, (size, b) -> {
@@ -1392,8 +1411,12 @@ public class PanoActivity extends AppCompatActivity {
 
             });
         }
+        else
+            showErr(getString(R.string.text_image_not_support));
     }
     private void closeFile(boolean quit) {
+        if(quit && currentFileHasError)
+            finish();
         closeMarked = quit;
         renderer.closeFile();
     }

@@ -154,8 +154,8 @@ void Logger::LogOutput(LogLevel logLevel, const char* str, const char* srcStr, s
 			case LogLevelInfo: __android_log_print(ANDROID_LOG_INFO, logTag.c_str(), "%s", str); break;
 			case LogLevelWarn: __android_log_print(ANDROID_LOG_WARN, logTag.c_str(), "%s", str);  break;
 			case LogLevelError: __android_log_print(ANDROID_LOG_ERROR, logTag.c_str(), "%s", str);  break;
-			case LogLevelText: __android_log_print(ANDROID_LOG_VERBOSE, logTag.c_str(), "%s", str);  break;
-			default: __android_log_print(ANDROID_LOG_DEBUG, logTag.c_str(), "%s", str);  break;
+			case LogLevelText: __android_log_print(ANDROID_LOG_DEBUG, logTag.c_str(), "%s", str);  break;
+			default: __android_log_print(ANDROID_LOG_DEFAULT, logTag.c_str(), "%s", str);  break;
 		}
 	}
 	else if (outPut == LogOutPutCallback && callBack)
@@ -190,4 +190,7 @@ void Logger::DestroyConst() {
 	globalStaticLogger = nullptr;
 }
 
+void Logger::SetWithWarp(bool e) {
+	withWarp = e;
+}
 

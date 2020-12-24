@@ -23,6 +23,7 @@ public class MainListItem extends CheckableListItem {
     private boolean thumbnailLoading;
     private boolean thumbnailLoadingStarted;
     private boolean thumbnailFail;
+    private boolean isVideo;
     private long fileSizeValue;
     private long fileModifyDate;
     private int forceItemType;
@@ -37,6 +38,7 @@ public class MainListItem extends CheckableListItem {
         this.fileSize = FileSizeUtil.getAutoFileOrFilesSize(imageItem.path);
         this.imageItem = imageItem;
         this.forceItemType = ITEM_TYPE_NORMAL;
+        this.isVideo = imageItem.isVideo;
     }
 
     public Drawable getThumbnail() {
@@ -101,5 +103,11 @@ public class MainListItem extends CheckableListItem {
     }
     public ImageItem getImageItem() {
         return imageItem;
+    }
+    public boolean isVideo() {
+        return isVideo;
+    }
+    public void setVideo(boolean video) {
+        isVideo = video;
     }
 }

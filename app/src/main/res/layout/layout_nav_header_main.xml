@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="@dimen/nav_header_height"
     android:layout_marginTop="20dp"
-    android:background="@drawable/btn_back_selector"
+    android:background="@android:drawable/screen_background_light"
     android:gravity="bottom"
     android:orientation="vertical"
     android:paddingLeft="@dimen/activity_horizontal_margin"

@@ -76,7 +76,6 @@ public class ListDataService {
 
             galleryList.add(li);
 
-            /*
             li = new GalleryItem();
             li.name = context.getString(R.string.text_videos);
             li.id = GALLERY_LIST_ID_VIDEOS;
@@ -84,7 +83,6 @@ public class ListDataService {
             li.createTime = "0";
 
             galleryList.add(li);
-            */
         }
     }
     public void saveList() {
@@ -162,9 +160,16 @@ public class ListDataService {
         return item;
     }
     public String getGalleryFirstImagePath(int galleryId) {
-        for (ImageItem imageItem : imageList) {
-            if(imageItem.isInBelongGalleries(galleryId))
-                return imageItem.path;
+        if(galleryId == GALLERY_LIST_ID_VIDEOS) {
+            for (ImageItem imageItem : imageList) {
+                if (imageItem.isVideo)
+                    return imageItem.path;
+            }
+        }else {
+            for (ImageItem imageItem : imageList) {
+                if (imageItem.isInBelongGalleries(galleryId))
+                    return imageItem.path;
+            }
         }
         return null;
     }
@@ -179,7 +184,7 @@ public class ListDataService {
     public int getGalleryVideoCount(int galleryId) {
         int count = 0;
         for (ImageItem imageItem : imageList) {
-            if(imageItem.isVideo && imageItem.isInBelongGalleries(galleryId))
+            if(imageItem.isVideo && (galleryId == GALLERY_LIST_ID_VIDEOS || imageItem.isInBelongGalleries(galleryId)))
                 count++;
         }
         return count;
@@ -187,9 +192,16 @@ public class ListDataService {
 
     public List<ImageItem> collectGalleryItems(int id) {
         List<ImageItem> list = new ArrayList<>();
-        for(ImageItem imageItem : imageList) {
-            if(imageItem.isInBelongGalleries(id))
-                list.add(imageItem);
+        if(id == GALLERY_LIST_ID_VIDEOS) {
+            for (ImageItem imageItem : imageList) {
+                if (imageItem.isVideo)
+                    list.add(imageItem);
+            }
+        }else {
+            for (ImageItem imageItem : imageList) {
+                if (imageItem.isInBelongGalleries(id))
+                    list.add(imageItem);
+            }
         }
         return list;
     }

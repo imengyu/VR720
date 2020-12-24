@@ -18,7 +18,7 @@ bool CCTexture::Load(const char* path)
 	int w, h, nrChannels;
     BYTE*data = stbi_load(path, &w, &h, &nrChannels, 0);
 	if (data) {
-		LOGIF("Load texture %s : %dx%dx%db", path, w, h, nrChannels);
+		LOGIF("[CCTexture] Load texture %s : %dx%dx%db", path, w, h, nrChannels);
 		if(nrChannels == 3)
 			LoadRGB(data, w, h);
 		else if(nrChannels == 4)
@@ -27,18 +27,18 @@ bool CCTexture::Load(const char* path)
 		return true;
 	}
 	else
-        LOGWF("Load texture %s failed : %s", path, stbi_failure_reason());
+        LOGWF("[CCTexture] Load texture %s failed : %s", path, stbi_failure_reason());
 	return false;
 }
 bool CCTexture::Load(BYTE *buffer, size_t bufferSize) {
 	if(!buffer || bufferSize <= 0) {
-		LOGE("CCTexture::Load() had bad param!");
+		LOGE("[CCTexture] Load had bad param!");
 		return false;
 	}
 	int w, h, nrChannels;
 	stbi_uc* data = stbi_load_from_memory(buffer, bufferSize, &w, &h, &nrChannels, 0);
 	if (data) {
-		LOGIF("CCTexture::Load() in memory %X : %dx%dx%db", buffer, w, h, nrChannels);
+		LOGIF("[CCTexture] Load in memory : %dx%dx%db", buffer, w, h, nrChannels);
 		if(nrChannels == 3)
 			LoadRGB(data, w, h);
 		else if(nrChannels == 4)
@@ -46,7 +46,7 @@ bool CCTexture::Load(BYTE *buffer, size_t bufferSize) {
 		stbi_image_free(data);
 		return true;
 	}else
-		LOGEF("Texture::Load() in memory %X failed : %s", buffer, stbi_failure_reason());
+		LOGEF("[CCTexture] Load in memory failed : %s", buffer, stbi_failure_reason());
 	return false;
 }
 void CCTexture::LoadRGB(BYTE* data, int w, int h)
@@ -60,7 +60,7 @@ void CCTexture::LoadRGBA(BYTE* data, int w, int h)
 void CCTexture::LoadBytes(BYTE* data, int w, int h, GLenum type) {
 
 	if(!data || w <= 0 || h <= 0) {
-		LOGE("CCTexture::LoadBytes() had bad param!");
+		LOGE("[CCTexture] Load LoadBytes had bad param!");
 		return;
 	}
 

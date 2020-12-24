@@ -15,15 +15,14 @@ void CCDecodeQueue::Init(CCVideoPlayerExternalData *data) {
 
     AllocFramePool(data->InitParams->FramePoolSize);
     AllocPacketPool(data->InitParams->PacketPoolSize);
+
+    externalData = data;
 }
 void CCDecodeQueue::Reset() {
 
 }
 void CCDecodeQueue::Destroy() {
-    videoQueue.clear();
-    audioQueue.clear();
-    videoFrameQueue.clear();
-    audioFrameQueue.clear();
+    ClearAll();
 
     ReleasePacketPool();
     ReleaseFramePool();
@@ -34,10 +33,14 @@ void CCDecodeQueue::Destroy() {
     pthread_mutex_destroy(&packetRequestLock);
 }
 
+//包数据队列
+
 void CCDecodeQueue::AudioEnqueue(AVPacket *pkt) {
     audioQueue.emplace_back(pkt);
 }
 AVPacket *CCDecodeQueue::AudioDequeue() {
+    if(audioQueue.empty())
+        return nullptr;
     AVPacket *pkt = audioQueue.front();
     audioQueue.pop_front();
     return pkt;
@@ -45,11 +48,23 @@ AVPacket *CCDecodeQueue::AudioDequeue() {
 size_t CCDecodeQueue::AudioQueueSize() {
     return audioQueue.size();
 }
-
+void CCDecodeQueue::VideoDrop() {
+    while (!videoQueue.empty()) {
+        AVPacket *packet = videoQueue.front();
+        if (packet->flags != AV_PKT_FLAG_KEY) {//还没有解码，需要判断它不是I帧，否则会影响后续的B帧，P帧的解码过程
+            ReleasePacket(packet);
+            videoQueue.pop_front();
+            break;
+        }
+    }
+}
 void CCDecodeQueue::VideoEnqueue(AVPacket *pkt) {
     videoQueue.emplace_back(pkt);
 }
-AVPacket *CCDecodeQueue::VideoDequeue()   {
+AVPacket *CCDecodeQueue::VideoDequeue() {
+    if(videoQueue.empty())
+        return nullptr;
+
     AVPacket *pkt = videoQueue.front();
     videoQueue.pop_front();
     return pkt;
@@ -58,7 +73,19 @@ size_t CCDecodeQueue::VideoQueueSize() {
     return videoQueue.size();
 }
 
+//已经解码的数据队列
+
+void CCDecodeQueue::VideoFrameDrop() {
+    if(!videoFrameQueue.empty()) {
+        AVFrame *frame = VideoFrameDequeue();
+        ReleaseFrame(frame);
+    }
+}
 AVFrame *CCDecodeQueue::VideoFrameDequeue() {
+
+    if(videoFrameQueue.empty())
+        return nullptr;
+
     AVFrame * frame = videoFrameQueue.front();
     videoFrameQueue.pop_front();
     return frame;
@@ -67,6 +94,10 @@ void CCDecodeQueue::VideoFrameEnqueue(AVFrame *frame) {
     videoFrameQueue.push_back(frame);
 }
 AVFrame *CCDecodeQueue::AudioFrameDequeue() {
+
+    if(audioFrameQueue.empty())
+        return nullptr;
+
     AVFrame * frame = audioFrameQueue.front();
     audioFrameQueue.pop_front();
     return frame;
@@ -81,6 +112,22 @@ size_t CCDecodeQueue::VideoFrameQueueSize() {
 size_t CCDecodeQueue::AudioFrameQueueSize() {
     return audioFrameQueue.size();
 }
+
+//清空队列数据
+void CCDecodeQueue::ClearAll() {
+    for(auto frame : videoFrameQueue) ReleaseFrame(frame);
+    for(auto frame : audioFrameQueue) ReleaseFrame(frame);
+    for(auto packet : videoQueue) ReleasePacket(packet);
+    for(auto packet : audioQueue) ReleasePacket(packet);
+
+    videoFrameQueue.clear();
+    audioFrameQueue.clear();
+    videoQueue.clear();
+    audioQueue.clear();
+}
+
+//两个池
+//可以随用随取，防止重复申请释放内存的额外开销
 
 void CCDecodeQueue::ReleasePacket(AVPacket *pkt) {
 
@@ -143,9 +190,9 @@ AVFrame* CCDecodeQueue::RequestFrame() {
     pthread_mutex_lock(&frameRequestLock);
 
     if(framePool.empty())
-        AllocPacketPool(externalData->InitParams->FramePoolGrowStep);
+        AllocFramePool(externalData->InitParams->FramePoolGrowStep);
     if(framePool.empty()) {
-        LOGE("[CCDecodeQueue] Failed to alloc packet pool!");
+        LOGE("[CCDecodeQueue] Failed to alloc frame pool!");
         return nullptr;
     }
 

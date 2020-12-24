@@ -168,7 +168,7 @@ public class FileUtils {
         return ext.equalsIgnoreCase("jpg")
                 || ext.equalsIgnoreCase("jpeg")
                 || ext.equalsIgnoreCase("jfif")
-                || ext.equalsIgnoreCase("pmg")
+                || ext.equalsIgnoreCase("png")
                 || ext.equalsIgnoreCase("bmp");
     }
 
