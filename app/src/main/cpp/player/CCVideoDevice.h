@@ -19,6 +19,7 @@ public:
     virtual void Destroy() {}
     virtual uint8_t* Lock(uint8_t *src, int srcStride, int*destStride, int64_t pts) { return nullptr; }
     virtual void Unlock() {}
+    virtual void Dirty() {}
 
     virtual void SetRect(int x, int y, int w, int h) {}
     virtual void Pause(int pause) {}

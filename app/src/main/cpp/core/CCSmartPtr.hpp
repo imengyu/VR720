@@ -36,6 +36,7 @@ public:
 
     std::unordered_map<void*, CCUPtr*> pool;
 
+    static bool IsStaticPoolCanUse();
     static CCPtrPool* GetStaticPool();
     static void InitPool();
     static void ReleasePool();
@@ -50,7 +51,7 @@ public:
     void ReleaseAllPtr();
 };
 #define CCPtrPoolStatic CCPtrPool::GetStaticPool()
-
+#define CCPtrPoolStaticCanUse CCPtrPool::IsStaticPoolCanUse()
 //智能指针类
 template <typename T>
 class CCSmartPtr
@@ -61,24 +62,29 @@ private:
 public:
     CCSmartPtr() {  
         ptr = nullptr;
-        rp = CCPtrPoolStatic->AddPtr(nullptr);   
+        if(CCPtrPoolStaticCanUse)
+            rp = CCPtrPoolStatic->AddPtr(nullptr);
     }
     //构造函数
     CCSmartPtr(T *srcPtr)  { 
         ptr = srcPtr;
-        rp = CCPtrPoolStatic->AddPtr(srcPtr);
+        if(CCPtrPoolStaticCanUse)
+            rp = CCPtrPoolStatic->AddPtr(srcPtr);
     }      
     //复制构造函数
     CCSmartPtr(const CCSmartPtr<T> &sp)  {      
         ptr = sp.ptr;
-        rp = CCPtrPoolStatic->AddRefPtr(sp.ptr);
+        if(CCPtrPoolStaticCanUse)
+            rp = CCPtrPoolStatic->AddRefPtr(sp.ptr);
     }     
 
     //重载赋值操作符
-    CCSmartPtr& operator = (const CCSmartPtr<T>& rhs) {    
-        CCPtrPoolStatic->RemoveRefPtr(ptr);
+    CCSmartPtr& operator = (const CCSmartPtr<T>& rhs) {
+        if(CCPtrPoolStaticCanUse)
+            CCPtrPoolStatic->RemoveRefPtr(ptr);
         ptr = rhs.ptr;
-        rp = CCPtrPoolStatic->AddRefPtr(ptr);
+        if(CCPtrPoolStaticCanUse)
+            rp = CCPtrPoolStatic->AddRefPtr(ptr);
         return *this;
     }
 
@@ -103,13 +109,15 @@ public:
         return 0;
     }
     void ForceRelease() {
-        CCPtrPool::GetStaticPool()->ReleasePtr(ptr);
+        if(CCPtrPoolStaticCanUse)
+            CCPtrPool::GetStaticPool()->ReleasePtr(ptr);
         ptr = nullptr;
         *rp = nullptr;
     }
 
     ~CCSmartPtr() {        //析构函数
-        CCPtrPoolStatic->RemoveRefPtr(ptr);
+        if(CCPtrPoolStaticCanUse)
+            CCPtrPoolStatic->RemoveRefPtr(ptr);
         ptr = nullptr;
         rp = nullptr;
     }

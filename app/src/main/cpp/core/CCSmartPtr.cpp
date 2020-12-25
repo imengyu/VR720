@@ -79,7 +79,7 @@ void CCPtrPool::ClearUnUsedPtr() {
 			deletedCount++;
 		}
 
-	LOGIF("[CCPtrPool] Clear un used Ptr : %d ptr released ", deletedCount);
+	LOGIF("CCPtrPool", "Clear un used Ptr : %d ptr released ", deletedCount);
 	pool.clear();
 }
 void CCPtrPool::ReleaseAllPtr()
@@ -87,6 +87,10 @@ void CCPtrPool::ReleaseAllPtr()
 	for (auto & it : pool)
 		delete it.second;
 
-	LOGIF("[CCPtrPool] Release Ptr : %d ptr released ", pool.size());
+	LOGIF("CCPtrPool", "Release Ptr : %d ptr released ", pool.size());
 	pool.clear();
+}
+
+bool CCPtrPool::IsStaticPoolCanUse() {
+	return globalPool != nullptr;
 }

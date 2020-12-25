@@ -6,6 +6,7 @@
 //Shader 封装类
 class CCShader
 {
+    const char* LOG_TAG = "CCShader";
 public:
     // the program ID
     unsigned int ID;

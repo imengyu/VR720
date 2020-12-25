@@ -54,6 +54,7 @@ import com.imengyu.vr720.dialog.LoadingDialog;
 import com.imengyu.vr720.model.ImageInfo;
 import com.imengyu.vr720.model.ImageItem;
 import com.imengyu.vr720.service.ListDataService;
+import com.imengyu.vr720.service.ListImageCacheService;
 import com.imengyu.vr720.utils.AlertDialogTool;
 import com.imengyu.vr720.utils.DateUtils;
 import com.imengyu.vr720.utils.FileSizeUtil;
@@ -160,6 +161,7 @@ public class PanoActivity extends AppCompatActivity {
     private boolean lastTouchMoved = false;
 
     private ListDataService listDataService;
+    private ListImageCacheService listImageCacheService;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -172,28 +174,31 @@ public class PanoActivity extends AppCompatActivity {
         StatusBarUtils.setDarkMode(this);
         StatusBarUtils.setStatusBarColor(this, getColor(R.color.colorPrimary));
 
-        listDataService = ((VR720Application)getApplication()).getListDataService();
+        VR720Application application = ((VR720Application)getApplication());
+
+        listImageCacheService = application.getListImageCacheService();
+        listDataService = application.getListDataService();
         resources = getResources();
         mContext = getApplicationContext();
         screenSize = ScreenUtils.getScreenSize(this);
 
-        ((VR720Application)getApplication()).checkAndInit();
+        //初始化内核
+        application.checkAndInit();
+        NativeVR720.updateAssetManagerPtr(getAssets());
 
         initAnimations();
         initResources();
         initSettings();
         initSensor();
+        initRenderer();
+        initControls();
+        initButtons();
 
-        NativeVR720.updateAssetManagerPtr(getAssets());
-        //初始化内核
+        //检查
         if(!NativeVR720Renderer.checkSupportsEs3(this)) {
             showErr(getString(R.string.text_your_device_dosnot_support_es20));
             return;
         }
-
-        initRenderer();
-        initControls();
-        initButtons();
 
         onUpdateScreenOrientation(getResources().getConfiguration());
 
@@ -288,6 +293,7 @@ public class PanoActivity extends AppCompatActivity {
         renderer.setOnRequestGyroValueCallback(quaternion -> orientationSensor1Provider.getQuaternion(quaternion));
         renderer.setCachePath(StorageDirUtils.getViewCachePath());
         renderer.setEnableCache(panoEnableCache);
+        renderer.setPanoramaMode(currentPanoMode);
         glSurfaceView = findViewById(R.id.pano_view);
         glSurfaceView.setNativeRenderer(renderer);
         glSurfaceView.setCaptureCallback(this::screenShotCallback);
@@ -564,6 +570,9 @@ public class PanoActivity extends AppCompatActivity {
                     renderer.setVideoPos((int) ((seekBar.getProgress() / 100.0f) * currentVideoLength));
             }
         });
+
+        //设置上次模式
+        updateModeButton();
     }
     private void saveSettings() {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
@@ -802,6 +811,7 @@ public class PanoActivity extends AppCompatActivity {
         switch (state) {
             case NativeVR720Renderer.VideoState_Paused:
             case NativeVR720Renderer.VideoState_Ended:
+
                 currentVideoPlaying = false;
                 break;
             case NativeVR720Renderer.VideoState_Playing:
@@ -966,14 +976,10 @@ public class PanoActivity extends AppCompatActivity {
 
     private void onRendererIsReady() {
         Log.d(TAG, "Renderer is ok");
-        Log.d(TAG, "Load image file : " + filePath);
+        Log.d(TAG, "Load file : " + filePath);
 
         if(!ImageUtils.checkSizeIs720Panorama(currentImageSize) && ImageUtils.checkSizeIs320Panorama(currentImageSize))
             currentPanoMode = NativeVR720Renderer.PanoramaMode_PanoramaFull360;
-
-        //设置上次模式
-        updateModeButton();
-        renderer.setPanoramaMode(currentPanoMode);
 
         titlebar.setTitle(FileUtils.getFileName(filePath));
         pano_loading.setVisibility(View.GONE);
@@ -1016,7 +1022,7 @@ public class PanoActivity extends AppCompatActivity {
             case NativeVR720Renderer.MobileGameUIEvent_MarkLoadFailed: {
                 fileLoading = false;
                 titlebar.setVisibility(View.VISIBLE);
-                String error = renderer.getLastError();
+                String error = renderer.getLastError(this);
                 Log.w(TAG, String.format("Image load failed : %s", error));
                 showErr(error);
                 break;
@@ -1048,6 +1054,7 @@ public class PanoActivity extends AppCompatActivity {
                 handler.sendEmptyMessage(MainMessages.MSG_QUIT_LATE);
             }
             case NativeVR720Renderer.MobileGameUIEvent_VideoStateChanged: {
+                updateVideoControlState();
                 updateVideoControlPlayState();
                 break;
             }
@@ -1195,10 +1202,13 @@ public class PanoActivity extends AppCompatActivity {
         final String text_un_know = getResources().getString(R.string.text_un_know);
         new Thread(() -> {
 
+            //加载图像基础信息
             Size imageSize = new Size(0,0);
             try {
                 imageSize = ImageUtils.getImageSize(filePath);
-            } catch (IOException e) {
+            }
+            catch (IOException e) {
+                Log.e(TAG, "Get image size failed : " + e.toString());
                 e.printStackTrace();
             }
 
@@ -1206,42 +1216,44 @@ public class PanoActivity extends AppCompatActivity {
             String fileTime = DateUtils.format(new Date((new File(filePath)).lastModified()));;
             imageInfo.imageTime = fileTime;
 
+            //加载EXIF数据
             try {
                 ExifInterface exifInterface = new ExifInterface(filePath);
 
                 imageInfo.imageTime = exifInterface.getAttribute(ExifInterface.TAG_DATETIME);
-                if(imageInfo.imageTime == null)
-                    imageInfo.imageTime = fileTime;
-
                 imageInfo.imageSize = exifInterface.getAttribute(ExifInterface.TAG_IMAGE_WIDTH) +
                         "x" + exifInterface.getAttribute(ExifInterface.TAG_IMAGE_LENGTH);
-
-                if(imageInfo.imageSize.equals("x"))
-                    imageInfo.imageSize = imageSize.getWidth() + "x" + imageSize.getHeight();
-
                 imageInfo.imageISOSensitivity = exifInterface.getAttribute(ExifInterface.TAG_RW2_ISO);
-
-                if(StringUtils.isNullOrEmpty(imageInfo.imageISOSensitivity))
-                    imageInfo.imageISOSensitivity = text_un_know;
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                     imageInfo.imageShutterTime = exifInterface.getAttribute(ExifInterface.TAG_EXPOSURE_TIME);
-                    if(StringUtils.isNullOrEmpty(imageInfo.imageShutterTime))
-                        imageInfo.imageShutterTime = text_un_know;
                     imageInfo.imageExposureBiasValue = exifInterface.getAttribute(ExifInterface.TAG_EXPOSURE_BIAS_VALUE);
-                    if(StringUtils.isNullOrEmpty(imageInfo.imageExposureBiasValue))
-                        imageInfo.imageExposureBiasValue = text_un_know;
-                }else {
-                    imageInfo.imageShutterTime = text_un_know;
-                    imageInfo.imageExposureBiasValue = text_un_know;
                 }
 
-            } catch (IOException e) {
+                if(imageInfo.imageTime == null)
+                    imageInfo.imageTime = fileTime;
+                if(imageInfo.imageSize.equals("x"))
+                    imageInfo.imageSize = imageSize.getWidth() + "x" + imageSize.getHeight();
+                if(StringUtils.isNullOrEmpty(imageInfo.imageShutterTime))
+                    imageInfo.imageShutterTime = text_un_know;
+                if(StringUtils.isNullOrEmpty(imageInfo.imageExposureBiasValue))
+                    imageInfo.imageExposureBiasValue = text_un_know;
+                if(StringUtils.isNullOrEmpty(imageInfo.imageISOSensitivity))
+                    imageInfo.imageISOSensitivity = text_un_know;
+
+            }
+            catch (IOException e) {
+                Log.e(TAG, "Load image exif data failed : " + e.toString());
                 e.printStackTrace();
             }
 
-            loadImageInfoFinishedListener.onLoadImageInfoFinishedListener(imageSize, isFromInitialization);
+            //尝试首先加载最小的缩略图
+            String cacheFilePath = listImageCacheService.tryGetImageThumbnailCacheFilePath(filePath);
+            if(!StringUtils.isNullOrEmpty(cacheFilePath))
+                renderer.setProp(NativeVR720Renderer.PROP_SMALL_PANORAMA_PATH, cacheFilePath);
 
+            //完成通知
+            loadImageInfoFinishedListener.onLoadImageInfoFinishedListener(imageSize, isFromInitialization);
             handler.sendEmptyMessage(MainMessages.MSG_LOAD_IMAGE_INFO);
         }).start();
     }
@@ -1411,8 +1423,7 @@ public class PanoActivity extends AppCompatActivity {
 
             });
         }
-        else
-            showErr(getString(R.string.text_image_not_support));
+        else showErr(getString(R.string.text_image_not_support));
     }
     private void closeFile(boolean quit) {
         if(quit && currentFileHasError)

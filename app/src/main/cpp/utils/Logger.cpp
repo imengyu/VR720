@@ -18,76 +18,76 @@ Logger::~Logger()
 	CloseLogFile();
 }
 
-void Logger::Log(const char* str, ...)
+void Logger::Log(const char * tag, const char* str, ...)
 {
 	if (level <= LogLevelText) {
 		va_list arg;
 		va_start(arg, str);
-		LogInternal(LogLevelText, str, arg);
+		LogInternal(LogLevelText, tag, str, arg);
 		va_end(arg);
 	}
 }
-void Logger::LogWarn(const char* str, ...)
+void Logger::LogWarn(const char * tag, const char* str, ...)
 {
 	if (level <= LogLevelWarn) {
 		va_list arg;
 		va_start(arg, str);
-		LogInternal(LogLevelWarn, str, arg);
+		LogInternal(LogLevelWarn, tag, str, arg);
 		va_end(arg);
 	}
 }
-void Logger::LogError(const char* str, ...)
+void Logger::LogError(const char * tag, const char* str, ...)
 {
 	if (level <= LogLevelError) {
 		va_list arg;
 		va_start(arg, str);
-		LogInternal(LogLevelError, str, arg);
+		LogInternal(LogLevelError, tag, str, arg);
 		va_end(arg);
 	}
 }
-void Logger::LogInfo(const char* str, ...)
+void Logger::LogInfo(const char * tag, const char* str, ...)
 {
 	if (level <= LogLevelInfo) {
 		va_list arg;
 		va_start(arg, str);
-		LogInternal(LogLevelInfo, str, arg);
+		LogInternal(LogLevelInfo, tag, str, arg);
 		va_end(arg);
 	}
 }
 
-void Logger::Log2(const char* str, const char* file, int line, const char* functon, ...)
+void Logger::Log2(const char * tag, const char* str, const char* file, int line, const char* functon, ...)
 {
 	if (level <= LogLevelText) {
 		va_list arg;
 		va_start(arg, functon);
-		LogInternalWithCodeAndLine(LogLevelText, str, file, line, functon, arg);
+		LogInternalWithCodeAndLine(LogLevelText, tag, str, file, line, functon, arg);
 		va_end(arg);
 	}
 }
-void Logger::LogWarn2(const char* str, const char* file, int line, const char* functon, ...)
+void Logger::LogWarn2(const char * tag, const char* str, const char* file, int line, const char* functon, ...)
 {
 	if (level <= LogLevelWarn) {
 		va_list arg;
 		va_start(arg, functon);
-		LogInternalWithCodeAndLine(LogLevelWarn, str, file, line, functon, arg);
+		LogInternalWithCodeAndLine(LogLevelWarn, tag, str, file, line, functon, arg);
 		va_end(arg);
 	}
 }
-void Logger::LogError2(const char* str, const char* file, int line, const char* functon, ...)
+void Logger::LogError2(const char * tag, const char* str, const char* file, int line, const char* functon, ...)
 {
 	if (level <= LogLevelError) {
 		va_list arg;
 		va_start(arg, functon);
-		LogInternalWithCodeAndLine(LogLevelError, str, file, line, functon, arg);
+		LogInternalWithCodeAndLine(LogLevelError, tag, str, file, line, functon, arg);
 		va_end(arg);
 	}
 }
-void Logger::LogInfo2(const char* str, const char* file, int line, const  char* functon, ...)
+void Logger::LogInfo2(const char * tag, const char* str, const char* file, int line, const  char* functon, ...)
 {
 	if (level <= LogLevelInfo) {
 		va_list arg;
 		va_start(arg, functon);
-		LogInternalWithCodeAndLine(LogLevelInfo, str, file, line, functon, arg);
+		LogInternalWithCodeAndLine(LogLevelInfo, tag, str, file, line, functon, arg);
 		va_end(arg);
 	}
 }
@@ -134,28 +134,28 @@ void Logger::WritePendingLog(const char* str, LogLevel logLevel)
 	logPendingBuffer.push_back(sla);
 }
 
-void Logger::LogInternalWithCodeAndLine(LogLevel logLevel, const char* str, const char* file, int line, const char* functon, va_list arg)
+void Logger::LogInternalWithCodeAndLine(LogLevel logLevel, const char * tag, const char* str, const char* file, int line, const char* functon, va_list arg)
 {
 	std::string format1 = CStringHlp::FormatString("%s\n[In] %s:%d : %s", str, file, line, functon);
-	LogInternal(logLevel, format1.c_str(), arg);
+	LogInternal(logLevel, tag, format1.c_str(), arg);
 }
-void Logger::LogInternal(LogLevel logLevel, const char* str, va_list arg)
+void Logger::LogInternal(LogLevel logLevel, const char * tag, const char* str, va_list arg)
 {
 	std::string out = CStringHlp::FormatString(str, arg);
-	LogOutput(logLevel, out.c_str(), str, out.size());
+	LogOutput(logLevel, tag, out.c_str(), str, out.size());
 }
-void Logger::LogOutput(LogLevel logLevel, const char* str, const char* srcStr, size_t len)
+void Logger::LogOutput(LogLevel logLevel, const char * tag, const char* str, const char* srcStr, size_t len)
 {
 	if (outPut == LogOutPutFile && logFile)
-		fprintf(logFile, "%s", str);
+		fprintf(logFile, "[%s] %s", tag, str);
 	else if (outPut == LogOutPutConsolne) {
 		switch (logLevel)
 		{
-			case LogLevelInfo: __android_log_print(ANDROID_LOG_INFO, logTag.c_str(), "%s", str); break;
-			case LogLevelWarn: __android_log_print(ANDROID_LOG_WARN, logTag.c_str(), "%s", str);  break;
-			case LogLevelError: __android_log_print(ANDROID_LOG_ERROR, logTag.c_str(), "%s", str);  break;
-			case LogLevelText: __android_log_print(ANDROID_LOG_DEBUG, logTag.c_str(), "%s", str);  break;
-			default: __android_log_print(ANDROID_LOG_DEFAULT, logTag.c_str(), "%s", str);  break;
+			case LogLevelInfo: __android_log_print(ANDROID_LOG_INFO, logTag.c_str(), "[%s] %s", tag, str); break;
+			case LogLevelWarn: __android_log_print(ANDROID_LOG_WARN, logTag.c_str(), "[%s] %s", tag, str);  break;
+			case LogLevelError: __android_log_print(ANDROID_LOG_ERROR, logTag.c_str(), "[%s] %s", tag, str);  break;
+			case LogLevelText: __android_log_print(ANDROID_LOG_DEBUG, logTag.c_str(), "[%s] %s", tag, str);  break;
+			default: __android_log_print(ANDROID_LOG_DEFAULT, logTag.c_str(), "[%s] %s", tag, str);  break;
 		}
 	}
 	else if (outPut == LogOutPutCallback && callBack)
@@ -171,23 +171,14 @@ void Logger::CloseLogFile()
 	}
 }
 
-Logger* globalStaticLogger = nullptr;
-int globalSecurityCheck = 0;
-
+Logger globalStaticLogger = Logger("VR720Native");
 Logger* Logger::GetStaticInstance() {
-	return globalStaticLogger;
+	return &globalStaticLogger;
 }
 void Logger::InitConst() {
-	globalStaticLogger = new Logger("VR720Native");
-	globalStaticLogger->SetLogOutPut(LogOutPutConsolne);
-	globalSecurityCheck = 0x15;
+	globalStaticLogger.SetLogOutPut(LogOutPutConsolne);
 }
 void Logger::DestroyConst() {
-	if (globalSecurityCheck != 0x15)
-		return;
-	if (globalStaticLogger != nullptr)
-		delete globalStaticLogger;
-	globalStaticLogger = nullptr;
 }
 
 void Logger::SetWithWarp(bool e) {

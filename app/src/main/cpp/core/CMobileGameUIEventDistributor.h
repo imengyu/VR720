@@ -26,7 +26,6 @@ public:
     void SendEvent(CCMobileGameUIEvent ev);
 
 private:
-    JavaVM* vm = nullptr;
     jclass objNativeVR720RendererClass;
     jobject objNativeVR720RendererObject;
 };

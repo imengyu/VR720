@@ -4,6 +4,7 @@
 //贴图类
 class CCTexture
 {
+	const char* LOG_TAG = "CCTexture";
 public:
 	CCTexture();
 
@@ -24,27 +25,13 @@ public:
 	 */
 	bool Load(BYTE* buffer, size_t bufferSize);
 	/**
-	 * 从内存加载贴图RGB数据
-	 * @param data RGB数据
-	 * @param width 图像宽
-	 * @param height 图像高
-	 */
-	void LoadRGB(BYTE* data, int width, int height);
-	/**
-	 * 从内存加载贴图RGBA数据
-	 * @param data RGBA数据
-	 * @param width 图像宽
-	 * @param height 图像高
-	 */
-	void LoadRGBA(BYTE* data, int width, int height);
-	/**
 	 * 从内存加载贴图数据
 	 * @param data 数据
 	 * @param width 图像宽
 	 * @param height 图像高
 	 * @param type 自定义数据类型（GL_RGB/GL_RGBA/GL_BGR）
 	 */
-	void LoadBytes(BYTE* data, int width, int height, GLenum type);
+	void LoadBytes(BYTE* data, int width, int height, GLenum format);
 
 
 	/**
@@ -107,13 +94,16 @@ public:
 	 * @param height 高度
 	 * @param type GL类型
 	 */
-	void DoBackupBufferData(BYTE* data, int width, int height, GLenum type);
+	void DoBackupBufferData(BYTE* data, int width, int height, GLenum format);
 
+	void LoadGridTexture(int w, int h, int gridSize, bool alpha, bool backup);
 protected:
 	BYTE* backupDataPtr = nullptr;
 	size_t backupDataLength = 0;
 	GLenum backupType = 0;
 
-	void LoadDataToGL(BYTE* data, int width, int height, GLenum type);
+	void LoadDataToGL(BYTE* data, int width, int height, GLenum format);
+
+
 };
 

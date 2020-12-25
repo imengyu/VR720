@@ -23,8 +23,8 @@ CCShader::CCShader(const char* vShaderCode, const char* fShaderCode)
     if (!success)
     {
         glGetShaderInfoLog(vertex, 512, nullptr, infoLog);
-        LOGIF("[CCShader]  vShaderCode : \n%s", vShaderCode);
-        LOGEF("[CCShader] Compile vertex shader file failed! \n%s", infoLog);
+        LOGDF(LOG_TAG, "D: vShaderCode : \n%s", vShaderCode);
+        LOGEF(LOG_TAG, "Compile vertex shader file failed! \n%s", infoLog);
     };
 
     // similiar for Fragment Shader
@@ -36,8 +36,8 @@ CCShader::CCShader(const char* vShaderCode, const char* fShaderCode)
     if (!success)
     {
         glGetShaderInfoLog(fragment, 512, nullptr, infoLog);
-        LOGIF("[CCShader]  fShaderCode : \n%s", fShaderCode);
-        LOGEF("[CCShader] Compile fragment shader file failed! \n%s", infoLog);
+        LOGDF(LOG_TAG, "D: fShaderCode : \n%s", fShaderCode);
+        LOGEF(LOG_TAG, "Compile fragment shader file failed! \n%s", infoLog);
     };
 
     // shader Program
@@ -50,7 +50,7 @@ CCShader::CCShader(const char* vShaderCode, const char* fShaderCode)
     if (!success)
     {
         glGetProgramInfoLog(ID, 512, nullptr, infoLog);
-        LOGEF("[CCShader] Link shader program failed! \n%s", infoLog);
+        LOGEF(LOG_TAG, "Link shader program failed! \n%s", infoLog);
     }
 
     // delete the shaders as they're linked into our program now and no longer necessary

@@ -1,5 +1,7 @@
 #include "CCTextureLoadQueue.h"
 
+const char * LOG_TAG = "CCTextureLoadQueue";
+
 CCTextureLoadQueue::CCTextureLoadQueue()
 {
 	logger = Logger::GetStaticInstance();
@@ -10,7 +12,7 @@ CCTextureLoadQueue::~CCTextureLoadQueue()
 {
 	if (queue.size() > 0) {
 
-		logger->Log("[CCTextureLoadQueue] Destroy not load Textures, count : %d", queue.size());
+		logger->Log(LOG_TAG, "Destroy not load Textures, count : %d", queue.size());
 
 		std::list<TextureLoadQueueInfo*>::iterator it;
 		for (it = queue.begin(); it != queue.end(); it++)
@@ -47,7 +49,7 @@ void CCTextureLoadQueue::ResolveMain()
 		pendingTexture = queue.front();
 		queue.pop_front();
 
-		logger->Log("[CCTextureLoadQueue] Load Texture %d", pendingTexture->id);
+		logger->Log(LOG_TAG, "Load Texture %d", pendingTexture->id);
 
 		TextureLoadQueueDataResult *result = nullptr;
 		if (loadHandle)
@@ -67,14 +69,14 @@ void CCTextureLoadQueue::ResolveRender()
 	if (pendingLoadDataTexture != nullptr) {
 		auto result = pendingLoadDataTexture->pendingResult;
 		if (result) {
-			logger->Log("[CCTextureLoadQueue:Render] Load Texture Data %d", pendingTexture->id);
+			logger->Log(LOG_TAG, " (RendererThread) Load Texture Data %d", pendingTexture->id);
 			switch (result->compoents)
 			{
 			case 3:
-				pendingLoadDataTexture->texture->LoadRGB(result->buffer, result->width, result->height);
+				pendingLoadDataTexture->texture->LoadBytes(result->buffer, result->width, result->height, GL_RGB);
 				break;
 			case 4:
-				pendingLoadDataTexture->texture->LoadRGBA(result->buffer, result->width, result->height);
+				pendingLoadDataTexture->texture->LoadBytes(result->buffer, result->width, result->height, GL_RGBA);
 				break;
 			default:
 				break;

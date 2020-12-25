@@ -3,6 +3,7 @@
 #define VR720_CCFILEMANAGER_H
 #include "stdafx.h"
 #include "../imageloaders/CImageLoader.h"
+#include "CCErrors.h"
 #include <string>
 
 //加载贴图回调
@@ -25,10 +26,14 @@ typedef void (*CCFileManagerOnCloseCallback)(void* data);
 
 #define CC_FILE_TYPE_VIDEO_MAX 20
 
+//判断文件类型是不是图像
 #define CC_IS_FILE_TYPE_IMAGE(x) x < CC_FILE_TYPE_IMG_MAX
+//判断文件类型是不是视频
 #define CC_IS_FILE_TYPE_VIDEO(x) (x > CC_FILE_TYPE_IMG_MAX && x < CC_FILE_TYPE_VIDEO_MAX)
 
-//文件打开管理
+/**
+ * 文件打开管理
+ */
 class COpenGLRenderer;
 class CCFileManager
 {
@@ -63,9 +68,9 @@ public:
     std::string CurrenImagePath;
 
     /**
-     *
-     * @param c
-     * @param data
+     * 设置文件关闭回调
+     * @param c 回调
+     * @param data 回调自定义数据
      */
     void SetOnCloseCallback(CCFileManagerOnCloseCallback c, void* data) {
         onCloseCallback = c;
@@ -76,12 +81,13 @@ public:
      * 获取上一个错误
      * @return 上一个错误
      */
-    const char* GetLastError();
+    const int GetLastError() { return lastErr; }
 
+    const char* LOG_TAG = "CCFileManager";
 private:
     Logger* logger = nullptr;
 
-    std::string lastErr;
+    int lastErr;
     COpenGLRenderer* Render = nullptr;
 
     CCFileManagerOnCloseCallback onCloseCallback = nullptr;

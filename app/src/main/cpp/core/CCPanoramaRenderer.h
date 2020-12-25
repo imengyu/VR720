@@ -28,6 +28,7 @@ class CCRenderGlobal;
 class CMobileGameRenderer;
 class CCPanoramaRenderer
 {
+    const char* LOG_TAG = "PanoramaRenderer";
 public:
     CCPanoramaRenderer(CMobileGameRenderer* renderer);
 private:
@@ -84,9 +85,8 @@ public:
     //贴图池
 
     CCSmartPtr<CCTexture> panoramaCubeMapTex = nullptr;
-    CCSmartPtr<CCTexture> panoramaRedCheckTex = nullptr;
-    CCSmartPtr<CCTexture> panoramaCheckTex = nullptr;
     CCSmartPtr<CCTexture> panoramaThumbnailTex = nullptr;
+    CCSmartPtr<CCTexture> panoramaCheckTex = nullptr;
 
     std::vector< CCSmartPtr<CCTexture>> panoramaTexPool;
 

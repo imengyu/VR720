@@ -12,6 +12,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/euler_angles.hpp>
 
+
+
 CCPanoramaRenderer::CCPanoramaRenderer(CMobileGameRenderer* renderer)
 {
     Renderer = renderer;
@@ -31,10 +33,6 @@ void CCPanoramaRenderer::ReInit() {
     if(shader != nullptr) delete shader;
     if(shaderCylinder != nullptr) delete shaderCylinder;
     InitShader();
-
-    //reload resources
-    ReleaseBuiltInResources();
-    LoadBuiltInResources();
 
     //Re buffer all data
     ReBufferAllData();
@@ -202,7 +200,7 @@ void CCPanoramaRenderer::RenderPreMercatorCylinder() {
 
     GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (status != GL_FRAMEBUFFER_COMPLETE)
-        logger->LogWarn2("glCheckFramebufferStatus ret : %04x (%d)", status, status);
+        logger->LogWarn2(LOG_TAG, "glCheckFramebufferStatus ret : %04x (%d)", status, status);
 
     glUniformMatrix4fv(shader->modelLoc, 1, GL_FALSE, glm::value_ptr(mainModel->GetModelMatrix()));
 
@@ -231,7 +229,7 @@ void CCPanoramaRenderer::RenderPreMercatorCylinder() {
 
     status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (status != GL_FRAMEBUFFER_COMPLETE)
-        logger->LogWarn2("glCheckFramebufferStatus ret : %04x (%d)", status, status);
+        logger->LogWarn2(LOG_TAG, "glCheckFramebufferStatus ret : %04x (%d)", status, status);
 
     const GLenum drawBuffers[] = { GL_COLOR_ATTACHMENT0 };
     glDrawBuffers(1, drawBuffers);
@@ -288,17 +286,11 @@ void CCPanoramaRenderer::RenderFullChunks(float deltaTime)
 }
 
 void CCPanoramaRenderer::LoadBuiltInResources() {
-    panoramaCheckTex =
-            CCAssetsManager::LoadTexture(
-                    CCAssetsManager::GetResourcePath("textures", "checker.jpg").c_str());
-    panoramaRedCheckTex = CCAssetsManager::LoadTexture(
-            CCAssetsManager::GetResourcePath("textures", "red_checker.jpg").c_str());
+    panoramaCheckTex = new CCTexture();
+    panoramaCheckTex->backupData = true;
+    panoramaCheckTex->LoadGridTexture(512, 512, 16, true, true);
 }
 void CCPanoramaRenderer::ReleaseBuiltInResources() {
-    if(!panoramaCheckTex.IsNullptr())
-        panoramaCheckTex.ForceRelease();
-    if(!panoramaRedCheckTex.IsNullptr())
-        panoramaRedCheckTex.ForceRelease();
 }
 void CCPanoramaRenderer::ReleaseTexPool() {
     renderPanoramaFull = false;
@@ -306,7 +298,7 @@ void CCPanoramaRenderer::ReleaseTexPool() {
         for (auto & it : panoramaTexPool)
             it.ForceRelease();
 
-        LOGIF("ReleaseTexPool : %d texture removed in pool", panoramaTexPool.size());
+        LOGIF(LOG_TAG, "ReleaseTexPool : %d texture removed in pool", panoramaTexPool.size());
         panoramaTexPool.clear();
     }
     panoramaThumbnailTex = nullptr;
@@ -325,6 +317,8 @@ void CCPanoramaRenderer::ReBufferAllData() {
         }
     if(!panoramaCubeMapTex.IsNullptr())
         panoramaCubeMapTex->ReBufferData(true);
+    if(!panoramaCheckTex.IsNullptr())
+        panoramaCheckTex->ReBufferData(true);
 }
 
 //全景模型创建与销毁
@@ -334,7 +328,7 @@ void CCPanoramaRenderer::CreateMainModel() {
 
     mainModel = new CCModel();
     mainModel->Mesh = new CCMesh();
-    mainModel->Material = new CCMaterial(panoramaCheckTex);
+    mainModel->Material = new CCMaterial();
     mainModel->Material->tilling = glm::vec2(50.0f, 25.0f);
 
     CreateMainModelSphereMesh(mainModel->Mesh.GetPtr());
@@ -342,7 +336,7 @@ void CCPanoramaRenderer::CreateMainModel() {
     mainFlatModel = new CCModel();
     mainFlatModel->Mesh = new CCMesh();
     mainFlatModel->Mesh->DrawType = GL_DYNAMIC_DRAW;
-    mainFlatModel->Material = new CCMaterial(panoramaCheckTex);
+    mainFlatModel->Material = new CCMaterial();
     mainFlatModel->Material->tilling = glm::vec2(50.0f, 25.0f);
 
     CreateMainModelFlatMesh(mainFlatModel->Mesh.GetPtr());
@@ -531,7 +525,7 @@ void CCPanoramaRenderer::GenerateFullModel(int chunkW, int chunkH)
             pChunkModel->model = new CCModel();
             pChunkModel->model->Visible = false;
             pChunkModel->model->Mesh = new CCMesh();
-            pChunkModel->model->Material = new CCMaterial(panoramaRedCheckTex);
+            pChunkModel->model->Material = new CCMaterial();
             pChunkModel->model->Material->tilling = glm::vec2(50.0f);
             pChunkModel->chunkX = chunkW - i - 1;
             pChunkModel->chunkY = j;
@@ -665,7 +659,7 @@ void CCPanoramaRenderer::UpdateFullChunksVisible() {
                 if (!m->loadMarked && !renderPanoramaFullTest) {//加载贴图
                     m->loadMarked = true;
 
-                    logger->Log("Star load chunk %d, %d", m->chunkX, m->chunkY);
+                    logger->Log(LOG_TAG, "Star load chunk %d, %d", m->chunkX, m->chunkY);
 
                     auto* tex = new CCTexture();
                     tex->backupData = true;
@@ -731,7 +725,6 @@ void CCPanoramaRenderer::VideoTexMarkDirty() {
 void CCPanoramaRenderer::VideoTexLock(bool lock) {
     videoTextureLock = lock;
 }
-
 void CCPanoramaRenderer::VideoTexDetermineSize(int *w, int *h) const {
     int vw = *w, vh = *h;
     if(vw >= vh && vw > 4096) {
@@ -745,6 +738,7 @@ void CCPanoramaRenderer::VideoTexDetermineSize(int *w, int *h) const {
     *w = vw; *h = vh;
     panoramaThumbnailTex->width = vw;
     panoramaThumbnailTex->height = vh;
+    panoramaThumbnailTex->DoBackupBufferData(nullptr, vw, vh, GL_RGBA);
 }
 
 

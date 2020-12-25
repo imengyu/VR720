@@ -46,6 +46,22 @@ public class ListImageCacheService {
         this.cacheThumbnailMaxSize = cacheThumbnailMaxSize;
     }
 
+    private String makeCacheThumbnailPath(String path) {
+        return StorageDirUtils.getGalleryCachePath() + MD5Utils.md5(path);
+    }
+
+    /**
+     * 尝试读取图片已经缓存的缓存文件路径
+     * @param path 图片路径
+     * @return 缓存文件路径，如果没有，则返回null
+     */
+    public String tryGetImageThumbnailCacheFilePath(String path) {
+        String cacheThumbnailPath = StorageDirUtils.getGalleryCachePath() + MD5Utils.md5(path);
+        if(new File(cacheThumbnailPath).exists())
+            return cacheThumbnailPath;
+        return null;
+    }
+
     /**
      * 加载图片缩略图并存入缓存系统
      * @param path 图片路径
@@ -58,17 +74,18 @@ public class ListImageCacheService {
 
         if(cacheThumbnailDataMap.containsKey(path)) {
             ImageCacheData cacheData = cacheThumbnailDataMap.get(path);
-            cacheData.cacheUseCount++;
-
-            if(cacheData.isFastCache)
-                return cacheData.fastCache;
-            else if(cacheData.isFileCache) {
-                BitmapDrawable drawable = new BitmapDrawable(context.getResources(), ImageUtils.loadBitmap(cacheData.cacheImagePath));
-                if(cacheData.cacheUseCount > 10) {
-                    cacheData.fastCache = drawable;
-                    cacheData.isFastCache = true;
+            if(cacheData != null) {
+                cacheData.cacheUseCount++;
+                if (cacheData.isFastCache)
+                    return cacheData.fastCache;
+                else if (cacheData.isFileCache) {
+                    BitmapDrawable drawable = new BitmapDrawable(context.getResources(), ImageUtils.loadBitmap(cacheData.cacheImagePath));
+                    if (cacheData.cacheUseCount > 10) {
+                        cacheData.fastCache = drawable;
+                        cacheData.isFastCache = true;
+                    }
+                    return drawable;
                 }
-                return drawable;
             }
         }
 
@@ -76,7 +93,7 @@ public class ListImageCacheService {
 
         if(FileUtils.getFileIsVideo(path)) {
 
-            String cacheThumbnailPath = StorageDirUtils.getGalleryCachePath() + MD5Utils.md5(path);
+            String cacheThumbnailPath = makeCacheThumbnailPath(path);
             File cacheThumbnailFile = new File(cacheThumbnailPath);
             if(cacheThumbnailFile.exists())
                 return fastLoadCacheToThumbnail(path, cacheThumbnailPath, false, true);
@@ -122,7 +139,7 @@ public class ListImageCacheService {
         if(imSize.getWidth() >= 4096 || imSize.getHeight() > 2048) {
 
             //已经有文件缓存，直接读取
-            String cacheThumbnailPath = StorageDirUtils.getGalleryCachePath() + MD5Utils.md5(path);
+            String cacheThumbnailPath = makeCacheThumbnailPath(path);
             File cacheThumbnailFile = new File(cacheThumbnailPath);
             if(cacheThumbnailFile.exists())
                 return fastLoadCacheToThumbnail(path, cacheThumbnailPath, false, true);

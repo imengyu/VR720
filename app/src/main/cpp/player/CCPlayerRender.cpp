@@ -26,14 +26,14 @@ bool CCPlayerRender::Init(CCVideoPlayerExternalData *data) {
     );
 
     if(swsContext == nullptr) {
-        LOGE("Get swsContext failed");
+        LOGE(LOG_TAG, "Get swsContext failed");
         return false;
     }
 
     //初始化 swrContext
     swrContext = swr_alloc();
     if(swrContext == nullptr){
-        LOGE("Alloc swrContext failed");
+        LOGE(LOG_TAG, "Alloc swrContext failed");
         return false;
     }
 
@@ -67,14 +67,16 @@ bool CCPlayerRender::Init(CCVideoPlayerExternalData *data) {
     return true;
 }
 void CCPlayerRender::Destroy() {
+    if(outFrame != nullptr)
+        av_frame_free(&outFrame);
     if(swsContext != nullptr) {
         sws_freeContext(swsContext);
         swsContext = nullptr;
     }
-    if (swrContext != nullptr) {
+    if(swrContext != nullptr) {
         swr_free(&swrContext);
     }
-    if (audioOutBuffer[0] != nullptr) {
+    if(audioOutBuffer[0] != nullptr) {
         free(audioOutBuffer[0]);
         audioOutBuffer[0] = nullptr;
     }
@@ -89,9 +91,16 @@ void CCPlayerRender::Destroy() {
 }
 void CCPlayerRender::Pause() {
     status = CCRenderState::NotRender;
+
+
     void* retval;
-    pthread_join(renderVideoThread, &retval);
-    pthread_join(renderAudioThread, &retval);
+    if(renderVideoThread)
+        pthread_join(renderVideoThread, &retval);
+    if(renderAudioThread)
+        pthread_join(renderAudioThread, &retval);
+
+    renderVideoThread = 0;
+    renderAudioThread = 0;
 
     audioDevice->Pause(true);
     videoDevice->Pause(true);
@@ -123,20 +132,36 @@ CCAudioDevice *CCPlayerRender::CreateAudioDevice(CCVideoPlayerExternalData *data
 }
 
 void *CCPlayerRender::RenderVideoThread() {
-    LOGD("[RenderVideoThread] Start");
+    LOGD(LOG_TAG, "RenderVideoThread Start");
 
     while (status == CCRenderState::Rendering) {
-        double frame_delays = 1.0 / externalData->CurrentFps;
 
+        if(outFrame == nullptr || outFrameDestFormat != externalData->InitParams->DestFormat
+            || outFrameDestWidth != externalData->InitParams->DestWidth
+            || outFrameDestHeight != externalData->InitParams->DestHeight) {
+
+            if(outFrame != nullptr)
+                av_frame_free(&outFrame);
+
+            outFrameDestFormat = externalData->InitParams->DestFormat;
+            outFrameDestWidth = externalData->InitParams->DestWidth;
+            outFrameDestHeight = externalData->InitParams->DestHeight;
+
+            outFrame = av_frame_alloc();
+            outFrameBufferSize = (size_t) av_image_get_buffer_size(outFrameDestFormat, outFrameDestWidth, outFrameDestHeight, 1);
+            outFrameBuffer = (uint8_t *) av_malloc(outFrameBufferSize);
+        }
+
+        double frame_delays = 1.0 / externalData->CurrentFps;
         AVFrame *frame = externalData->DecodeQueue->VideoFrameDequeue();
-        AVFrame *outFrame = externalData->DecodeQueue->RequestFrame();
+
         if(frame == nullptr) {
             av_usleep((int64_t)(1000000 * frame_delays));
             continue;
         }
 
         //时钟
-        AVRational time_base = externalData->VideoCodecContext->time_base;
+        AVRational time_base = externalData->VideoCodecContext->framerate;
         currentVideoClock = frame->best_effort_timestamp * av_q2d(time_base);
 
         curVideoDts = frame->pkt_dts;
@@ -152,17 +177,18 @@ void *CCPlayerRender::RenderVideoThread() {
             double diff = currentVideoClock - currentAudioClock;
             if (diff > 0) {
                 //大于0 表示视频比较快
-                //LOGE("视频快了：%lf", diff);
+                LOGDF(LOG_TAG, "Video fast: %lf", diff);
+                if(diff > 0.15) diff = 0.15;
                 av_usleep((int64_t) ((delays + diff) * 1000000));
             } else if (diff < 0) {
                 //不睡了，快点赶上音频
-                //LOGE("音频快了：%lf",diff);
+                LOGDF(LOG_TAG, "Audio fast: %lf",diff);
                 // 视频包积压的太多了 （丢包）
-                if (fabs(diff) >= 0.05) {
+                if (fabs(diff) >= 0.05 && frame->flags != AV_PKT_FLAG_KEY) {
+                    LOGDF(LOG_TAG, "Skip frame %ld", frame->pts);
+
                     externalData->DecodeQueue->ReleaseFrame(frame);
-                    //丢包
-                    externalData->DecodeQueue->VideoFrameDrop();
-                    externalData->DecodeQueue->VideoDrop();
+                    externalData->DecodeQueue->VideoDrop(); //丢包
                     continue;//每次丢一帧，循环丢，重新计算延迟时间。
                 } else {
                     //不睡了 快点赶上 音频
@@ -173,6 +199,11 @@ void *CCPlayerRender::RenderVideoThread() {
         //seeking时不刷新屏幕，直接跳过
         if(!videoSeeking) {
 
+            memset(outFrameBuffer, 0, outFrameBufferSize);
+
+            //更具指定的数据初始化/填充缓冲区
+            av_image_fill_arrays(outFrame->data, outFrame->linesize, outFrameBuffer, outFrameDestFormat,
+                                 outFrameDestWidth, outFrameDestHeight, 1);
             //转码
             sws_scale(swsContext, (const uint8_t *const *) frame->data, frame->linesize, 0,
                       frame->height, outFrame->data, outFrame->linesize);
@@ -181,23 +212,26 @@ void *CCPlayerRender::RenderVideoThread() {
             int srcStride = outFrame->linesize[0];
             int destStride = 0;
             uint8_t *target = videoDevice->Lock(src, srcStride, &destStride, 0);
-            if (target) {
+            if (target && src) {
                 for (int i = 0, c = externalData->VideoCodecContext->height; i < c; i++)
                     memcpy(target + i * destStride, src + i * srcStride, srcStride);
+                videoDevice->Dirty();
+            }else if(!src) {
+                LOGWF(LOG_TAG, "Frame %ld scale failed", frame->pts);
             }
-
             videoDevice->Unlock();
+
+            av_frame_unref(outFrame);
         }
 
         externalData->DecodeQueue->ReleaseFrame(frame);
-        externalData->DecodeQueue->ReleaseFrame(outFrame);
     }
 
-    LOGD("[RenderVideoThread] End");
+    LOGD(LOG_TAG, "RenderVideoThread End");
     return nullptr;
 }
 void *CCPlayerRender::RenderAudioThread() {
-    LOGD("[RenderAudioThread] Start");
+    LOGD(LOG_TAG, "RenderAudioThread Start");
 
     while (status == CCRenderState::Rendering) {
         double frame_delays = 1.0 / externalData->CurrentFps;
@@ -212,7 +246,7 @@ void *CCPlayerRender::RenderAudioThread() {
         double delays = extra_delay + frame_delays;
 
         //时钟
-        AVRational time_base = externalData->AudioCodecContext->time_base;
+        AVRational time_base = externalData->AudioCodecContext->framerate;
         currentAudioClock = frame->pts * av_q2d(time_base);
 
         curAudioDts = frame->pkt_dts;
@@ -239,7 +273,7 @@ void *CCPlayerRender::RenderAudioThread() {
         av_usleep((int64_t)(delays * 1000000));
     }
 
-    LOGD("[RenderAudioThread] End");
+    LOGD(LOG_TAG, "RenderAudioThread End");
     return nullptr;
 }
 void *CCPlayerRender::RenderVideoThreadStub(void *param) {

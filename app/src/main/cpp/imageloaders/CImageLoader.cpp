@@ -85,7 +85,7 @@ BYTE* CImageLoader::GetImageChunkData(int x, int y, int chunkW, int chunkH)
 
 const char* CImageLoader::GetLastError()
 {
-	return lastError.c_str();;
+	return lastError.c_str();
 }
  unsigned long CImageLoader::GetFullDataSize()
 {

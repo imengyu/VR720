@@ -6,19 +6,21 @@
 #include "CCamera.h"
 #include "COpenGLRenderer.h"
 
+#define LOG_TAG "OpenGLView"
+
 bool CMobileOpenGLView::Init() {
     if(!ready) {
-        LOGI("[OpenGLView] Init!");
+        LOGI(LOG_TAG, "Init!");
         if (OpenGLRenderer && !OpenGLRenderer->Init()) {
-            LOGE("[OpenGLView] OpenGLRenderer init failed!");
+            LOGE(LOG_TAG, "OpenGLRenderer init failed!");
             return false;
         }
         ready = true;
     } else {
-        LOGI("[OpenGLView] ReInit!");
+        LOGI(LOG_TAG, "ReInit!");
 
         if (OpenGLRenderer && !OpenGLRenderer->ReInit()) {
-            LOGE("[OpenGLView] OpenGLRenderer reinit failed!");
+            LOGE(LOG_TAG, "OpenGLRenderer reinit failed!");
             return false;
         }
     }
@@ -27,16 +29,16 @@ bool CMobileOpenGLView::Init() {
 void CMobileOpenGLView::Destroy() {
     if(ready) {
         ready = false;
-        LOGI("[OpenGLView] Destroy!");
+        LOGI(LOG_TAG, "Destroy!");
 
         //Destroy Renderer
         if (OpenGLRenderer) {
             if (destroyWithForce) {
-                LOGI("[OpenGLRenderer] Force destroy");
+                LOGI(LOG_TAG, "Force destroy OpenGLRenderer");
                 OpenGLRenderer->Destroy();
                 OpenGLRenderer = nullptr;
             } else {
-                LOGI("[OpenGLRenderer] Mark destroy");
+                LOGI(LOG_TAG, "Mark destroy OpenGLRenderer");
                 OpenGLRenderer->MarkDestroy();
             }
         }
@@ -54,10 +56,10 @@ void CMobileOpenGLView::ManualDestroy() {
     Destroy();
 }
 void CMobileOpenGLView::Pause() {
-    LOGI("[OpenGLView] Pause!");
+    LOGI(LOG_TAG, "Pause!");
 }
 void CMobileOpenGLView::Resume() {
-    LOGI("[OpenGLView] Resume!");
+    LOGI(LOG_TAG, "Resume!");
 }
 
 void CMobileOpenGLView::Update() {

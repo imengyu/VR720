@@ -8,7 +8,7 @@ CCamera::CCamera(glm::vec3 position, glm::vec3 up, glm::vec3 rotate)
 	SetEulerAngles(rotate);
 }
 
-// ·µ»ØÊ¹ÓÃÅ·À­½ÇºÍLookAt¾ØÕó¼ÆËãµÄview¾ØÕó
+// è¿”å›žä½¿ç”¨æ¬§æ‹‰è§’å’ŒLookAtçŸ©é˜µè®¡ç®—çš„viewçŸ©é˜µ
 glm::mat4 CCamera::GetViewMatrix()
 {
 	if(VectorDirty) UpdateVectors();
@@ -94,7 +94,7 @@ glm::vec3 CCamera::Screen2World(const glm::vec2& screenPoint, glm::mat4& model, 
 	}
 	else
 	{
-		// »ñÈ¡Éî¶È»º³åÇøÖÐx,yµÄÊýÖµ
+		// èŽ·å–æ·±åº¦ç¼“å†²åŒºä¸­x,yçš„æ•°å€¼
 		glReadPixels((GLint)screenPoint.x, (GLint)screenPoint.y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &pointDepth);
 	}
 	return glm::unProject(glm::vec3(screenPoint, pointDepth), view * model, projection, glm::vec4(0.0f, 0.0f, glView->Width, glView->Height));

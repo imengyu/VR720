@@ -69,8 +69,7 @@ private:
     pthread_mutex_t frameRequestLock = PTHREAD_MUTEX_INITIALIZER;
     pthread_mutex_t frameReleaseLock = PTHREAD_MUTEX_INITIALIZER;
 
-
-
+    const char* LOG_TAG = "CCDecodeQueue";
 };
 
 

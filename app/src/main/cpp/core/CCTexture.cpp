@@ -13,66 +13,102 @@ CCTexture::~CCTexture()
 	Destroy();
 }
 
+void CCTexture::LoadGridTexture(int w, int h, int gridSize, bool alpha, bool backup) {
+
+	int compoents = (alpha ? 4 : 3);
+	BYTE* data = (BYTE*)malloc(w * h * compoents);
+	int gridWidth = w / gridSize;
+	int gridHeight = h / gridSize;
+	bool currentIsLight;
+	bool currentHIsLight = false;
+	int nextChangeW = 0, nextChangeH = 0;
+
+	for(int currentH = 0; currentH < h; currentH++) {
+
+		if (currentH == nextChangeH) {
+			nextChangeH += gridHeight;
+			currentHIsLight = !currentHIsLight;
+		}
+
+		nextChangeW = 0;
+		currentIsLight = currentHIsLight;
+		for(int currentW = 0; currentW < w; currentW++) {
+
+			if (currentW == nextChangeW) {
+				nextChangeW += gridWidth;
+				currentIsLight = !currentIsLight;
+			}
+
+			int pos = (currentW + currentH * w) * compoents;
+			data[pos] = currentIsLight ? 255 : 0;
+			data[pos + 1] = 0;
+			data[pos + 2] = currentIsLight ? 255 : 0;
+			if(alpha)
+				data[pos + 3] = 255;
+		}
+
+	}
+
+	LoadBytes(data, w, h, (alpha ? GL_RGBA : GL_RGB));
+
+	free(data);
+}
 bool CCTexture::Load(const char* path)
 {
 	int w, h, nrChannels;
     BYTE*data = stbi_load(path, &w, &h, &nrChannels, 0);
 	if (data) {
-		LOGIF("[CCTexture] Load texture %s : %dx%dx%db", path, w, h, nrChannels);
+		LOGIF(LOG_TAG, "Load texture %s : %dx%dx%db", path, w, h, nrChannels);
 		if(nrChannels == 3)
-			LoadRGB(data, w, h);
+			LoadBytes(data, w, h, GL_RGB);
 		else if(nrChannels == 4)
-			LoadRGBA(data, w, h);
+			LoadBytes(data, w, h, GL_RGBA);
+		else
+			LOGEF(LOG_TAG, "Load texture failed : not support channels count %d", nrChannels);
 		stbi_image_free(data);
 		return true;
 	}
 	else
-        LOGWF("[CCTexture] Load texture %s failed : %s", path, stbi_failure_reason());
+        LOGWF(LOG_TAG, "Load texture %s failed : %s", path, stbi_failure_reason());
 	return false;
 }
 bool CCTexture::Load(BYTE *buffer, size_t bufferSize) {
 	if(!buffer || bufferSize <= 0) {
-		LOGE("[CCTexture] Load had bad param!");
+		LOGE(LOG_TAG, "Load had bad param!");
 		return false;
 	}
 	int w, h, nrChannels;
 	stbi_uc* data = stbi_load_from_memory(buffer, bufferSize, &w, &h, &nrChannels, 0);
 	if (data) {
-		LOGIF("[CCTexture] Load in memory : %dx%dx%db", buffer, w, h, nrChannels);
+		LOGDF(LOG_TAG, "Load in memory : %dx%dx%db", w, h, nrChannels);
 		if(nrChannels == 3)
-			LoadRGB(data, w, h);
+			LoadBytes(data, w, h, GL_RGB);
 		else if(nrChannels == 4)
-			LoadRGBA(data, w, h);
+			LoadBytes(data, w, h, GL_RGBA);
+		else
+			LOGEF(LOG_TAG, "Load texture failed : not support channels count %d", nrChannels);
 		stbi_image_free(data);
 		return true;
 	}else
-		LOGEF("[CCTexture] Load in memory failed : %s", buffer, stbi_failure_reason());
+		LOGEF(LOG_TAG, "Load in memory failed : %s", stbi_failure_reason());
 	return false;
 }
-void CCTexture::LoadRGB(BYTE* data, int w, int h)
-{
-	LoadBytes(data, w, h, GL_RGB);
-}
-void CCTexture::LoadRGBA(BYTE* data, int w, int h)
-{
-	LoadBytes(data, w, h, GL_RGBA);
-}
-void CCTexture::LoadBytes(BYTE* data, int w, int h, GLenum type) {
+void CCTexture::LoadBytes(BYTE* data, int w, int h, GLenum format) {
 
 	if(!data || w <= 0 || h <= 0) {
-		LOGE("[CCTexture] Load LoadBytes had bad param!");
+		LOGE(LOG_TAG, "Load LoadBytes had bad param!");
 		return;
 	}
 
 	//load dT
-	LoadDataToGL(data, w, h, type);
+	LoadDataToGL(data, w, h, format);
 
     this->width = w;
     this->height = h;
 
     //backup data
     if(backupData)
-        DoBackupBufferData(data, w, h, type);
+        DoBackupBufferData(data, w, h, format);
 }
 
 void CCTexture::Destroy()
@@ -93,26 +129,29 @@ void CCTexture::UnUse(GLenum type)
 	glBindTexture(type, 0);
 }
 
-void CCTexture::DoBackupBufferData(BYTE* data, int w, int h, GLenum type)
+void CCTexture::DoBackupBufferData(BYTE* data, int w, int h, GLenum format)
 {
-	if (backupDataPtr) {
+	size_t newBackupDataLength;
+
+	switch (format) {
+		case GL_RGB:
+			newBackupDataLength = w * h * 3;
+			break;
+		case GL_RGBA:
+			newBackupDataLength = w * h * 4;
+			break;
+		default:
+			return;
+	}
+
+	if (backupDataPtr && newBackupDataLength != backupDataLength) {
 		free(backupDataPtr);
 		backupDataPtr = nullptr;
 	}
 
-    switch (type) {
-        case GL_RGB:
-            backupDataLength = w * h * 3;
-            break;
-        case GL_RGBA:
-            backupDataLength = w * h * 4;
-            break;
-        default:
-            return;
-    }
-
+	backupDataLength = newBackupDataLength;
     backupDataPtr = (BYTE*)malloc(backupDataLength);
-    backupType = type;
+    backupType = format;
 
     if(data != nullptr)
     	memcpy(backupDataPtr, data, backupDataLength);
@@ -156,18 +195,22 @@ void CCTexture::CreateGLTexture() {
 
 	glBindTexture(0, texture);
 }
-void CCTexture::LoadDataToGL(BYTE *data, int w, int h, GLenum type) {
+void CCTexture::LoadDataToGL(BYTE *data, int w, int h, GLenum format) {
 
-	if(texture == 0)
+	if (texture == 0 || !glIsTexture(texture))
 		CreateGLTexture();
 
-    glBindTexture(textureType, texture);
+	glBindTexture(textureType, texture);
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-	alpha = type == GL_RGBA;
+	alpha = format == GL_RGBA;
 
-	glTexImage2D(textureType, 0, GL_RGB, (GLsizei) w, (GLsizei) h, 0, type, GL_UNSIGNED_BYTE, data);
-    glBindTexture(textureType, 0);
+	glTexImage2D(textureType, 0, format, (GLsizei) w, (GLsizei) h, 0, format, GL_UNSIGNED_BYTE, data);
+	GLenum error = glGetError();
+	if (error != GL_NO_ERROR)
+		LOGWF(LOG_TAG, "glTexImage2D() error : 0x%04x", error);
+
+	glBindTexture(textureType, 0);
 }
 
 

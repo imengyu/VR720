@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
 import com.imengyu.vr720.R;
 import com.imengyu.vr720.list.MainList;
 import com.imengyu.vr720.model.holder.MainListViewHolder;
@@ -71,7 +72,11 @@ public class MainListAdapter extends CheckableListAdapter<MainListItem> {
                 else if (item.isThumbnailLoading())
                     viewHolder.imageView.setImageResource(R.drawable.ic_tumb);
                 else if(item.getThumbnail() != viewHolder.imageView.getDrawable())
-                    Glide.with(getContext()).load(item.getThumbnail()).into(viewHolder.imageView);
+                    Glide.with(getContext())
+                            .load(item.getThumbnail())
+                            .placeholder(R.drawable.ic_tumb)
+                            .transition(DrawableTransitionOptions.withCrossFade())
+                            .into(viewHolder.imageView);
 
                 if (!item.isThumbnailLoadingStarted()) {
                     item.setThumbnailLoadingStarted(true);

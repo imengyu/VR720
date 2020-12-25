@@ -49,12 +49,15 @@ size_t CCDecodeQueue::AudioQueueSize() {
     return audioQueue.size();
 }
 void CCDecodeQueue::VideoDrop() {
-    while (!videoQueue.empty()) {
-        AVPacket *packet = videoQueue.front();
-        if (packet->flags != AV_PKT_FLAG_KEY) {//还没有解码，需要判断它不是I帧，否则会影响后续的B帧，P帧的解码过程
-            ReleasePacket(packet);
-            videoQueue.pop_front();
-            break;
+    if (!videoQueue.empty()) {
+        for(auto it = videoQueue.begin(); it != videoQueue.end(); it++) {
+            AVPacket *packet = *it;
+            //还没有解码，需要判断它不是I帧，否则会影响后续的B帧，P帧的解码过程
+            if (packet->flags != AV_PKT_FLAG_KEY) {
+                ReleasePacket(packet);
+                videoQueue.erase(it);
+                break;
+            }
         }
     }
 }
@@ -149,7 +152,7 @@ AVPacket* CCDecodeQueue::RequestPacket() {
     if(packetPool.empty())
         AllocPacketPool(externalData->InitParams->PacketPoolGrowStep);
     if(packetPool.empty()) {
-        LOGE("[CCDecodeQueue] Failed to alloc packet pool!");
+        LOGE(LOG_TAG, "Failed to alloc packet pool!");
         return nullptr;
     }
 
@@ -192,7 +195,7 @@ AVFrame* CCDecodeQueue::RequestFrame() {
     if(framePool.empty())
         AllocFramePool(externalData->InitParams->FramePoolGrowStep);
     if(framePool.empty()) {
-        LOGE("[CCDecodeQueue] Failed to alloc frame pool!");
+        LOGE(LOG_TAG, "Failed to alloc frame pool!");
         return nullptr;
     }
 

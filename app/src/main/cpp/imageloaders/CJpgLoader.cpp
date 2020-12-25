@@ -10,7 +10,7 @@ void jpeg_error_exit(j_common_ptr cinfo) {
 void jpeg_output_message(j_common_ptr cinfo) {
     char buffer[JMSG_LENGTH_MAX];
     (*cinfo->err->format_message) (cinfo, buffer);
-    LOGEF("[JPEG Error] %s", buffer);
+    LOGEF("JPEG Error", "%s", buffer);
     strcpy(jpeg_last_err, buffer);
 }
 

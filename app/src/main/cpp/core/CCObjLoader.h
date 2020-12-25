@@ -6,6 +6,8 @@
 //Obj 模型加载器
 class CCObjLoader : public CCMeshLoader
 {
+	const char* LOG_TAG = "CCObjLoader";
+
     /**
 	 * 从文件加载Mesh
 	 * @param path 文件路径

@@ -87,13 +87,13 @@ public:
 
 //用户可见的播放器状态值
 enum class CCVideoState {
-    Failed = 0,
-    NotOpen = 1,
-    Playing = 2,
-    Ended = 3,
-    Opened = 4,
-    Paused = 4,
-    Loading = 5,
+    Loading = 1,
+    Failed = 2,
+    NotOpen = 3,
+    Playing = 4,
+    Ended = 5,
+    Opened = 6,
+    Paused = 6,
 };
 
 enum class CCDecodeState {

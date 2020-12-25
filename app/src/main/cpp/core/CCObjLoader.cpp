@@ -2,6 +2,7 @@
 #include "CCMesh.h"
 #include <vector>
 
+
 bool CCObjLoader::Load(const char* path, CCMesh* mesh)
 {
     if(mesh == nullptr || path == nullptr) {
@@ -10,7 +11,7 @@ bool CCObjLoader::Load(const char* path, CCMesh* mesh)
 
     FILE* file = fopen(path, "r");
     if (file == nullptr) {
-        LOGEF("[CCObjLoader] Open %s failed !", path);
+        LOGEF(LOG_TAG, "Open %s failed !", path);
         SetLastError("Open file failed");
         return false;
     }
@@ -63,8 +64,8 @@ bool CCObjLoader::Load(const char* path, CCMesh* mesh)
 
     fclose(file);
 
-    LOGIF("[CCObjLoader]  Load obj %s", path);
-    LOGIF("vertex count: %d , normals  count: %d , texCoords count: %d , indices count: %d",
+    LOGIF(LOG_TAG, " Load obj %s", path);
+    LOGIF(LOG_TAG, "vertex count: %d , normals  count: %d , texCoords count: %d , indices count: %d",
             mesh->positions.size(), mesh->normals.size(), mesh->texCoords.size(), mesh->indices.size());
 
     mesh->GenerateBuffer();
@@ -120,8 +121,8 @@ bool CCObjLoader::Load(BYTE *buffer, size_t bufferSize, CCMesh *mesh) {
             }
         }
 
-        LOGIF("[CCObjLoader]  Load obj 0x%x, size : %d", buffer, bufferSize);
-        LOGIF("vertex count: %d , normals  count: %d , texCoords count: %d , indices count: %d",
+        LOGIF(LOG_TAG, " Load obj 0x%x, size : %d", buffer, bufferSize);
+        LOGIF(LOG_TAG, "vertex count: %d , normals  count: %d , texCoords count: %d , indices count: %d",
               mesh->positions.size(), mesh->normals.size(), mesh->texCoords.size(), mesh->indices.size());
 
         mesh->GenerateBuffer();

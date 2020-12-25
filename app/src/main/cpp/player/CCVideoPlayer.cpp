@@ -4,24 +4,21 @@
 
 #include "CCVideoPlayer.h"
 #include "../utils/CStringHlp.h"
+#include "../core/CCErrors.h"
+
+#define LOG_TAG "CCVideoPlayer"
 
 void CCVideoPlayer::CallPlayerEventCallback(int message) {
     if(videoPlayerEventCallback != nullptr)
         videoPlayerEventCallback(this, message, videoPlayerEventCallbackData);
 }
-void CCVideoPlayer::SetLastError(const char *str) {
-    lastError = str;
-    LOGEF("[CCVideoPlayer] %s", str);
-}
-const char *CCVideoPlayer::GetLastError() {
-    return lastError.c_str();
-}
+int CCVideoPlayer::GetLastError() const { return lastError; }
 
 //播放器子线程方法
 //**************************
 
 void CCVideoPlayer::DoOpenVideo() {
-    LOGD("[CCVideoPlayer] DoOpenVideo");
+    LOGD(LOG_TAG, "DoOpenVideo");
 
     playerStatus = CCVideoState::Loading;
 
@@ -43,7 +40,7 @@ void CCVideoPlayer::DoOpenVideo() {
     CallPlayerEventCallback(PLAYER_EVENT_OPEN_DONE);
 }
 void CCVideoPlayer::DoCloseVideo() {
-    LOGD("[CCVideoPlayer] DoCloseVideo");
+    LOGD(LOG_TAG, "DoCloseVideo");
 
     SetVideoState(CCVideoState::Paused);
 
@@ -62,7 +59,7 @@ void CCVideoPlayer::DoSeekVideo() {
     //跳转到指定帧
     int ret = av_seek_frame(formatContext, audioIndex, seekPos, AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME);
     if(ret) {
-        LOGEF("[CCVideoPlayer] av_seek_frame failed : %d", ret);
+        LOGEF(LOG_TAG, "av_seek_frame failed : %d", ret);
         playerSeeking = 0;
         render->SetSeekDest(-1);
         return;
@@ -77,11 +74,13 @@ void CCVideoPlayer::DoSeekVideo() {
 bool CCVideoPlayer::OpenVideo(const char *filePath) {
 
     if(playerStatus == CCVideoState::Loading) {
-        SetLastError("Player is loading, please wait a second");
+        LOGE(LOG_TAG, "Player is loading, please wait a second");
+        lastError = VR_ERR_VIDEO_PLAYER_NOW_IS_LOADING;
         return false;
     }
     if(playerStatus > CCVideoState::NotOpen) {
-        SetLastError("A video has been opened. Please close it first");
+        LOGE(LOG_TAG, "A video has been opened. Please close it first");
+        lastError = VR_ERR_VIDEO_PLAYER_ALREADY_OPEN;
         return false;
     }
 
@@ -97,14 +96,14 @@ bool CCVideoPlayer::OpenVideo(const char *filePath) {
 bool CCVideoPlayer::CloseVideo() {
 
     if(playerStatus == CCVideoState::NotOpen || playerStatus == CCVideoState::Failed) {
-        SetLastError("Can not close video because video not load");
+        LOGE(LOG_TAG, "Can not close video because video not load");
         return false;
     }
     if(playerClose == 0) {
         playerClose = 1;
         return true;
     }
-    return false;
+    return true;
 }
 void CCVideoPlayer::SetVideoState(CCVideoState newState) {
     if(videoState == newState)
@@ -117,11 +116,12 @@ void CCVideoPlayer::SetVideoState(CCVideoState newState) {
         case CCVideoState::Ended:
         case CCVideoState::Failed:
         case CCVideoState::Loading:
-            SetLastError(CStringHlp::FormatString("Bad state %d, this state can only get.", newState).c_str());
+            LOGEF(LOG_TAG, "Bad state %d, this state can only get.", newState);
+            lastError = VR_ERR_VIDEO_PLAYER_STATE_CAN_ONLY_GET;
             return;
     }
 
-    LOGDF("[CCVideoPlayer] SetVideoState : %d", newState);
+    LOGDF(LOG_TAG, "SetVideoState : %d", newState);
 }
 void CCVideoPlayer::SetVideoPos(int64_t pos) {
     if(playerSeeking == 0)
@@ -132,15 +132,24 @@ void CCVideoPlayer::SetVideoPos(int64_t pos) {
 }
 int64_t CCVideoPlayer::GetVideoPos() {
 
+    if(playerStatus <= CCVideoState::NotOpen) {
+        lastError = VR_ERR_VIDEO_PLAYER_NOT_OPEN;
+        return -1;
+    }
+
     if(playerSeeking == 1)
         return seekDest - externalData.StartTime;
 
-    return MAX(render->GetCurAudioPts(), render->GetCurVideoPts()) - externalData.StartTime;;
+    if(audioIndex != -1)
+        return render->GetCurAudioPts() * av_q2d(formatContext->streams[audioIndex]->time_base) * 1000;
+    else
+        return render->GetCurAudioPts() * av_q2d(formatContext->streams[videoIndex]->time_base) * 1000;
 }
 CCVideoState CCVideoPlayer::GetVideoState() { return videoState; }
 int64_t CCVideoPlayer::GetVideoLength() {
     if(!formatContext) {
-        SetLastError("Video not open");
+        lastError = VR_ERR_VIDEO_PLAYER_NOT_OPEN;
+        LOGE(LOG_TAG, "Video not open");
         return 0;
     }
     return formatContext->duration / AV_TIME_BASE * 1000; //ms
@@ -155,24 +164,43 @@ void CCVideoPlayer::GetVideoSize(int *w, int *h) {
 }
 
 void CCVideoPlayer::StartAll() {
+    if(videoState == CCVideoState::Playing)
+        return;
     videoState = CCVideoState::Playing;
+
+    pthread_mutex_lock(&startAllLock);
+
     decoderAudioFinish = false;
     decoderVideoFinish = false;
     StartDecoderThread();
     render->Start();
+
+    pthread_mutex_unlock(&startAllLock);
 }
 void CCVideoPlayer::StopAll() {
+    if(videoState == CCVideoState::Paused || videoState == CCVideoState::Ended)
+        return;
     videoState = CCVideoState::Paused;
+
+    pthread_mutex_lock(&stopAllLock);
+
     StopDecoderThread();
     render->Pause();
+
+    pthread_mutex_unlock(&stopAllLock);
 }
 void CCVideoPlayer::FlushStopStatus() {
-    if (decoderAudioFinish && decoderVideoFinish) {
+    if (decoderAudioFinish && decoderVideoFinish
+        && decodeState != CCDecodeState::Finished) {
+
         decodeState = CCDecodeState::Finished;
         playerStatus = CCVideoState::Ended;
+
+        decodeQueue.ClearAll();//清空数据
         StopAll();
+
         CallPlayerEventCallback(PLAYER_EVENT_PLAY_DONE);
-        LOGI("[CCVideoPlayer] decodeState > Finished");
+        LOGI(LOG_TAG, "decodeState -> Finished");
     }
 }
 
@@ -189,24 +217,27 @@ bool CCVideoPlayer::InitDecoder() {
     int openState = avformat_open_input(&formatContext, currentFile.c_str(), nullptr, nullptr);
     if (openState < 0) {
         char errBuf[128];
-        if (av_strerror(openState, errBuf, sizeof(errBuf)) == 0)
-            SetLastError(CStringHlp::FormatString("Failed to open input file, error : %s", errBuf).c_str());
+        if (av_strerror(openState, errBuf, sizeof(errBuf)) == 0) {
+            LOGEF(LOG_TAG, "Failed to open input file, error : %s", errBuf);
+            lastError = VR_ERR_VIDEO_PLAYER_AV_ERROR;
+        }
         return false;
     }
     //为分配的AVFormatContext 结构体中填充数据
     if (avformat_find_stream_info(formatContext, nullptr) < 0) {
-        SetLastError("Failed to read the input video stream information.");
+        lastError = VR_ERR_VIDEO_PLAYER_AV_ERROR;
+        LOGE(LOG_TAG, "Failed to read the input video stream information");
         return false;
     }
 
     videoIndex = -1;
     audioIndex = -1;
 
-    LOGDF("[CCVideoPlayer] formatContext->nb_streams : %d", formatContext->nb_streams);
+    LOGDF(LOG_TAG, "formatContext->nb_streams : %d", formatContext->nb_streams);
 
-    printf("---------------- File Information ---------------\n");
+    LOGD(LOG_TAG, "---------------- File Information ---------------");
     av_dump_format(formatContext, 0, currentFile.c_str(), 0);
-    printf("-------------- File Information end -------------\n");
+    LOGD(LOG_TAG, "-------------- File Information end -------------");
 
     //找到"视频流".AVFormatContext 结构体中的nb_streams字段存储的就是当前视频文件中所包含的总数据流数量——
     //视频流，音频流
@@ -225,7 +256,8 @@ bool CCVideoPlayer::InitDecoder() {
         }
     }
     if (videoIndex == -1) {
-        SetLastError("Not found video stream!");
+        lastError = VR_ERR_VIDEO_PLAYER_NO_VIDEO_STREAM;
+        LOGE(LOG_TAG, "Not found video stream!");
         return false;
     }
 
@@ -239,27 +271,31 @@ bool CCVideoPlayer::InitDecoder() {
     AVCodecParameters *codecParameters=formatContext->streams[videoIndex]->codecpar;
     videoCodec = avcodec_find_decoder(codecParameters->codec_id);
     if (videoCodec == nullptr) {
-        SetLastError("Not find video decoder");
+        LOGE(LOG_TAG, "Not find video decoder");
+        lastError = VR_ERR_VIDEO_PLAYER_VIDEO_NOT_SUPPORT;
         return false;
     }
 
     //通过解码器分配(并用  默认值   初始化)一个解码器context
     videoCodecContext = avcodec_alloc_context3(videoCodec);
     if (videoCodecContext == nullptr) {
-        SetLastError("avcodec_alloc_context3 for videoCodecContext failed");
+        LOGE(LOG_TAG, "avcodec_alloc_context3 for videoCodecContext failed");
+        lastError = VR_ERR_VIDEO_PLAYER_AV_ERROR;
         return false;
     }
 
     //更具指定的编码器值填充编码器上下文
     ret = avcodec_parameters_to_context(videoCodecContext, codecParameters);
     if(ret < 0) {
-        SetLastError(CStringHlp::FormatString("avcodec_parameters_to_context videoCodecContext failed : %d", ret).c_str());
+        LOGEF(LOG_TAG, "avcodec_parameters_to_context videoCodecContext failed : %d", ret);
+        lastError = VR_ERR_VIDEO_PLAYER_AV_ERROR;
         return false;
     }
     ret = avcodec_open2(videoCodecContext, videoCodec, nullptr);
     //通过所给的编解码器初始化编解码器上下文
     if (ret < 0) {
-        SetLastError(CStringHlp::FormatString("avcodec_open2 videoCodecContext failed : %d",ret).c_str());
+        LOGEF(LOG_TAG, "avcodec_open2 videoCodecContext failed : %d", ret);
+        lastError = VR_ERR_VIDEO_PLAYER_AV_ERROR;
         return false;
     }
 
@@ -271,26 +307,26 @@ bool CCVideoPlayer::InitDecoder() {
         codecParameters = formatContext->streams[audioIndex]->codecpar;
         audioCodec = avcodec_find_decoder(codecParameters->codec_id);
         if (audioCodec == nullptr) {
-            LOGW("[CCVideoPlayer::InitDecoder] Not find audio decoder");
+            LOGW(LOG_TAG, "Not find audio decoder");
             goto AUDIO_INIT_DONE;
         }
         //通过解码器分配(并用  默认值   初始化)一个解码器context
         audioCodecContext = avcodec_alloc_context3(audioCodec);
         if (audioCodecContext == nullptr) {
-            LOGW("[CCVideoPlayer] avcodec_alloc_context3 for audioCodecContext failed");
+            LOGW(LOG_TAG, "avcodec_alloc_context3 for audioCodecContext failed");
             goto AUDIO_INIT_DONE;
         }
 
         //更具指定的编码器值填充编码器上下文
         ret = avcodec_parameters_to_context(audioCodecContext, codecParameters);
         if(ret < 0) {
-            LOGWF("[CCVideoPlayer] avcodec_parameters_to_context audioCodecContext failed : %d", ret);
+            LOGWF(LOG_TAG, "avcodec_parameters_to_context audioCodecContext failed : %d", ret);
             goto AUDIO_INIT_DONE;
         }
         ret = avcodec_open2(audioCodecContext, audioCodec, nullptr);
         //通过所给的编解码器初始化编解码器上下文
         if (ret < 0) {
-            LOGWF("[CCVideoPlayer] avcodec_open2 audioCodecContext failed : %d", ret);
+            LOGWF(LOG_TAG, "avcodec_open2 audioCodecContext failed : %d", ret);
             goto AUDIO_INIT_DONE;
         }
 
@@ -310,7 +346,8 @@ AUDIO_INIT_DONE:
 bool CCVideoPlayer::DestroyDecoder() {
 
     if(decodeState < CCDecodeState::Ready) {
-        SetLastError("Decoder not init");
+        lastError = VR_ERR_VIDEO_PLAYER_NOR_INIT;
+        LOGE(LOG_TAG, "Decoder not init");
         return false;
     }
 
@@ -343,9 +380,16 @@ void CCVideoPlayer::StopDecoderThread() {
     decodeState = CCDecodeState::Ready;
 
     void* retVal;
-    pthread_join(decoderWorkerThread, &retVal);
-    pthread_join(decoderVideoThread, &retVal);
-    pthread_join(decoderAudioThread, &retVal);
+    if(decoderWorkerThread)
+        pthread_join(decoderWorkerThread, &retVal);
+    if(decoderVideoThread)
+        pthread_join(decoderVideoThread, &retVal);
+    if(decoderAudioThread)
+        pthread_join(decoderAudioThread, &retVal);
+
+    decoderWorkerThread = 0;
+    decoderAudioThread = 0;
+    decoderVideoThread = 0;
 }
 
 //线程入口包装函数
@@ -367,7 +411,7 @@ void* CCVideoPlayer::DecoderAudioThreadStub(void *param) {
 
 void* CCVideoPlayer::PlayerWorkerThread() {
     //背景线程，用于防止用户主线程卡顿
-    LOGI("[PlayerWorkerThread] Start");
+    LOGI(LOG_TAG, "PlayerWorkerThread : Start");
 
     while (playerWorking) {
 
@@ -389,13 +433,13 @@ void* CCVideoPlayer::PlayerWorkerThread() {
         av_usleep(100 * 1000);
     }
 
-    LOGI("[PlayerWorkerThread] End");
+    LOGI(LOG_TAG, "PlayerWorkerThread : End");
     return nullptr;
 }
 void* CCVideoPlayer::DecoderWorkerThread() {
     //读取线程，解复用线程
     int ret;
-    LOGI("[DecoderWorkerThread] Start");
+    LOGI(LOG_TAG, "DecoderWorkerThread : Start");
 
     while (decodeState == CCDecodeState::Decoding) {
         if (playerSeeking != 2) {
@@ -426,26 +470,26 @@ void* CCVideoPlayer::DecoderWorkerThread() {
             }
         }
         else {
-            LOGEF("[CCVideoPlayer::DecoderWorkerThread] av_read_frame failed : %d", ret);
+            LOGEF("DecoderWorkerThread", "av_read_frame failed : %d", ret);
             decodeQueue.ReleasePacket(avPacket);
             decodeState = CCDecodeState::FinishedWithError;
             break;
         }
     }
 
-    LOGI("[DecoderWorkerThread] End");
+    LOGI(LOG_TAG, "DecoderWorkerThread : End");
     return nullptr;
 }
 void* CCVideoPlayer::DecoderVideoThread() {
     //视频解码线程
-    LOGI("[DecoderVideoThread] Start");
+    LOGI(LOG_TAG, "DecoderVideoThread : Start");
 
     int ret;
     AVPacket *packet;
     while (decodeState >= CCDecodeState::Decoding) {
 
         if(playerSeeking != 2 && decodeQueue.VideoFrameQueueSize() > 50) {
-            usleep(1000 * 10);
+            usleep(1000 * 5);
             continue;
         }
 
@@ -453,12 +497,14 @@ void* CCVideoPlayer::DecoderVideoThread() {
         if (!packet) {
 
             //如果主线程标记已经结束，那么没有收到包即意味着结束，退出线程
-            if(decoderVideoFinish ||  decodeState == CCDecodeState::Finish) {
-                decoderVideoFinish = false;
+            if(!decoderVideoFinish && decodeState == CCDecodeState::Finish) {
+                decoderVideoFinish = true;
                 FlushStopStatus();
-                LOGI("[DecoderVideoThread] End by Finish");
+                LOGI(LOG_TAG, "DecoderVideoThread : End by Finish");
                 return nullptr;
             }
+            if(decoderVideoFinish)
+                return nullptr;
 
             usleep(1000 * 5);
             continue;
@@ -468,7 +514,10 @@ void* CCVideoPlayer::DecoderVideoThread() {
         ret = avcodec_send_packet(videoCodecContext, packet);
         decodeQueue.ReleasePacket(packet);
 
-        if (ret != 0) break;
+        if (ret != 0) {
+            LOGIF(LOG_TAG, "DecoderVideoThread : avcodec_send_packet failed : %d", ret);
+            break;
+        }
 
         AVFrame *frame = decodeQueue.RequestFrame();
         ret = avcodec_receive_frame(videoCodecContext, frame);
@@ -476,19 +525,19 @@ void* CCVideoPlayer::DecoderVideoThread() {
             continue;
         }
         else if (ret != 0) {
+            LOGIF(LOG_TAG, "DecoderVideoThread : avcodec_receive_frame failed : %d", ret);
             break;
         }
         //再开一个线程 播放。
         decodeQueue.VideoFrameEnqueue(frame);
     }
-    decodeQueue.ReleasePacket(packet);
 
-    LOGI("[DecoderVideoThread] End");
+    LOGI(LOG_TAG, "DecoderVideoThread : End");
     return nullptr;
 }
 void* CCVideoPlayer::DecoderAudioThread() {
     //音频解码线程
-    LOGI("[DecoderAudioThread] Start");
+    LOGI(LOG_TAG, "DecoderAudioThread : Start");
 
     int ret;
     AVPacket *packet;
@@ -503,12 +552,14 @@ void* CCVideoPlayer::DecoderAudioThread() {
         if (!packet) {
 
             //如果主线程标记已经结束，那么没有收到包即意味着结束，退出线程
-            if(decoderAudioFinish || decodeState == CCDecodeState::Finish) {
-                decoderAudioFinish = false;
+            if(!decoderAudioFinish && decodeState == CCDecodeState::Finish) {
+                decoderAudioFinish = true;
                 FlushStopStatus();
-                LOGI("[DecoderAudioThread] End by Finish");
+                LOGI(LOG_TAG, "DecoderAudioThread : End by Finish");
                 return nullptr;
             }
+            if(decoderAudioFinish)
+                return nullptr;
 
             usleep(1000 * 5);
             continue;
@@ -518,8 +569,10 @@ void* CCVideoPlayer::DecoderAudioThread() {
         ret = avcodec_send_packet(audioCodecContext, packet);
         decodeQueue.ReleasePacket(packet);
 
-        if (ret != 0)
+        if (ret != 0) {
+            LOGIF(LOG_TAG, "DecoderAudioThread : avcodec_send_packet failed : %d", ret);
             break;
+        }
 
         AVFrame *frame = decodeQueue.RequestFrame();
         ret = avcodec_receive_frame(audioCodecContext, frame);
@@ -527,14 +580,14 @@ void* CCVideoPlayer::DecoderAudioThread() {
             continue;
         }
         else if (ret != 0) {
+            LOGIF(LOG_TAG, "DecoderAudioThread : avcodec_receive_frame failed : %d", ret);
             break;
         }
 
         decodeQueue.AudioFrameEnqueue(frame);
     }
-    decodeQueue.ReleasePacket(packet);
 
-    LOGI("[DecoderAudioThread] End");
+    LOGI(LOG_TAG, "DecoderAudioThread : End");
     return nullptr;
 }
 
@@ -551,7 +604,7 @@ void CCVideoPlayer::Init(CCVideoPlayerInitParams *initParams) {
     if(initParams != nullptr)
         memcpy(&InitParams, initParams, sizeof(CCVideoPlayerInitParams));
     if (InitParams.Render == nullptr)
-       LOGE("[CCVideoPlayer] InitParams.Render not set! ") ;
+       LOGE("CCVideoPlayer", "InitParams.Render not set! ") ;
     render = InitParams.Render;
     externalData.InitParams = &InitParams;
     externalData.DecodeQueue = &decodeQueue;
@@ -563,6 +616,10 @@ void CCVideoPlayer::Init(CCVideoPlayerInitParams *initParams) {
 
     av_log_set_level(AV_LOG_DEBUG);
     av_log_set_callback(FFmpegLogFunc);
+
+    //mutex
+    pthread_mutex_init(&startAllLock, nullptr);
+    pthread_mutex_init(&stopAllLock, nullptr);
 }
 void CCVideoPlayer::Destroy() {
 
@@ -571,13 +628,19 @@ void CCVideoPlayer::Destroy() {
 
     playerWorking = false;
     void* retVal;
-    pthread_join(playerWorkerThread, &retVal);
+    if(playerWorkerThread)
+        pthread_join(playerWorkerThread, &retVal);
+    playerWorkerThread = 0;
+
+    pthread_mutex_destroy(&startAllLock);
+    pthread_mutex_destroy(&stopAllLock);
 }
 void CCVideoPlayer::GlobalInit() {
 
 }
 
 void CCVideoPlayer::FFmpegLogFunc(void* ptr, int level, const char* fmt, va_list vl) {
+    UNREFERENCED_PARAMETER(ptr);
 
     std::string str = CStringHlp::FormatString(fmt, vl);
     switch (level) {
@@ -592,6 +655,9 @@ void CCVideoPlayer::FFmpegLogFunc(void* ptr, int level, const char* fmt, va_list
             break;
         case AV_LOG_ERROR:
             __android_log_print(ANDROID_LOG_ERROR, "FFmpeg", "%s", str.c_str());
+            break;
+        default:
+            __android_log_print(ANDROID_LOG_DEFAULT, "FFmpeg", "%s", str.c_str());
             break;
     }
 

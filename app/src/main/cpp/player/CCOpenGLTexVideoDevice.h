@@ -18,6 +18,7 @@ public:
     void Destroy() override ;
     uint8_t* Lock(uint8_t *src, int srcStride, int*destStride, int64_t pts) override;
     void Unlock() override;
+    void Dirty() override;
 
     void Pause(int pause) override;
     void Reset() override;
@@ -26,6 +27,8 @@ public:
 
 private:
     CCPanoramaRenderer* renderer;
+
+
 };
 
 

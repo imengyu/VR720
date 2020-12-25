@@ -11,6 +11,8 @@
 #include <android/asset_manager.h>
 #include <android/asset_manager_jni.h>
 
+#define LOG_TAG "CCAssetsManager"
+
 static AAssetManager * gAssetMgr = nullptr;
 
 std::string CCAssetsManager::GetResourcePath(const char* typeName, const char* name)
@@ -42,6 +44,7 @@ BYTE *CCAssetsManager::LoadResource(const char *path, size_t *bufferLength) {
 }
 CCTexture *CCAssetsManager::LoadTexture(const char *path) {
     auto * tex = new CCTexture();
+    tex->backupData = true;
     BYTE *buffer = nullptr;
     size_t bufferLength = 0;
     if (Android_LoadAsset(path, &buffer, &bufferLength)) {
@@ -74,7 +77,7 @@ std::string CCAssetsManager::LoadStringResource(const char *path) {
         strncpy((char *) str.data(), (char *) buffer, bufferLength - 1);
         free(buffer);
     } else
-        LOGEF("LoadStringResource %s failed !", path);
+        LOGEF(LOG_TAG, "LoadStringResource %s failed !", path);
     return str;
 }
 
@@ -84,7 +87,7 @@ void CCAssetsManager::Android_InitFromJni(JNIEnv *env, jobject assetManager) {
 bool CCAssetsManager::Android_LoadAsset(const char *path, BYTE **buffer, size_t *bufferLength) {
     AAsset* asset = AAssetManager_open(gAssetMgr, path,AASSET_MODE_UNKNOWN);
     if(asset == nullptr) {
-        LOGWF("[CCAssetsManager] Assets: %s not found!", path);
+        LOGWF(LOG_TAG, "Assets: %s not found!", path);
         return false;
     }
     /*获取文件大小*/
@@ -95,7 +98,7 @@ bool CCAssetsManager::Android_LoadAsset(const char *path, BYTE **buffer, size_t 
     /*关闭文件*/
     AAsset_close(asset);
 
-    LOGIF("[CCAssetsManager] Assets: %s loaded.", path);
+    LOGIF(LOG_TAG, "Assets: %s loaded.", path);
     return true;
 }
 

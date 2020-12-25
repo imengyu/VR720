@@ -35,14 +35,14 @@ typedef void(*LogCallBack)(const char *str, LogLevel level, void* lparam);
 //快速记录日志
 
 #define LOG Logger::GetStaticInstance()
-#define LOGI(fmt) Logger::GetStaticInstance()->LogInfo(fmt)
-#define LOGW(fmt) Logger::GetStaticInstance()->LogWarn2(fmt, 0)
-#define LOGE(fmt) Logger::GetStaticInstance()->LogError2(fmt, 0)
-#define LOGD(fmt) Logger::GetStaticInstance()->Log(fmt)
-#define LOGIF(fmt, ...) Logger::GetStaticInstance()->LogInfo(fmt, __VA_ARGS__)
-#define LOGWF(fmt, ...) Logger::GetStaticInstance()->LogWarn2(fmt, __VA_ARGS__)
-#define LOGEF(fmt, ...) Logger::GetStaticInstance()->LogError2(fmt, __VA_ARGS__)
-#define LOGDF(fmt, ...) Logger::GetStaticInstance()->Log(fmt, __VA_ARGS__)
+#define LOGI(tag,fmt) Logger::GetStaticInstance()->LogInfo(tag,fmt)
+#define LOGW(tag,fmt) Logger::GetStaticInstance()->LogWarn2(tag,fmt, 0)
+#define LOGE(tag,fmt) Logger::GetStaticInstance()->LogError2(tag,fmt, 0)
+#define LOGD(tag,fmt) Logger::GetStaticInstance()->Log(tag,fmt)
+#define LOGIF(tag,fmt, ...) Logger::GetStaticInstance()->LogInfo(tag,fmt, __VA_ARGS__)
+#define LOGWF(tag,fmt, ...) Logger::GetStaticInstance()->LogWarn2(tag,fmt, __VA_ARGS__)
+#define LOGEF(tag,fmt, ...) Logger::GetStaticInstance()->LogError2(tag,fmt, __VA_ARGS__)
+#define LOGDF(tag,fmt, ...) Logger::GetStaticInstance()->Log(tag,fmt, __VA_ARGS__)
 
 //日志记录
 class Logger
@@ -60,15 +60,15 @@ public:
     static void DestroyConst();
     static Logger* GetStaticInstance();
 
-	void Log(const char * str, ...);
-	void LogWarn(const char * str, ...);
-	void LogError(const char * str, ...);
-	void LogInfo(const char * str, ...);
+	void Log(const char * tag, const char * str, ...);
+	void LogWarn(const char * tag, const char * str, ...);
+	void LogError(const char * tag, const char * str, ...);
+	void LogInfo(const char * tag, const char * str, ...);
 
-	void Log2(const char * str, const char* file, int line, const char* functon, ...);
-	void LogWarn2(const char * str, const  char* file, int line, const char* functon, ...);
-	void LogError2(const char * str, const char* file, int line, const char* functon, ...);
-	void LogInfo2(const char * str, const char* file, int line, const char* functon, ...);
+	void Log2(const char * tag, const char * str, const char* file, int line, const char* functon, ...);
+	void LogWarn2(const char * tag, const char * str, const  char* file, int line, const char* functon, ...);
+	void LogError2(const char * tag, const char * str, const char* file, int line, const char* functon, ...);
+	void LogInfo2(const char * tag, const char * str, const char* file, int line, const char* functon, ...);
 
 	LogLevel GetLogLevel();
 	void SetLogLevel(LogLevel logLevel);
@@ -91,16 +91,16 @@ private:
 
 	void WritePendingLog(const char *str, LogLevel logLevel);
 
-	void LogInternalWithCodeAndLine(LogLevel logLevel, const char * str, const char*file, int line, const char*functon, va_list arg);
-	void LogInternal(LogLevel logLevel, const char *str, va_list arg);
-	void LogOutput(LogLevel logLevel, const char *str, const char *srcStr, size_t len);
+	void LogInternalWithCodeAndLine(LogLevel logLevel, const char * tag, const char * str, const char*file, int line, const char*functon, va_list arg);
+	void LogInternal(LogLevel logLevel, const char * tag, const char *str, va_list arg);
+	void LogOutput(LogLevel logLevel, const char * tag, const char *str, const char *srcStr, size_t len);
 	void CloseLogFile();
 };
 
-#define LogError2(str, ...) LogError2(str, __FILE__, __LINE__, __FUNCTION__,__VA_ARGS__)
-#define LogWarn2(str, ...) LogWarn2(str, __FILE__, __LINE__, __FUNCTION__,__VA_ARGS__)
-#define LogInfo2(str, ...) LogInfo2(str, __FILE__, __LINE__, __FUNCTION__,__VA_ARGS__)
-#define Log2(str, ...) Log2(str, __FILE__, __LINE__, __FUNCTION__,__VA_ARGS__)
+#define LogError2(tag, str, ...) LogError2(tag, str, __FILE__, __LINE__, __FUNCTION__,__VA_ARGS__)
+#define LogWarn2(tag, str, ...) LogWarn2(tag, str, __FILE__, __LINE__, __FUNCTION__,__VA_ARGS__)
+#define LogInfo2(tag, str, ...) LogInfo2(tag, str, __FILE__, __LINE__, __FUNCTION__,__VA_ARGS__)
+#define Log2(tag, str, ...) Log2(tag, str, __FILE__, __LINE__, __FUNCTION__,__VA_ARGS__)
 
 #endif
 

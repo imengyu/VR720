@@ -16,6 +16,7 @@ class CCAudioDevice;
 class CCVideoDevice;
 class CCVideoPlayerExternalData;
 class CCPlayerRender {
+    const char* LOG_TAG = "CCPlayerRender";
 public:
 
     virtual bool Init(CCVideoPlayerExternalData *data);
@@ -82,6 +83,13 @@ private:
 
     CCAudioDevice* audioDevice = nullptr;
     CCVideoDevice* videoDevice = nullptr;
+
+    AVFrame *outFrame = nullptr;
+    uint8_t *outFrameBuffer = nullptr;
+    size_t outFrameBufferSize = 0;
+    int outFrameDestWidth = 0;
+    int outFrameDestHeight = 0;
+    AVPixelFormat outFrameDestFormat = AV_PIX_FMT_RGBA;
 
     pthread_t renderVideoThread = 0;
     pthread_t renderAudioThread = 0;

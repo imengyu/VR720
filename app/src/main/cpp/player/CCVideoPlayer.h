@@ -25,7 +25,6 @@ public:
     ~CCVideoPlayer();
 
     static void GlobalInit();
-    const char* GetLastError();
 
     //初始配置和状态信息
     //**********************
@@ -47,6 +46,7 @@ public:
     int64_t GetVideoPos();
     int GetVideoVolume();
     void GetVideoSize(int* w, int* h);
+    int GetLastError() const;
 
     //回调
     //**********************
@@ -59,11 +59,9 @@ public:
 
 protected:
 
-    std::string lastError;
+    int lastError = 0;
     std::string currentFile;
     CCVideoState playerStatus = CCVideoState::NotOpen;
-
-    void SetLastError(const char * str);
 
     CCVideoPlayerEventCallback videoPlayerEventCallback = nullptr;
     void*videoPlayerEventCallbackData = nullptr;
@@ -128,6 +126,9 @@ private:
     void* DecoderAudioThread();
 
     //流水线启停
+
+    pthread_mutex_t startAllLock = PTHREAD_MUTEX_INITIALIZER;
+    pthread_mutex_t stopAllLock = PTHREAD_MUTEX_INITIALIZER;
 
     void StartAll();
     void StopAll();

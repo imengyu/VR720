@@ -199,6 +199,19 @@
 
     <string name="text_logo">标题Logo</string>
     <string name="text_soft_version">当前软件版本：</string>
+    <string name="text_success">成功</string>
+
+    <!-- error -->
+
+    <string name="text_error_un_know">未知错误</string>
+    <string name="text_error_file_not_support">暂时不支持这种图像格式</string>
+    <string name="text_error_file_not_exists">文件不存在</string>
+    <string name="text_error_image_too_big">图像过大（超过65536x32768），我们无法打开此文件</string>
+    <string name="text_error_big_image_and_not_jpg">图像过大无法解码，请转为 JPG 格式后再打开</string>
+    <string name="text_error_bad_image">无法打开图像，图像可能已经损坏或者格式不支持</string>
+    <string name="text_error_video_player_av_error">解码失败，视频可能已经损坏或者格式不支持</string>
+    <string name="text_error_video_player_no_video_stream">视频并不包含图像，无法播放</string>
+    <string name="text_error_video_player_video_not_support">暂时不支持这种视频格式</string>
 
     <!-- settings -->
 

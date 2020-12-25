@@ -12,7 +12,7 @@ uint8_t* CCOpenGLTexVideoDevice::Lock(uint8_t *src, int srcStride, int* destStri
     renderer->VideoTexLock(true);
     auto* texture = renderer->VideoTexGet();
     if(texture) {
-        *destStride = texture->width * (texture->textureType == GL_RGBA ? 4 : 3);
+        *destStride = texture->width * 4;//GL_RGBA
         return (UCHAR *) texture->GetBackupDataPtr();
     }
     return nullptr;
@@ -23,6 +23,8 @@ void CCOpenGLTexVideoDevice::UpdateVideoMode(int w, int h) {
 }
 void CCOpenGLTexVideoDevice::Unlock() {
     renderer->VideoTexLock(false);
+}
+void CCOpenGLTexVideoDevice::Dirty() {
     renderer->VideoTexMarkDirty();
 }
 void CCOpenGLTexVideoDevice::Pause(int pause) {

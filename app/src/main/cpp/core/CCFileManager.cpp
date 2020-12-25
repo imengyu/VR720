@@ -5,8 +5,10 @@
 #include "../utils/PathHelper.h"
 #include "../imageloaders/CImageLoader.h"
 
+
+
 void CCFileManager::CloseFile() {
-    LOGI("[CCFileManager] Closing file");
+    LOGI(LOG_TAG, "Closing file");
     if (onCloseCallback)
         onCloseCallback(onCloseCallbackData);
     if (CurrentFileLoader != nullptr) {
@@ -21,7 +23,8 @@ std::string CCFileManager::GetCurrentFileName() const {
 bool CCFileManager::OpenFile(const char* path) {
     CloseFile();
     if (!Path::Exists(path)) {
-        lastErr = "文件不存在";
+        LOGEF(LOG_TAG, "File %s not exists ", path);
+        lastErr = VR_ERR_FILE_NOT_EXISTS;
         return false;
     }
 
@@ -29,44 +32,39 @@ bool CCFileManager::OpenFile(const char* path) {
 
     int fileType = CheckCurrentFileType();
     if(CC_IS_FILE_TYPE_VIDEO(fileType)) {
-        LOGI("[CCFileManager] Skip image check for video file");
+        LOGI(LOG_TAG, "Skip image check for video file");
         return true;
     }
-    LOGDF("[CCFileManager] fileType : %d", fileType);
+    LOGDF(LOG_TAG, "fileType : %d", fileType);
 
     CurrenImageType = CImageLoader::CheckImageType(path);
     CurrentFileLoader = CImageLoader::CreateImageLoaderAuto(path);
     if (CurrentFileLoader == nullptr) {
-        lastErr = "不支持这种文件格式";
+        lastErr = VR_ERR_FILE_NOT_SUPPORT;
         return false;
     }
 
-    LOGIF("[CCFileManager] Open file \"%s\" type: %d", path, CurrenImageType);
+    LOGIF(LOG_TAG, "Open file \"%s\" type: %d", path, CurrenImageType);
 
     glm::vec2 size = CurrentFileLoader->GetImageSize();
     if (size.x > 65536 || size.y > 32768) {
-        LOGEF("[CCFileManager] Image size too big : %dx%d > 65536x32768", (int)size.x, (int)size.y);
-        lastErr = "我们暂时无法打开非常大的图像（图像大小超过65536x32768）";
+        LOGEF(LOG_TAG, "Image size too big : %dx%d > 65536x32768", (int)size.x, (int)size.y);
+        lastErr = VR_ERR_IMAGE_TOO_BIG;
         CloseFile();
         return false;
     }
 
     if (CurrenImageType != ImageType::JPG && (size.x > 4096 || size.y > 2048)) {
-        LOGEF("[CCFileManager] Image size too big (not jpeg) : %dx%d > 4096x2048", (int)size.x, (int)size.y);
-        lastErr = "大图像请转为JPEG格式打开（图像大小超过4096x2048）";
+        LOGEF(LOG_TAG, "Image size too big (not jpeg) : %dx%d > 4096x2048", (int)size.x, (int)size.y);
+        lastErr = VR_ERR_BIG_IMAGE_AND_NOT_JPG;
         CloseFile();
         return false;
     }
     return true;
 }
-const char* CCFileManager::GetLastError()
-{
-    return lastErr.c_str();
-}
 int CCFileManager::CheckCurrentFileType() const {
 
-    std::string ext = Path::GetExtension(CurrenImagePath.c_str());
-    LOGDF("CheckCurrentFileType : %s", ext.c_str());
+    std::string ext = Path::GetExtension(CurrenImagePath);
 
     if(ext == ".jpg" || ext == ".jpeg") return CC_FILE_TYPE_JPG;
     else if(ext == ".png") return CC_FILE_TYPE_PNG;
@@ -82,13 +80,14 @@ int CCFileManager::CheckCurrentFileType() const {
     else if(ext == ".flv") return CC_FILE_TYPE_FLV;
 
     if(!ext.empty())
-        LOGWF("[CCFileManager] Un support file ext : %s", ext.c_str());
+        LOGWF(LOG_TAG, "Un support file ext : %s", ext.c_str());
     return 0;
 }
 
 CCFileManager::CCFileManager(COpenGLRenderer* render)
 {
     logger = Logger::GetStaticInstance();
+    lastErr = VR_ERR_SUCCESS;
     Render = render;
 }
 

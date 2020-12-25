@@ -8,6 +8,7 @@
 #include "CCModel.h"
 #include "CCFileManager.h"
 #include "CCGUInfo.h"
+#include "CCErrors.h"
 #include "../player/CCVideoPlayer.h"
 #include "../player/CCOpenGLTexVideoDevice.h"
 #include <vector>
@@ -20,14 +21,12 @@ enum PanoramaMode : int16_t {
 	PanoramaOuterBall,
 	PanoramaMercator,
 	PanoramaFull360,
-	PanoramaFullOrginal,
-	PanoramaModeMax,
+	PanoramaFullOriginal,
 };
 
-#define VideoState_Stop 0
-#define VideoState_Playing 1
-#define VideoState_Ended 2
-
+/**
+ * 全景游戏基础渲染器
+ */
 class CMobileGameUIEventDistributor;
 class CImageLoader;
 class CMobileGameRenderer : public COpenGLRenderer
@@ -38,7 +37,6 @@ public:
 
 	static void GlobalInit(JNIEnv *env, jobject context);
 
-	void SetOpenFilePath(const char* path);
 	void DoOpenFile();
 	void MarkShouldOpenFile() {
 		shouldOpenFile = true;
@@ -46,13 +44,10 @@ public:
 	void MarkCloseFile();
 	void MarkDestroy() override { shouldDestroy = true; }
 
-	void SwitchMode(PanoramaMode mode);
-	void SetMouseDragVelocity(float x, float y);
-
 	void UpdateGyroValue(float x, float y, float z, float w) const;
 	void UpdateDebugValue(float x, float y, float z, float w, float u, float v);
-	void SetVideoState(CCVideoState newState);
-	void SetVideoPos(int64_t pos);
+
+	//属性方法
 
 	void SetIntProp(int id, int value);
 	int GetIntProp(int id);
@@ -61,13 +56,17 @@ public:
 	void SetProp(int id, char* string);
 	const char* GetProp(int id);
 
+	//视频播放器方法
+
+	void SetVideoState(CCVideoState newState);
+	void SetVideoPos(int64_t pos);
 	CCVideoState GetVideoState();
 	int64_t GetVideoLength();
 	int64_t GetVideoPos();
-	PanoramaMode GetMode() { return mode; }
-	const char* GetImageOpenError() { return lastImageError.c_str(); }
-    CCGUInfo* GetGUInfo() { return uiInfo; }
+
 	void SetUiEventDistributor( CMobileGameUIEventDistributor*uv) { uiEventDistributor = uv; }
+
+	//鼠标移动速度与粘性计算
 
 	float MouseSensitivityMin = 0.01f;
 	float MouseSensitivityMax = 0.06f;
@@ -79,14 +78,14 @@ public:
 
 	float GetMouseSensitivity();
 	float GetMouseSensitivityInFlat();
+	void SetMouseDragVelocity(float x, float y);
+
+
 	CCamera* GetMercatorCylinderCaptureCamera() { return cameraMercatorCylinderCapture; }
 
 private:
 
 	Logger* logger;
-
-	std::string currentOpenFilePath;
-    std::string currentFileCachePath;
 
 	bool ReInit() override;
 	bool Init() override;
@@ -104,19 +103,26 @@ private:
 	CCFileManager* fileManager = nullptr;
 	CCTextureLoadQueue* texLoadQueue = nullptr;
 
+	void SwitchMode(PanoramaMode mode);
+
 	bool gyroEnabled = false;
     bool vREnabled = false;
 	bool fullChunkLoadEnabled = false;
 
-	void ShowErrorDialog();
+	void FinishLoadAndNotifyError();
 
     CMobileGameUIEventDistributor*uiEventDistributor = nullptr;
     CCGUInfo* uiInfo = nullptr;
 	bool fileOpened = false;
-	std::string viewCachePath;
-	bool enableViewCache = true;
+    bool enableViewCache = true;
 
-	std::string lastImageError;
+	std::string currentOpenFilePath;
+	std::string currentFileCachePath;
+	std::string currentFileSmallThumbnailCachePath;
+
+    std::string viewCachePath;
+
+	int lastError = VR_ERR_SUCCESS;
 
 	bool renderInitFinish = false;
 	bool shouldOpenFile = false;
@@ -153,7 +159,6 @@ private:
 	bool VelocityDragCurrentIsInSim = false;
 	float VelocityDragCutSensitivity = 5.0f;
 
-
     void DoOpenAsImage();
 	void DoOpenAsVideo();
 
@@ -169,6 +174,6 @@ private:
 	void SetVREnabled(bool enable);
 	void SetCachePath(char* path);
 
-	void VideoPlayerEventCallBack();
+    void TryLoadSmallThumbnail();
 };
 

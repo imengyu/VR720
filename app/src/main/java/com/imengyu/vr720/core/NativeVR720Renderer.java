@@ -96,13 +96,13 @@ public class NativeVR720Renderer {
     public static final int PanoramaMode_PanoramaModeMax = 7;
 
     //视频状态
-    public static final int VideoState_Failed = 0;
-    public static final int VideoState_NotOpen = 1;
-    public static final int VideoState_Playing = 2;
-    public static final int VideoState_Ended = 3;
-    public static final int VideoState_Opened = 4;
-    public static final int VideoState_Paused = 4;
-    public static final int VideoState_Loading = 5;
+    public static final int VideoState_Loading = 1;
+    public static final int VideoState_Failed = 2;
+    public static final int VideoState_NotOpen = 3;
+    public static final int VideoState_Playing = 4;
+    public static final int VideoState_Ended = 5;
+    public static final int VideoState_Opened = 6;
+    public static final int VideoState_Paused = 6;
 
     //属性
     public static final int PROP_IS_FILE_OPEN = 2;
@@ -117,6 +117,8 @@ public class NativeVR720Renderer {
     public static final int PROP_LAST_ERROR = 17;
     public static final int PROP_VIDEO_VOLUME = 20;
     public static final int PROP_PANORAMA_MODE = 21;
+    public static final int PROP_SMALL_PANORAMA_PATH = 22;
+
 
     //C++代码声明
     //***********************************
@@ -146,7 +148,6 @@ public class NativeVR720Renderer {
     private native void processMouseDragVelocity(long nativePtr, float x, float y);
     private native void processViewZoom(long nativePtr, float v);
     private native void processKey(long nativePtr, int key, boolean down);
-    private native void setPanoramaMode(long nativePtr, int mode);
     private native void updateGyroValue(long nativePtr, float x, float y, float z, float w);
     private native void updateDebugValue(long nativePtr, float x, float y, float z, float w, float v, float u);
     private native void onResume(long nativePtr);
@@ -196,7 +197,9 @@ public class NativeVR720Renderer {
      * 获取打开文件的错误信息
      * @return 错误信息
      */
-    public String getLastError() { return getProp(PROP_LAST_ERROR); }
+    public String getLastError(Context context) {
+        return NativeVR720ErrorConverter.getStringError(context, getIntProp(PROP_LAST_ERROR));
+    }
 
     /**
      * 关闭当前文件
@@ -263,7 +266,7 @@ public class NativeVR720Renderer {
      * 设置全景模式
      * @param mode 全景模式（PANO_MODE_*）
      */
-    public void setPanoramaMode(int mode) { setPanoramaMode(mainNativePtr, mode); }
+    public void setPanoramaMode(int mode) { setIntProp(mainNativePtr, PROP_PANORAMA_MODE, mode); }
 
     private boolean gyroEnable = false;
 

@@ -17,6 +17,8 @@ jobject applicationContext;
 int applicationKey;
 int applicationKey2;
 
+#define LOG_TAG "GameCore"
+
 CMobileGameRenderer::CMobileGameRenderer()
 {
     logger = Logger::GetStaticInstance();
@@ -26,10 +28,6 @@ CMobileGameRenderer::~CMobileGameRenderer() = default;
 //文件管理
 //*************************
 
-void CMobileGameRenderer::SetOpenFilePath(const char* path)
-{
-	currentOpenFilePath = path;
-}
 void CMobileGameRenderer::DoOpenFile()
 {
     uiEventDistributor->SendEvent(CCMobileGameUIEvent::MarkLoadingStart);
@@ -38,23 +36,25 @@ void CMobileGameRenderer::DoOpenFile()
         if(CC_IS_FILE_TYPE_IMAGE(fileManager->CheckCurrentFileType())) {
             currentFileIsVideo = false;
             DoOpenAsImage();
-        } else if(CC_IS_FILE_TYPE_VIDEO(fileManager->CheckCurrentFileType())) {
+        }
+        else if(CC_IS_FILE_TYPE_VIDEO(fileManager->CheckCurrentFileType())) {
             currentFileIsVideo = true;
             DoOpenAsVideo();
-        } else {
-            lastImageError = std::string("Not support file format");
-            LOGI("[GameCore] Unknown file ext");
-            ShowErrorDialog();
+        }
+        else {
+            lastError = VR_ERR_FILE_NOT_SUPPORT;
+            LOGI(LOG_TAG, "Unknown file ext");
+            FinishLoadAndNotifyError();
         }
     }
     else {
-        lastImageError = std::string(fileManager->GetLastError());
-        LOGEF("[GameCore] File %s open failed : %s", currentOpenFilePath.c_str(), lastImageError.c_str());
-        ShowErrorDialog();
+        lastError = fileManager->GetLastError();
+        LOGEF(LOG_TAG, "File %s open failed : %d", currentOpenFilePath.c_str(), lastError);
+        FinishLoadAndNotifyError();
     }
 }
 void CMobileGameRenderer::DoOpenAsImage() {
-    LOGI("[GameCore] File open as image");
+    LOGI(LOG_TAG, "File open as image");
 
     //如果开启了缓存，那么同时加载缓存
     glm::vec2 size = fileManager->CurrentFileLoader->GetImageSize();
@@ -69,6 +69,9 @@ void CMobileGameRenderer::DoOpenAsImage() {
     renderer->panoramaTexPool.push_back(renderer->panoramaThumbnailTex);
     renderer->UpdateMainModelTex();
 
+    //测试加载缩略图
+    TryLoadSmallThumbnail();
+
     //检查是否需要分片并加载
     needTestImageAndSplit = true;
     fileOpened = true;
@@ -77,13 +80,18 @@ void CMobileGameRenderer::DoOpenAsImage() {
     uiEventDistributor->SendEvent(CCMobileGameUIEvent::UiInfoChanged);
 }
 void CMobileGameRenderer::DoOpenAsVideo() {
-    LOGI("[GameCore] File open as video");
+    LOGI(LOG_TAG, "File open as video");
 
     //加载主图
     renderer->panoramaThumbnailTex = new CCTexture();
     renderer->panoramaThumbnailTex->backupData = true;
     renderer->panoramaTexPool.push_back(renderer->panoramaThumbnailTex);
+    renderer->panoramaThumbnailTex->LoadGridTexture(256, 256, 16, GL_RGBA, true);
     renderer->UpdateMainModelTex();
+
+    shouldSplitFullImage = false;
+    thisFileShouldSaveCache = false;
+    thisFileShouldLoadInCache = false;
 
     //打开视频
     player->OpenVideo(currentOpenFilePath.c_str());
@@ -94,13 +102,50 @@ void CMobileGameRenderer::MarkCloseFile() {
     else
         uiEventDistributor->SendEvent(CCMobileGameUIEvent::FileClosed);
 }
-void CMobileGameRenderer::ShowErrorDialog() {
+void CMobileGameRenderer::FinishLoadAndNotifyError() {
     fileOpened = false;
     renderer->renderOn = false;
     uiInfo->currentImageOpened = false;
     uiInfo->currentImageLoading = false;
     uiEventDistributor->SendEvent(CCMobileGameUIEvent::UiInfoChanged);
     uiEventDistributor->SendEvent(CCMobileGameUIEvent::MarkLoadFailed);
+}
+void CMobileGameRenderer::TryLoadSmallThumbnail() {
+
+    if (!Path::Exists(currentFileSmallThumbnailCachePath)) {
+        LOGI(LOG_TAG, "SmallThumbnail not exists");
+        return;
+    }
+
+    CImageLoader *imageLoader = CImageLoader::CreateImageLoaderType(ImageType::JPG);
+    imageLoader->Load(currentFileSmallThumbnailCachePath.c_str());
+
+    BYTE *buffer = imageLoader->GetAllImageData();
+
+    if (!buffer) {
+        LOGW(LOG_TAG, "Load SmallThumbnail tex from cache file failed.");
+        delete imageLoader;
+        return;
+    }
+
+    size_t size = imageLoader->GetFullDataSize();
+    int compoents = imageLoader->GetImageDepth();
+    glm::vec2 imageSize = imageLoader->GetImageScaledSize();
+
+    delete imageLoader;
+
+    LOGIF(LOG_TAG, "Load SmallThumbnail tex from cache file: %s", currentFileCachePath.c_str());
+    LOGIF(LOG_TAG, "Load SmallThumbnail tex buffer from cache file: w: %d h: %d (%d)  Buffer Size: %d",
+          (int) imageSize.x, (int) imageSize.y, compoents, size);
+
+    if (compoents == 3)
+        renderer->panoramaThumbnailTex->LoadBytes(buffer, (int) imageSize.x, (int) imageSize.y, GL_RGB);
+    else if (compoents == 4)
+        renderer->panoramaThumbnailTex->LoadBytes(buffer, (int) imageSize.x, (int) imageSize.y, GL_RGBA);
+
+    free(buffer);
+
+    SwitchMode(mode);
 }
 void CMobileGameRenderer::TestSplitImageAndLoadTexture() {
     glm::vec2 size = fileManager->CurrentFileLoader->GetImageSize();
@@ -113,7 +158,7 @@ void CMobileGameRenderer::TestSplitImageAndLoadTexture() {
         if (chunkW < 2) chunkW = 2;
         if (chunkH < 2) chunkH = 2;
         if (chunkW > 64 || chunkH > 32) {
-            LOGEF("[GameCore] Too big image (%.2f, %.2f) that cant split chunks.", chunkW, chunkH);
+            LOGEF(LOG_TAG, "Too big image (%.2f, %.2f) that cant split chunks.", chunkW, chunkH);
             shouldSplitFullImage = false;
             return;
         }
@@ -125,7 +170,7 @@ void CMobileGameRenderer::TestSplitImageAndLoadTexture() {
 
         //设置渲染分块参数
         if(fullChunkLoadEnabled) {
-            LOGIF("[GameCore] Image use split mode , size: %d, %d", chunkWi, chunkHi);
+            LOGIF(LOG_TAG, "Image use split mode , size: %d, %d", chunkWi, chunkHi);
             renderer->sphereFullSegmentX =
                     renderer->sphereSegmentX + (renderer->sphereSegmentX % chunkWi);
             renderer->sphereFullSegmentY =
@@ -146,19 +191,19 @@ void CMobileGameRenderer::TestSplitImageAndLoadTexture() {
 void CMobileGameRenderer::TestToLoadTextureImageCache() {
     char md5_str[MD5_STR_LEN + 1];
     if(FileUtils::ComputeFileMd5(currentOpenFilePath.c_str(), md5_str) != 0) {
-        LOGW("[GameCore] Compute file md5 failed");
+        LOGW(LOG_TAG, "Compute file md5 failed");
         return;
     }
 
     currentFileCachePath = viewCachePath + md5_str;
     if(!Path::Exists(currentFileCachePath)) {
         thisFileShouldSaveCache = true;
-        LOGI("[GameCore] Image should save cache in this load");
+        LOGI(LOG_TAG, "Image should save cache in this load");
         return;
     }
 
     thisFileShouldLoadInCache = true;
-    LOGI("[GameCore] Image should load cache this time");
+    LOGI(LOG_TAG, "Image should load cache this time");
 }
 
 //测试(不再使用)
@@ -234,10 +279,11 @@ void RenderTest() {
 void CMobileGameRenderer::GlobalInit(JNIEnv *env, jobject context) {
     applicationContext = context;
     applicationKey2 = CommonUtils::CheckAppSignature(env, applicationContext, &applicationKey);
+    if(applicationKey2 > 0) applicationKey2 = 0;
 }
 bool CMobileGameRenderer::ReInit() {
     if (renderInitFinish) {
-        LOGI("[CMobileGameRenderer] ReInit!");
+        LOGI(LOG_TAG, "ReInit!");
         ReBufferAllData();
         renderer->ReInit();
         return true;
@@ -246,7 +292,7 @@ bool CMobileGameRenderer::ReInit() {
 }
 bool CMobileGameRenderer::Init()
 {
-    LOGI("[CMobileGameRenderer] Init!");
+    LOGI(LOG_TAG, "Init!");
 
     camera = new CCPanoramaCamera();
     cameraMercatorCylinderCapture = new CCamera();
@@ -298,7 +344,7 @@ void CMobileGameRenderer::Destroy()
 
     destroying = true;
 
-    LOGI("[CMobileGameRenderer] Destroy!");
+    LOGI(LOG_TAG, "Destroy!");
 
 
 
@@ -338,7 +384,7 @@ void CMobileGameRenderer::Destroy()
     }
     if (uiEventDistributor != nullptr) {
         uiEventDistributor->SendEvent(CCMobileGameUIEvent::DestroyComplete);
-        LOGD("[CMobileGameRenderer] Send DestroyComplete event");
+        LOGD(LOG_TAG, "Send DestroyComplete event");
         delete uiEventDistributor;
         uiEventDistributor = nullptr;
     }
@@ -379,7 +425,7 @@ void CMobileGameRenderer::MouseCallback(COpenGLView* view, float xpos, float ypo
                 renderer->renderer->RotateModel(xoffset, yoffset);
             }
             //移动模型
-            else if (renderer->mode == PanoramaMode::PanoramaFull360 || renderer->mode == PanoramaMode::PanoramaFullOrginal) {
+            else if (renderer->mode == PanoramaMode::PanoramaFull360 || renderer->mode == PanoramaMode::PanoramaFullOriginal) {
                 float xoffset = -renderer->xoffset * renderer->GetMouseSensitivityInFlat();
                 float yoffset = -renderer->yoffset * renderer->GetMouseSensitivityInFlat();
                 renderer->renderer->MoveModel(xoffset, yoffset);
@@ -429,7 +475,7 @@ void CMobileGameRenderer::KeyMoveCallback(CCameraMovement move) {
             break;
         }
     }
-    else if (mode == PanoramaMode::PanoramaFull360 || mode == PanoramaMode::PanoramaFullOrginal) {
+    else if (mode == PanoramaMode::PanoramaFull360 || mode == PanoramaMode::PanoramaFullOriginal) {
         switch (move)
         {
         case CCameraMovement::ROATE_UP:
@@ -467,7 +513,7 @@ void CMobileGameRenderer::Render(float FrameTime)
         return;
 
     if (shouldDestroy) {
-        LOGI("[CMobileGameRenderer] Start destroy in renderer thread");
+        LOGI(LOG_TAG, "Start destroy in renderer thread");
         Destroy();
         return;
     }
@@ -520,8 +566,8 @@ void CMobileGameRenderer::Render(float FrameTime)
 
     if (shouldOpenFile && renderInitFinish) {
         shouldOpenFile = false;
-        if(applicationKey == -5036)
-            DoOpenFile();
+        if(applicationKey == -5036) DoOpenFile();
+        else MarkCloseFile();
     }
 
     if (needTestImageAndSplit) {
@@ -623,7 +669,7 @@ TextureLoadQueueDataResult* CMobileGameRenderer::LoadMainTexCallback(TextureLoad
     UNREFERENCED_PARAMETER(info);
     UNREFERENCED_PARAMETER(texture);
 
-    LOGI("[GameCore] Load main tex: id: -1");
+    LOGI(LOG_TAG, "Load main tex: id: -1");
     uiInfo->currentImageLoading = true;
     uiEventDistributor->SendEvent(CCMobileGameUIEvent::UiInfoChanged);
 
@@ -631,10 +677,10 @@ TextureLoadQueueDataResult* CMobileGameRenderer::LoadMainTexCallback(TextureLoad
     auto *result = new TextureLoadQueueDataResult();
 
     //加载上次保存的图像缓存
-    if (enableViewCache && thisFileShouldLoadInCache) {
+    if (enableViewCache && thisFileShouldLoadInCache)  {
 
         if(!Path::Exists(currentFileCachePath)) {
-            LOGWF("[GameCore] Check currentFileCachePath not exists : %s", currentFileCachePath.c_str());
+            LOGWF(LOG_TAG, "Check currentFileCachePath not exists : %s", currentFileCachePath.c_str());
             goto ORG_LOAD;
         }
 
@@ -644,7 +690,7 @@ TextureLoadQueueDataResult* CMobileGameRenderer::LoadMainTexCallback(TextureLoad
         result->buffer = imageLoader->GetAllImageData();
 
         if (!result->buffer) {
-            LOGW("[GameCore] Load tex from cache file failed, now try original file load.");
+            LOGW(LOG_TAG, "Load tex from cache file failed, now try original file load.");
             delete imageLoader;
             goto ORG_LOAD;
         }
@@ -656,8 +702,8 @@ TextureLoadQueueDataResult* CMobileGameRenderer::LoadMainTexCallback(TextureLoad
         result->height = (int)size.y;
         result->success = true;
 
-        LOGIF("[GameCore] Load tex from cache file: %s", currentFileCachePath.c_str());
-        LOGIF("[GameCore] Load tex buffer from cache file: w: %d h: %d (%d)  Buffer Size: %d",
+        LOGIF(LOG_TAG, "Load tex from cache file: %s", currentFileCachePath.c_str());
+        LOGIF(LOG_TAG, "Load tex buffer from cache file: w: %d h: %d (%d)  Buffer Size: %d",
                     (int)result->width, (int)result->height, result->compoents, result->size);
 
         delete imageLoader;
@@ -668,9 +714,10 @@ ORG_LOAD:
         result->buffer = fileManager->CurrentFileLoader->GetAllImageData();
 
         if (!result->buffer) {
-            lastImageError = std::string("图像可能已经损坏，错误信息：") + std::string(fileManager->CurrentFileLoader->GetLastError());
-            ShowErrorDialog();
-            logger->LogError2("[GameCore] Load tex main buffer failed : %s", fileManager->CurrentFileLoader->GetLastError());
+            lastError = VR_ERR_BAD_IMAGE;
+            logger->LogError2(LOG_TAG, "Load tex main buffer failed : %s", fileManager->CurrentFileLoader->GetLastError());
+
+            FinishLoadAndNotifyError();
             delete result;
             return nullptr;
         }
@@ -682,19 +729,19 @@ ORG_LOAD:
         result->height = (int)size.y;
         result->success = true;
 
-        LOGIF("[GameCore] Load tex buffer from file : w: %d h: %d (%d)  Buffer Size: %d",
+        LOGIF(LOG_TAG, "Load tex buffer from file : w: %d h: %d (%d)  Buffer Size: %d",
                     (int)result->width, (int)result->height, result->compoents, result->size);
     }
 
     //保存缓存至文件
     if(enableViewCache && thisFileShouldSaveCache && !thisFileShouldLoadInCache) {
 
-        LOGIF("[GameCore] Start save tex cache to file : %s", currentFileCachePath.c_str());
+        LOGIF(LOG_TAG, "Start save tex cache to file : %s", currentFileCachePath.c_str());
 
         FileUtils::SaveImageBufferToJPEGFile(currentFileCachePath.c_str(), result->buffer, result->size,
                                              result->width, result->height, result->compoents);
 
-        LOGIF("[GameCore] Tex cache to file saved : %s", currentFileCachePath.c_str());
+        LOGIF(LOG_TAG, "Tex cache to file saved : %s", currentFileCachePath.c_str());
 
         thisFileShouldSaveCache = false;
     }
@@ -713,7 +760,7 @@ TextureLoadQueueDataResult* CMobileGameRenderer::LoadChunkTexCallback(TextureLoa
     if (!fileOpened)
         return nullptr;
 
-    LOGIF("[GameCore] Load block tex : x: %d y: %d id: %d", info->x, info->y, info->id);
+    LOGIF(LOG_TAG, "Load block tex : x: %d y: %d id: %d", info->x, info->y, info->id);
 
     auto imgSize = fileManager->CurrentFileLoader->GetImageSize();
     int chunkW = (int)imgSize.x / renderer->panoramaFullSplitW;
@@ -750,10 +797,11 @@ TextureLoadQueueDataResult* CMobileGameRenderer::LoadTexCallback(TextureLoadQueu
         return _this->LoadChunkTexCallback(info, texture);
 }
 void CMobileGameRenderer::FileCloseCallback(void* data) {
-    auto* _this = (CMobileGameRenderer*)data;
-    if(_this->currentFileIsVideo)
+    auto *_this = (CMobileGameRenderer *) data;
+    if (_this->currentFileIsVideo && _this->player->GetVideoState() > CCVideoState::NotOpen) {
+        _this->logger->Log(LOG_TAG, "Go close video");
         _this->player->CloseVideo();
-    else {
+    } else {
         _this->renderer->panoramaThumbnailTex = nullptr;
         _this->renderer->renderPanoramaFull = false;
         _this->renderer->ReleaseTexPool();
@@ -790,7 +838,7 @@ void CMobileGameRenderer::VideoPlayerEventCallBack(CCVideoPlayer* player, int me
             _this->renderer->VideoTexDetermineSize(&w, &h);
             _this->player->InitParams.DestWidth = w;
             _this->player->InitParams.DestHeight = h;
-            _this->logger->Log("[GameCore] Adjust video to size : %dx%d", w, h);
+            _this->logger->Log(LOG_TAG, "Adjust video to size : %dx%d", w, h);
             break;
         }
         case PLAYER_EVENT_OPEN_DONE: {
@@ -798,30 +846,33 @@ void CMobileGameRenderer::VideoPlayerEventCallBack(CCVideoPlayer* player, int me
             _this->renderer->renderOn = true;
             _this->uiInfo->currentImageOpened = true;
             _this->uiInfo->currentImageLoading = false;
+            _this->lastError = VR_ERR_SUCCESS;
+            _this->SwitchMode(_this->mode);
             _this->uiEventDistributor->SendEvent(CCMobileGameUIEvent::UiInfoChanged);
             _this->uiEventDistributor->SendEvent(CCMobileGameUIEvent::MarkLoadingEnd);
             _this->player->SetVideoState(CCVideoState::Playing);
-            _this->logger->Log("[GameCore] Video open done");
+            _this->logger->Log(LOG_TAG, "Video open done");
             break;
         }
         case PLAYER_EVENT_OPEN_FAIED: {
-            _this->lastImageError = player->GetLastError();
-            _this->logger->LogError2("[GameCore] Video file open failed : %s", player->GetLastError());
-            _this->ShowErrorDialog();
+            _this->lastError = player->GetLastError();
+            _this->logger->LogError2(LOG_TAG, "Video file open failed : %s", player->GetLastError());
+            _this->FinishLoadAndNotifyError();
             break;
         }
         case PLAYER_EVENT_CLOSED: {
-            _this->logger->Log("[GameCore] Video closed");
+            _this->logger->Log(LOG_TAG, "Video closed");
             _this->fileOpened = false;
             _this->renderer->renderOn = false;
             _this->currentFileIsVideo = false;
             _this->FileCloseCallback(_this);
             break;
         }
-        case PLAYER_EVENT_PLAY_DONE:
-            _this->logger->Log("[GameCore] Video play done");
+        case PLAYER_EVENT_PLAY_DONE: {
+            _this->logger->Log(LOG_TAG, "Video play done");
             _this->uiEventDistributor->SendEvent(CCMobileGameUIEvent::VideoStateChanged);
             break;
+        }
         default: break;
     }
 }
@@ -839,6 +890,8 @@ float CMobileGameRenderer::GetMouseSensitivityInFlat() {
 void CMobileGameRenderer::SwitchMode(PanoramaMode panoramaMode)
 {
     mode = panoramaMode;
+    if(renderer == nullptr)
+        return;
     renderer->renderPanoramaFull = false;
     switch (mode)
     {
@@ -856,7 +909,7 @@ void CMobileGameRenderer::SwitchMode(PanoramaMode panoramaMode)
         MouseInFlatSensitivityMax = 0.001f;
         MouseInFlatSensitivityMin = 0.0001f;
         break;
-    case PanoramaFullOrginal:
+    case PanoramaFullOriginal:
         camera->Projection = CCameraProjection::Orthographic;
         camera->SetMode(CCPanoramaCameraMode::OrthoZoom);
         camera->ForceUpdate();
@@ -900,8 +953,8 @@ void CMobileGameRenderer::SwitchMode(PanoramaMode panoramaMode)
         camera->Projection = CCameraProjection::Perspective;
         camera->SetMode(CCPanoramaCameraMode::CenterRoate);
         camera->Position.z = 0.0f;
-        camera->FiledOfView = 70.0f;
-        camera->FovMin = 5.0f;
+        camera->FiledOfView = 100.0f;
+        camera->FovMin = fullChunkLoadEnabled ? 5.0f : 25.0f;
         camera->FovMax = 120.0f;
         camera->ForceUpdate();
         renderer->renderPanoramaFull = fullChunkLoadEnabled && shouldSplitFullImage && camera->FiledOfView < 30;
@@ -914,8 +967,8 @@ void CMobileGameRenderer::SwitchMode(PanoramaMode panoramaMode)
         camera->Projection = CCameraProjection::Perspective;
         camera->SetMode(CCPanoramaCameraMode::CenterRoate);
         camera->Position.z = 0.5f;
-        camera->FiledOfView = 50.0f;
-        camera->FovMin = 5.0f;
+        camera->FiledOfView = 75.0f;
+        camera->FovMin = fullChunkLoadEnabled ? 5.0f : 25.0f;
         camera->FovMax = 75.0f;
         renderer->ResetModel();
         renderer->renderPanoramaFull = fullChunkLoadEnabled && shouldSplitFullImage && camera->FiledOfView < 30;
@@ -929,7 +982,7 @@ void CMobileGameRenderer::SwitchMode(PanoramaMode panoramaMode)
         camera->SetMode(CCPanoramaCameraMode::CenterRoate);
         camera->FiledOfView = 130.0f;
         camera->Position.z = 1.5f;
-        camera->FovMin = 25.0f;
+        camera->FovMin = 45.0f;
         camera->FovMax = 130.0f;
         renderer->ResetModel();
         renderer->renderPanoramaFull = false;
@@ -994,6 +1047,7 @@ int CMobileGameRenderer::GetIntProp(int id) {
     switch(id) {
         case PROP_VIDEO_VOLUME: return player->GetVideoVolume();
         case PROP_PANORAMA_MODE: return (int)mode;
+        case PROP_LAST_ERROR: return lastError;
         default: break;
     }
     return 0;
@@ -1027,16 +1081,17 @@ bool CMobileGameRenderer::GetBoolProp(int id) {
 void CMobileGameRenderer::SetProp(int id, char* string) {
     switch (id) {
         case PROP_CACHE_PATH: SetCachePath(string); break;
-        case PROP_FILE_PATH: SetOpenFilePath(string); break;
+        case PROP_SMALL_PANORAMA_PATH: currentFileSmallThumbnailCachePath = string; break;
+        case PROP_FILE_PATH: currentOpenFilePath = string; break;
         default: break;
     }
 }
 const char* CMobileGameRenderer::GetProp(int id) {
     switch (id) {
         case PROP_CACHE_PATH: return viewCachePath.c_str();
-        case PROP_LAST_ERROR: return lastImageError.c_str();
         case PROP_FILE_PATH: return currentOpenFilePath.c_str();
         case PROP_FILE_CACHE_PATH: return currentFileCachePath.c_str();
+        case PROP_SMALL_PANORAMA_PATH: return currentFileSmallThumbnailCachePath.c_str();
         default: break;
     }
     return nullptr;
