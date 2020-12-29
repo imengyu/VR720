@@ -16,14 +16,15 @@
         <Button
             android:id="@+id/button_video_play_pause"
             style="@style/ButtonTransParent"
-            android:layout_width="25dp"
-            android:layout_height="25dp"
+            android:layout_width="40dp"
+            android:layout_height="match_parent"
             android:layout_alignParentStart="true"
             android:layout_centerVertical="true"
-            android:layout_marginStart="10dp"
-            android:layout_marginEnd="0dp"
-            android:foreground="@drawable/ic_play"
-            android:foregroundTint="#FFFFFF" />
+            android:drawableStart="@drawable/ic_play"
+            android:drawableTint="#FFFFFF"
+            android:foregroundTint="#FFFFFF"
+            android:paddingStart="6dp"
+            android:paddingEnd="0dp" />
 
         <SeekBar
             android:id="@+id/seek_video"

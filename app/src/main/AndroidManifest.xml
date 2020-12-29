@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.imengyu.vr720">
-    
+
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
-    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <!-- Tell the system this app requires OpenGL ES 2.0. -->
     <uses-feature
@@ -28,12 +28,11 @@
 
         <activity
             android:name=".LunchActivity"
-            android:theme="@style/LunchTheme"
             android:label="@string/title_activity_launcher"
-            android:screenOrientation="portrait">
+            android:screenOrientation="portrait"
+            android:theme="@style/LunchTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -42,18 +41,22 @@
             android:label="@string/title_activity_feedback"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
+            android:name=".HtmlActivity"
+            android:label="@string/title_activity_html"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
             android:name=".HelpActivity"
             android:label="@string/title_activity_help"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".MainActivity"
-            android:label="@string/app_name"
             android:configChanges="orientation|screenSize"
+            android:label="@string/app_name"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".GalleryActivity"
-            android:label="@string/title_activity_gallery"
             android:configChanges="orientation|screenSize"
+            android:label="@string/title_activity_gallery"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".AboutActivity"
@@ -65,17 +68,17 @@
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".PanoActivity"
-            android:label="@string/title_activity_pano"
             android:configChanges="orientation|screenSize"
+            android:label="@string/title_activity_pano"
             android:theme="@style/AppTheme.NoActionBar">
-
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
+
                 <category android:name="android.intent.category.DEFAULT" />
 
                 <data android:mimeType="image/*" />
                 <data android:scheme="content" />
-                <data android:host="*"/>
+                <data android:host="*" />
             </intent-filter>
         </activity>
 

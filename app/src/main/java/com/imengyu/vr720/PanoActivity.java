@@ -278,6 +278,7 @@ public class PanoActivity extends AppCompatActivity {
     private final TimerTask task = new TimerTask() {
         @Override
         public void run() {
+            Thread.currentThread().setName("GameUpdate");
             renderer.onMainThread();
         }
     };
@@ -802,24 +803,16 @@ public class PanoActivity extends AppCompatActivity {
        }
     }
     private void updateVideoControlState() {
-        text_video_current_pos.setText(StringUtils.getTimeString(renderer.getVideoPos()));
-        if(!lockVideoSeekUpdate)
-            seek_video.setProgress((int)((renderer.getVideoPos() / (float)currentVideoLength) * 100));
+        if(fileLoaded) {
+            text_video_current_pos.setText(StringUtils.getTimeString(renderer.getVideoPos()));
+            if (!lockVideoSeekUpdate)
+                seek_video.setProgress((int) ((renderer.getVideoPos() / (float) currentVideoLength) * 100));
+        }
     }
     private void updateVideoControlPlayState() {
-        int state = renderer.getVideoState();
-        switch (state) {
-            case NativeVR720Renderer.VideoState_Paused:
-            case NativeVR720Renderer.VideoState_Ended:
-
-                currentVideoPlaying = false;
-                break;
-            case NativeVR720Renderer.VideoState_Playing:
-                currentVideoPlaying = true;
-                break;
-
-        }
-        button_video_play_pause.setForeground(currentVideoPlaying ? ic_pause : ic_play);
+        int state = fileLoaded ? renderer.getVideoState() : NativeVR720Renderer.VideoState_NotOpen;
+        currentVideoPlaying = (state == NativeVR720Renderer.VideoState_Playing);
+        button_video_play_pause.setCompoundDrawables(currentVideoPlaying ? ic_pause : ic_play, null, null, null);
     }
     private void updateToolbarStateInVideoMode() {
         if(currentFileIsVideo && toolbarOn) {
@@ -1012,7 +1005,8 @@ public class PanoActivity extends AppCompatActivity {
                 if (closeMarked) {
                     Log.i(TAG, "Destroy renderer at FileClosed");
                     renderer.destroy();
-                } else if (openNextMarked) {
+                }
+                else if (openNextMarked) {
                     openNextMarked = false;
                     loadFile(openNextPath, false);
                     openNextPath = null;

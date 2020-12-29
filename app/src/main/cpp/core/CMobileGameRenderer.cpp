@@ -86,8 +86,10 @@ void CMobileGameRenderer::DoOpenAsVideo() {
     renderer->panoramaThumbnailTex = new CCTexture();
     renderer->panoramaThumbnailTex->backupData = true;
     renderer->panoramaTexPool.push_back(renderer->panoramaThumbnailTex);
-    renderer->panoramaThumbnailTex->LoadGridTexture(256, 256, 16, GL_RGBA, true);
     renderer->UpdateMainModelTex();
+
+    //测试加载缩略图
+    TryLoadSmallThumbnail();
 
     shouldSplitFullImage = false;
     thisFileShouldSaveCache = false;
@@ -562,7 +564,9 @@ void CMobileGameRenderer::Render(float FrameTime)
     //在渲染线程中加载贴图
     //===========================
 
-    texLoadQueue->ResolveRender();
+    if (fileOpened) {
+        texLoadQueue->ResolveRender();
+    }
 
     if (shouldOpenFile && renderInitFinish) {
         shouldOpenFile = false;
@@ -668,6 +672,9 @@ TextureLoadQueueDataResult* CMobileGameRenderer::LoadMainTexCallback(TextureLoad
 
     UNREFERENCED_PARAMETER(info);
     UNREFERENCED_PARAMETER(texture);
+
+    if(destroying)
+        return nullptr;
 
     LOGI(LOG_TAG, "Load main tex: id: -1");
     uiInfo->currentImageLoading = true;
@@ -804,6 +811,7 @@ void CMobileGameRenderer::FileCloseCallback(void* data) {
     } else {
         _this->renderer->panoramaThumbnailTex = nullptr;
         _this->renderer->renderPanoramaFull = false;
+        _this->texLoadQueue->Clear();
         _this->renderer->ReleaseTexPool();
         _this->renderer->ReleaseFullModel();
         _this->renderer->UpdateMainModelTex();
@@ -969,7 +977,7 @@ void CMobileGameRenderer::SwitchMode(PanoramaMode panoramaMode)
         camera->Position.z = 0.5f;
         camera->FiledOfView = 75.0f;
         camera->FovMin = fullChunkLoadEnabled ? 5.0f : 25.0f;
-        camera->FovMax = 75.0f;
+        camera->FovMax = 90.0f;
         renderer->ResetModel();
         renderer->renderPanoramaFull = fullChunkLoadEnabled && shouldSplitFullImage && camera->FiledOfView < 30;
         renderer->renderNoPanoramaSmall = false;

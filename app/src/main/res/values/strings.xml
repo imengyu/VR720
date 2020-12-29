@@ -1,6 +1,6 @@
 <resources>
-    <string name="app_name">720全景图查看器</string>
-    <string name="app_introduction">一款精简的全景图浏览软件</string>
+    <string name="app_name">720全景查看器</string>
+    <string name="app_introduction">一款精简的720度全景浏览软件</string>
 
     <!-- titles -->
     <string name="navigation_drawer_open">开启侧边栏</string>
@@ -30,7 +30,7 @@
     <string name="action_import_pano">导入全景图</string>
     <string name="action_settings">设置</string>
     <string name="action_about">关于本软件</string>
-    <string name="action_send_feed_back">发送反馈</string>
+    <string name="action_send_feed_back">提交建议或反馈</string>
     <string name="action_quit">退出</string>
 
     <string name="action_ok">确定</string>
@@ -82,6 +82,7 @@
         © 2020 By 梦欤 All rights reserved. 
         \n<a href="https://imengyu.top">imengyu.top</a>
     </string>
+    <string name="text_copyright_small">© 2020 By 梦欤</string>
     <string name="text_enter_gallery_name">输入分类收藏夹名称</string>
     <string name="text_time_default">0:00</string>
 
@@ -182,7 +183,7 @@
 
     <string name="text_main_empty">
         这里空空如也，一张全景图都没有呢
-        <br/>\n点击下面的 “+” 导入一些全景图吧！
+        <br />\n点击下面的 “+” 导入一些全景图吧！
     </string>
 
     <string name="text_no_storage_permission">存储权限不可用</string>
@@ -270,6 +271,8 @@
     <string name="text_agreement_lost">如果您不同意或拒绝授予这些权限，您将无法使用 App 的部分或全部功能。</string>
     <string name="text_agreement_allow">同意并继续</string>
     <string name="text_agreement_not_allow">不同意并退出</string>
+    <string name="title_activity_html">HtmlActivity</string>
+
 
 
 </resources>

@@ -10,20 +10,7 @@ CCTextureLoadQueue::CCTextureLoadQueue()
 }
 CCTextureLoadQueue::~CCTextureLoadQueue()
 {
-	if (queue.size() > 0) {
-
-		logger->Log(LOG_TAG, "Destroy not load Textures, count : %d", queue.size());
-
-		std::list<TextureLoadQueueInfo*>::iterator it;
-		for (it = queue.begin(); it != queue.end(); it++)
-		{
-			TextureLoadQueueInfo* dat = *it;
-			if (dat->pendingResult)
-				delete dat->pendingResult;
-			delete dat;
-		}
-		queue.clear();
-	}
+	Clear();
 }
 
 CCTexture* CCTextureLoadQueue::Push(CCTexture* texture, int x, int y, int id)
@@ -89,5 +76,21 @@ void CCTextureLoadQueue::ResolveRender()
 		delete pendingLoadDataTexture;
 		pendingLoadDataTexture = nullptr;
 		pendingTexture = nullptr;
+	}
+}
+void CCTextureLoadQueue::Clear() {
+	if (!queue.empty()) {
+
+		logger->Log(LOG_TAG, "Destroy not load Textures, count : %d", queue.size());
+
+		std::list<TextureLoadQueueInfo*>::iterator it;
+		for (it = queue.begin(); it != queue.end(); it++)
+		{
+			TextureLoadQueueInfo* dat = *it;
+			if (dat->pendingResult)
+				delete dat->pendingResult;
+			delete dat;
+		}
+		queue.clear();
 	}
 }

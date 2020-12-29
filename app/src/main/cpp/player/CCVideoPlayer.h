@@ -84,6 +84,7 @@ protected:
 
     CCDecodeState decodeState = CCDecodeState::NotInit;// 解码状态
     CCVideoState videoState = CCVideoState::NotOpen;
+    bool forceStopSeek = false;
 
     CCDecodeQueue decodeQueue;
     CCPlayerRender *render = nullptr;
@@ -103,7 +104,7 @@ private:
 
     //线程控制
 
-    void StartDecoderThread();
+    void StartDecoderThread(bool isStartBySeek = false);
     void StopDecoderThread() ;
 
     pthread_t decoderWorkerThread = 0;
@@ -132,8 +133,6 @@ private:
 
     void StartAll();
     void StopAll();
-
-    void FlushStopStatus();
 
     //播放器工作子线程控制
 

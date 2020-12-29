@@ -37,7 +37,7 @@ public:
     void AudioEnqueue(AVPacket *pkt);
     AVPacket* AudioDequeue();
 
-    void VideoDrop();
+    int VideoDrop(double targetClock);
     size_t VideoQueueSize();
     void VideoEnqueue(AVPacket *pkt);
     AVPacket* VideoDequeue();
@@ -45,7 +45,6 @@ public:
     void AudioFrameEnqueue(AVFrame *frame);
     AVFrame* AudioFrameDequeue();
 
-    void VideoFrameDrop();
     void VideoFrameEnqueue(AVFrame *frame);
     AVFrame* VideoFrameDequeue();
 
@@ -61,13 +60,12 @@ private:
     std::list<AVFrame*>  videoFrameQueue;
     std::list<AVFrame*>  audioFrameQueue;
 
+    bool initState = false;
     CCVideoPlayerExternalData * externalData;
 
     pthread_mutex_t packetRequestLock = PTHREAD_MUTEX_INITIALIZER;
-    pthread_mutex_t packetReleaseLock = PTHREAD_MUTEX_INITIALIZER;
-
     pthread_mutex_t frameRequestLock = PTHREAD_MUTEX_INITIALIZER;
-    pthread_mutex_t frameReleaseLock = PTHREAD_MUTEX_INITIALIZER;
+    pthread_mutex_t videoDropLock = PTHREAD_MUTEX_INITIALIZER;
 
     const char* LOG_TAG = "CCDecodeQueue";
 };

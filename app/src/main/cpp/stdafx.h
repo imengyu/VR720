@@ -6,6 +6,7 @@
 //android ndk support
 #include <jni.h>
 #include <sys/types.h>
+#include <sys/prctl.h>
 #include <unistd.h>
 
 //android log

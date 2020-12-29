@@ -78,6 +78,8 @@ public:
     AVCodecContext *VideoCodecContext = nullptr;
     AVCodecContext *AudioCodecContext = nullptr;
     AVFormatContext *FormatContext = nullptr;
+    AVRational VideoTimeBase;
+    AVRational AudioTimeBase;
     double CurrentFps = 0;
     int64_t StartTime = 0;
 };
@@ -104,12 +106,14 @@ enum class CCDecodeState {
     Finished,
     FinishedWithError,
     Decoding,
+    DecodingToSeekPos,
     Finish,
 };
 
 enum class CCRenderState {
     NotRender,
     Rendering,
+    RenderingToSeekPos,
 };
 
 #define AUDIO_DEST_SAMPLE_RATE 44100

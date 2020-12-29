@@ -10,8 +10,16 @@
 #include <SLES/OpenSLES_Platform.h>
 #include <SLES/OpenSLES_Android.h>
 
-class CCAudioDevice {
+typedef struct {
+    uint8_t *buffer;
+    int bufferLen;
+} AUDIO_BUFFER;
 
+class CCAudioDevice;
+typedef void (*CCAudioDeviceBufferCallback)(CCAudioDevice* dev, void* customData, uint8_t **buf, int *len);
+
+class CCAudioDevice {
+    const char* LOG_TAG = "CCAudioDevice";
 public:
 
     CCAudioDevice(CCVideoPlayerExternalData *externalData);
@@ -20,6 +28,7 @@ public:
     virtual void Write(uint8_t *buf, int len, int64_t pts);
     virtual void Pause(int pause);
     virtual void Reset();
+    virtual void SetBufferCallback(CCAudioDeviceBufferCallback callback, void* data);
 
     /**
      * 采样格式：16位
@@ -33,8 +42,20 @@ public:
     virtual int GetSampleRate(int spr) {
         return AUDIO_DEST_SAMPLE_RATE; //44100Hz
     }
+    virtual size_t GetQueueSize() {
+        return buffers.size(); //44100Hz
+    }
+
+
 
 private:
+
+    bool isPlaying = false;
+    bool isSurePlaying = false;
+
+    CCAudioDeviceBufferCallback bufferCallback = nullptr;
+    void* bufferCallbackData = nullptr;
+
     //引擎
     SLObjectItf engineObject = nullptr;
     //引擎接口
@@ -50,8 +71,9 @@ private:
 
     static void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context);
 
-    uint8_t *buffer = nullptr;
-    int bufferLen = 0;
+    std::list<AUDIO_BUFFER*>buffers;
+
+    AUDIO_BUFFER* popBuffer();
 };
 
 

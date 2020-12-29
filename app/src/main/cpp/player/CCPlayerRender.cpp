@@ -51,7 +51,8 @@ bool CCPlayerRender::Init(CCVideoPlayerExternalData *data) {
     swr_init(swrContext);
 
     // 重采样后一个通道采样数
-    destNbSample = (int)av_rescale_rnd(ACC_NB_SAMPLES,
+    destNbSample = (int)av_rescale_rnd(
+            ACC_NB_SAMPLES,
             audioDevice->GetSampleRate(externalData->AudioCodecContext->sample_rate),
             externalData->AudioCodecContext->sample_rate, AV_ROUND_UP);
     // 重采样后一帧数据的大小
@@ -60,9 +61,7 @@ bool CCPlayerRender::Init(CCVideoPlayerExternalData *data) {
             destNbSample, audioDevice->GetSampleFmt(), 1);
 
     audioOutBuffer[0] = (uint8_t *) malloc(destDataSize);
-
-    volZeroDb = SwVolScalerInit(volScaler, SW_VOLUME_MINDB, SW_VOLUME_MAXDB);
-    volCur = volZeroDb;
+    audioDevice->SetBufferCallback(RenderAudioThreadStub, this);
 
     return true;
 }
@@ -92,27 +91,26 @@ void CCPlayerRender::Destroy() {
 void CCPlayerRender::Pause() {
     status = CCRenderState::NotRender;
 
-
     void* retval;
     if(renderVideoThread)
         pthread_join(renderVideoThread, &retval);
+    renderVideoThread = 0;
     if(renderAudioThread)
         pthread_join(renderAudioThread, &retval);
-
-    renderVideoThread = 0;
     renderAudioThread = 0;
 
     audioDevice->Pause(true);
     videoDevice->Pause(true);
 }
-void CCPlayerRender::Start() {
+void CCPlayerRender::Start(bool isStartBySeek) {
+
+    status = isStartBySeek ? CCRenderState::RenderingToSeekPos : CCRenderState::Rendering;
 
     audioDevice->Pause(false);
     videoDevice->Pause(false);
 
-    status = CCRenderState::Rendering;
     pthread_create(&renderVideoThread, nullptr, RenderVideoThreadStub, this);
-    pthread_create(&renderAudioThread, nullptr, RenderAudioThreadStub, this);
+    //pthread_create(&renderAudioThread, nullptr, RenderAudioThreadStub, this);
 }
 void CCPlayerRender::Reset() {
     audioDevice->Reset();
@@ -131,10 +129,14 @@ CCAudioDevice *CCPlayerRender::CreateAudioDevice(CCVideoPlayerExternalData *data
     return new CCAudioDevice(data);
 }
 
+void *CCPlayerRender::RenderVideoThreadStub(void *param) {
+    prctl(PR_SET_NAME, "RenderVideo");
+    return ((CCPlayerRender*)param)->RenderVideoThread();
+}
 void *CCPlayerRender::RenderVideoThread() {
-    LOGD(LOG_TAG, "RenderVideoThread Start");
+    LOGD(LOG_TAG, "RenderVideo Start");
 
-    while (status == CCRenderState::Rendering) {
+    while (status == CCRenderState::Rendering || status == CCRenderState::RenderingToSeekPos) {
 
         if(outFrame == nullptr || outFrameDestFormat != externalData->InitParams->DestFormat
             || outFrameDestWidth != externalData->InitParams->DestWidth
@@ -156,44 +158,82 @@ void *CCPlayerRender::RenderVideoThread() {
         AVFrame *frame = externalData->DecodeQueue->VideoFrameDequeue();
 
         if(frame == nullptr) {
-            av_usleep((int64_t)(1000000 * frame_delays));
+            av_usleep((int64_t)(1000));
             continue;
         }
 
         //时钟
-        AVRational time_base = externalData->VideoCodecContext->framerate;
-        currentVideoClock = frame->best_effort_timestamp * av_q2d(time_base);
+        AVRational time_base = externalData->VideoTimeBase;
+        if ((currentVideoClock = frame->best_effort_timestamp) == AV_NOPTS_VALUE)
+            currentVideoClock = 0;
+        else
+            currentVideoClock = frame->best_effort_timestamp * av_q2d(time_base);
 
         curVideoDts = frame->pkt_dts;
         curVideoPts = frame->pts;
 
+        if(currentVideoClock == 0)
+            startTime = av_gettime() / 1000000.0;
+
+        //延迟计算
+        double extra_delay = frame->repeat_pict / (2 * externalData->CurrentFps);
+        double delays = extra_delay + frame_delays;
+
+        videoPlayTime = curVideoPts * av_q2d(time_base);
+        //纠正时间
+        videoPlayTime = VideoPlayTimeSynchronize(frame, videoPlayTime);
+        videoDelay = videoPlayTime - videoLastPlayTime;
+        if (videoDelay <= 0 || videoDelay > 1)
+            videoDelay = videoLastDelay;
+        videoLastDelay = videoDelay;
+        videoLastPlayTime = videoPlayTime;
+
         if(videoSeeking) {
-            if(curVideoPts >= seekDest) videoSeeking = false;
+            if(curVideoPts >= seekDest) {
+                videoSeeking = false;
+                currentSeekToPosFinished = true;
+                if(status == CCRenderState::RenderingToSeekPos) {
+                    externalData->DecodeQueue->ReleaseFrame(frame);
+                    LOGD(LOG_TAG, "RenderVideoThread End because seek to dest pos");
+                    return nullptr;
+                }
+            }
         }
         //与音频同步
         else if(externalData->AudioCodecContext != nullptr) {
-            double extra_delay = frame->repeat_pict / (2 * externalData->CurrentFps);
-            double delays = extra_delay + frame_delays;
-            double diff = currentVideoClock - currentAudioClock;
-            if (diff > 0) {
-                //大于0 表示视频比较快
-                LOGDF(LOG_TAG, "Video fast: %lf", diff);
-                if(diff > 0.15) diff = 0.15;
-                av_usleep((int64_t) ((delays + diff) * 1000000));
-            } else if (diff < 0) {
-                //不睡了，快点赶上音频
-                LOGDF(LOG_TAG, "Audio fast: %lf",diff);
-                // 视频包积压的太多了 （丢包）
-                if (fabs(diff) >= 0.05 && frame->flags != AV_PKT_FLAG_KEY) {
-                    LOGDF(LOG_TAG, "Skip frame %ld", frame->pts);
 
-                    externalData->DecodeQueue->ReleaseFrame(frame);
-                    externalData->DecodeQueue->VideoDrop(); //丢包
-                    continue;//每次丢一帧，循环丢，重新计算延迟时间。
-                } else {
-                    //不睡了 快点赶上 音频
+
+            //音频与视频的时间差
+            double diff = currentVideoClock - currentAudioClock;
+            //在合理范围外  才会延迟  加快
+            syncThreshold = (videoDelay > 0.01 ? 0.01 : videoDelay);
+
+            if (fabs(diff) < 10) {
+                if (diff <= -syncThreshold) {
+                    videoDelay = 0;
+                    //如果视频太落后于音频，那么必须丢包，不然赶不上了
+                    if(diff < 0.5) {
+                        int count = externalData->DecodeQueue->VideoDrop(currentAudioClock);
+                        LOGDF(LOG_TAG, "Sync: Video too slow, skip frame : %d, %f (v/a -> %f/%f)", count, diff, currentVideoClock, currentAudioClock);
+                    } else {
+                        LOGDF(LOG_TAG, "Sync: Video slow : %f (v/a -> %f/%f)", diff, currentVideoClock, currentAudioClock);
+                    }
+                } else if (diff >= syncThreshold) {
+                    videoDelay = 2 * videoDelay;
+                    LOGDF(LOG_TAG, "Sync: Audio slow : %f (v/a -> %f/%f)", diff, currentVideoClock, currentAudioClock);
                 }
             }
+
+            startTime += videoDelay;
+            videoActualDelay = startTime - av_gettime() / 1000000.0;
+            if (videoActualDelay < 0.01)
+                videoActualDelay = 0.01;
+
+            av_usleep((int64_t)(videoActualDelay * 1000000.0 + 6000));
+        }
+        else {
+            //正常播放
+            av_usleep((int64_t)(delays * 1000000));
         }
 
         //seeking时不刷新屏幕，直接跳过
@@ -211,7 +251,7 @@ void *CCPlayerRender::RenderVideoThread() {
             uint8_t *src = outFrame->data[0];
             int srcStride = outFrame->linesize[0];
             int destStride = 0;
-            uint8_t *target = videoDevice->Lock(src, srcStride, &destStride, 0);
+            uint8_t *target = videoDevice->Lock(src, srcStride, &destStride, curVideoPts);
             if (target && src) {
                 for (int i = 0, c = externalData->VideoCodecContext->height; i < c; i++)
                     memcpy(target + i * destStride, src + i * srcStride, srcStride);
@@ -230,24 +270,21 @@ void *CCPlayerRender::RenderVideoThread() {
     LOGD(LOG_TAG, "RenderVideoThread End");
     return nullptr;
 }
+/*
 void *CCPlayerRender::RenderAudioThread() {
     LOGD(LOG_TAG, "RenderAudioThread Start");
 
     while (status == CCRenderState::Rendering) {
-        double frame_delays = 1.0 / externalData->CurrentFps;
 
         AVFrame *frame = externalData->DecodeQueue->AudioFrameDequeue();
         if(frame == nullptr) {
-            av_usleep((int64_t)(1000000 * frame_delays));
+            av_usleep((int64_t)(1000000));
             continue;
         }
 
-        double extra_delay = frame->repeat_pict / (2 * externalData->CurrentFps);
-        double delays = extra_delay + frame_delays;
-
         //时钟
-        AVRational time_base = externalData->AudioCodecContext->framerate;
-        currentAudioClock = frame->pts * av_q2d(time_base);
+        AVRational time_base = externalData->AudioTimeBase;
+        currentAudioClock = frame->best_effort_timestamp * av_q2d(time_base);
 
         curAudioDts = frame->pkt_dts;
         curAudioPts = frame->pts;
@@ -256,74 +293,108 @@ void *CCPlayerRender::RenderAudioThread() {
             if(curAudioPts >= seekDest) audioSeeking = false;
         } else {
             // 转换，返回每个通道的样本数
-            int ret = swr_convert(swrContext, audioOutBuffer, (int) destDataSize / 2,
+            int samples = swr_convert(swrContext, audioOutBuffer, (int) destDataSize / 2,
                                   (const uint8_t **) frame->data, frame->nb_samples);
-            if (ret > 0) {
-                SwVolScalerRun((int16_t *) audioOutBuffer[0], destDataSize / sizeof(int16_t),
-                               volScaler[volCur]);
-                curAudioPts += 5 * destDataSize / (2 * audioDevice->GetSampleRate(
-                        externalData->AudioCodecContext->sample_rate));
+            if (samples > 0)
                 audioDevice->Write(audioOutBuffer[0], (size_t) destDataSize, 0);
-            }
+
+            double frame_delays = 1.0 / externalData->CurrentFps;
+            double extra_delay = frame->repeat_pict / (2 * externalData->CurrentFps);
+            double delays = (extra_delay + frame_delays) / 2;
+            av_usleep((int64_t)(delays * 1000000));
         }
 
         externalData->DecodeQueue->ReleaseFrame(frame);
-
-        //睡眠
-        av_usleep((int64_t)(delays * 1000000));
     }
 
     LOGD(LOG_TAG, "RenderAudioThread End");
     return nullptr;
 }
-void *CCPlayerRender::RenderVideoThreadStub(void *param) {
-    return ((CCPlayerRender*)param)->RenderVideoThread();
-}
 void *CCPlayerRender::RenderAudioThreadStub(void *param) {
     return ((CCPlayerRender*)param)->RenderAudioThread();
 }
+*/
+void CCPlayerRender::RenderAudioThreadStub(CCAudioDevice* dev, void* customData, uint8_t **buf, int *len) {
+    return ((CCPlayerRender*)customData)->RenderAudioThread(dev, buf, len);
+}
+void CCPlayerRender::RenderAudioThread(CCAudioDevice* dev, uint8_t **buf, int *len) {
+    if (status == CCRenderState::Rendering || status == CCRenderState::RenderingToSeekPos) {
+
+        AVFrame *frame = nullptr;
+        int noneFrameTick = 0;
+GET_FRAME:
+        while(frame == nullptr) {
+            av_usleep((int64_t)(10000));
+            frame = externalData->DecodeQueue->AudioFrameDequeue();
+            if(noneFrameTick < 32) noneFrameTick ++;
+            else return;
+        }
+
+        //时钟
+        AVRational time_base = externalData->AudioTimeBase;
+        if (frame->best_effort_timestamp == AV_NOPTS_VALUE)
+            currentAudioClock = 0;
+        else
+            currentAudioClock = frame->best_effort_timestamp * av_q2d(time_base);
+
+        curAudioDts = frame->pkt_dts;
+        curAudioPts = frame->pts;
+
+        //seek时直接跳过至目标帧
+        if(audioSeeking) {
+            if(curAudioPts >= seekDest) audioSeeking = false;
+            else {
+                frame = nullptr;
+                noneFrameTick = 0;
+                goto GET_FRAME;
+            }
+        }
+
+        if(!audioSeeking) {
+            // 转换，返回每个通道的样本数
+            int samples = swr_convert(swrContext, audioOutBuffer, (int) destDataSize / 2,
+                                      (const uint8_t **) frame->data, frame->nb_samples);
+            if (samples > 0) {
+                *buf = audioOutBuffer[0];
+                *len = destDataSize;
+
+                //pts时间+当前帧播放需要的时间
+                currentAudioClock += samples / ((double) (audioDevice->GetSampleRate(0) * 2 * 2));
+            }
+
+            //audioDevice->Write(audioOutBuffer[0], (size_t) destDataSize, 0);
+
+            //double frame_delays = 1.0 / externalData->CurrentFps;
+            //double extra_delay = frame->repeat_pict / (2 * externalData->CurrentFps);
+            //double delays = (extra_delay + frame_delays) / 2;
+            //av_usleep((int64_t)(delays * 1000000));
+        }
+
+        externalData->DecodeQueue->ReleaseFrame(frame);
+    }
+}
+
+double CCPlayerRender::VideoPlayTimeSynchronize(AVFrame *frame, double playTime) {
+    //clock是当前播放的时间位置
+    if (playTime != 0)
+        currentVideoClock = playTime;
+    else //pst为0 则先把pts设为上一帧时间
+        playTime = currentVideoClock;
+    //可能有pts为0 则主动增加clock
+    //需要求出扩展延时：
+    //使用AvCodecContext的而不是stream的
+
+    double frame_delay = av_q2d(externalData->VideoCodecContext->time_base);
+    double fps = 1 / frame_delay;
+    //pts 加上 这个延迟 是显示时间
+    double extra_delay = frame->repeat_pict / (2 * fps);
+    currentVideoClock += extra_delay + frame_delay;
+    return playTime;
+}
 
 void CCPlayerRender::SetVolume(int vol) {
-    vol += volZeroDb;
-    vol = MAX(vol, 0  );
-    vol = MIN(vol, 255);
-    volCur = vol;
+
 }
-
-int CCPlayerRender::SwVolScalerInit(int *scaler, int mindb, int maxdb)
-{
-    double tabdb[256];
-    double tabf [256];
-    int    z, i;
-
-    for (i=0; i<256; i++) {
-        tabdb[i]  = mindb + (maxdb - mindb) * i / 256.0;
-        tabf [i]  = pow(10.0, tabdb[i] / 20.0);
-        scaler[i] = (int)((1 << 14) * tabf[i]); // Q14 fix point
-    }
-
-    z = -mindb * 256 / (maxdb - mindb);
-    z = MAX(z, 0  );
-    z = MIN(z, 255);
-    scaler[0] = 0;        // mute
-    scaler[z] = (1 << 14);// 0db
-    return z;
-}
-void CCPlayerRender::SwVolScalerRun(int16_t *buf, int n, int multiplier)
-{
-    if (multiplier > (1 << 14)) {
-        int64_t v;
-        while (n--) {
-            v = ((int32_t)*buf * multiplier) >> 14;
-            v = MAX(v,-0x7fff);
-            v = MIN(v, 0x7fff);
-            *buf++ = (int16_t)v;
-        }
-    } else if (multiplier < (1 << 14)) {
-        while (n--) { *buf = ((int32_t)*buf * multiplier) >> 14; buf++; }
-    }
-}
-
 void CCPlayerRender::SetSeekDest(int64_t dest) {
     if(dest == -1) {
         seekDest = 0;
@@ -335,4 +406,5 @@ void CCPlayerRender::SetSeekDest(int64_t dest) {
         videoSeeking = true;
     }
 }
+
 

@@ -21,7 +21,7 @@ public:
 
     virtual bool Init(CCVideoPlayerExternalData *data);
     virtual void Destroy();
-    virtual void Start();
+    virtual void Start(bool isStartBySeek);
     virtual void Reset();
     virtual void Pause();
 
@@ -34,9 +34,17 @@ public:
     virtual int64_t GetCurAudioPts() { return curAudioPts; }
 
     virtual void SetVolume(int i);
-    virtual int GetVolume() { return volCur - volZeroDb; }
+    virtual int GetVolume() { return 0; }
 
     virtual void SetSeekDest(int64_t dest);
+
+    virtual bool IsCurrentSeekToPosFinished() {
+        if(currentSeekToPosFinished) {
+            currentSeekToPosFinished = false;
+            return true;
+        }
+        return false;
+    }
 
 protected:
 
@@ -65,10 +73,6 @@ private:
     double currentAudioClock = 0;
     double currentVideoClock = 0;
 
-    //软件音量控制
-    int volZeroDb = 0;
-    int volScaler[256];
-    int volCur = 0;
 
     int64_t seekDest = 0;
     bool audioSeeking = false;
@@ -80,6 +84,7 @@ private:
     CCVideoPlayerExternalData *externalData;
 
     CCRenderState status = CCRenderState::NotRender;
+    bool currentSeekToPosFinished = false;
 
     CCAudioDevice* audioDevice = nullptr;
     CCVideoDevice* videoDevice = nullptr;
@@ -95,13 +100,21 @@ private:
     pthread_t renderAudioThread = 0;
 
     static void* RenderVideoThreadStub(void *param);
-    static void* RenderAudioThreadStub(void *param);
-    void* RenderAudioThread();
+    //static void* RenderAudioThreadStub(void *param);
+    //void* RenderAudioThread();
+    static void RenderAudioThreadStub(CCAudioDevice* dev, void* customData, uint8_t **buf, int *len);
+    void RenderAudioThread(CCAudioDevice* dev, uint8_t **buf, int *len);
     void* RenderVideoThread();
 
-    int SwVolScalerInit(int *scaler, int mindb, int maxdb);
+    double videoLastPlayTime,  //上一帧的播放时间
+        videoPlayTime,             //当前帧的播放时间
+        videoLastDelay,    // 上一次播放视频的两帧视频间隔时间
+        videoDelay,         //两帧视频间隔时间
+        videoActualDelay,//真正需要延迟时间
+        syncThreshold, //合理的范围
+        startTime;  //从第一帧开始的绝对时间
 
-    void SwVolScalerRun(int16_t *buf, int n, int multiplier);
+    double VideoPlayTimeSynchronize(AVFrame *frame, double play);
 };
 
 

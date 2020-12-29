@@ -13,6 +13,9 @@
                       if(!view) return
 #define GET_VIEW_OR_RET(ptr,ret) auto* view = (CMobileOpenGLView*)native_ptr;\
                       if(!view) return ret
+/**
+ * 应用层入口函数
+ */
 
 /*
 CMobileOpenGLView* getJavaObjectOpenGLViewPtr(JNIEnv *env, jobject thiz) {

@@ -57,6 +57,7 @@ public:
 	 */
 	void ResolveRender();
 
+	void Clear();
 private:
 
 	Logger*logger = nullptr;
