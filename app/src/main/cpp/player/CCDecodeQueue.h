@@ -36,11 +36,13 @@ public:
     size_t AudioQueueSize();
     void AudioEnqueue(AVPacket *pkt);
     AVPacket* AudioDequeue();
+    void AudioQueueBack(AVPacket *packet);
 
     int VideoDrop(double targetClock);
     size_t VideoQueueSize();
     void VideoEnqueue(AVPacket *pkt);
     AVPacket* VideoDequeue();
+    void VideoQueueBack(AVPacket *packet);
 
     void AudioFrameEnqueue(AVFrame *frame);
     AVFrame* AudioFrameDequeue();
@@ -65,9 +67,9 @@ private:
 
     pthread_mutex_t packetRequestLock = PTHREAD_MUTEX_INITIALIZER;
     pthread_mutex_t frameRequestLock = PTHREAD_MUTEX_INITIALIZER;
-    pthread_mutex_t videoDropLock = PTHREAD_MUTEX_INITIALIZER;
 
     const char* LOG_TAG = "CCDecodeQueue";
+
 };
 
 

@@ -25,7 +25,7 @@ public class NativeVR720ErrorConverter {
             case VR_ERR_SUCCESS: return context.getString(R.string.text_success);
             case VR_ERR_FILE_NOT_EXISTS: return context.getString(R.string.text_error_file_not_exists);
             case VR_ERR_FILE_NOT_SUPPORT: return context.getString(R.string.text_error_file_not_support);
-            case VR_ERR_IMAGE_TOO_BIG: return context.getString(R.string.text_error_bad_image);
+            case VR_ERR_IMAGE_TOO_BIG: return context.getString(R.string.text_error_image_too_big);
             case VR_ERR_BIG_IMAGE_AND_NOT_JPG: return context.getString(R.string.text_error_big_image_and_not_jpg);
             case VR_ERR_BAD_IMAGE: return context.getString(R.string.text_error_bad_image);
             case VR_ERR_VIDEO_PLAYER_AV_ERROR: return context.getString(R.string.text_error_video_player_av_error);

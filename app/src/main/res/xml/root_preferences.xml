@@ -16,103 +16,55 @@
 
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    app:iconSpaceReserved="false">
+    app:iconSpaceReserved="true">
 
     <PreferenceCategory
-        app:iconSpaceReserved="false"
-        app:title="@string/settings_header_common">
-
-        <SwitchPreferenceCompat
-            app:defaultValue="true"
-            app:iconSpaceReserved="false"
-            app:key="calc_auto_update"
-            app:title="@string/settings_key_auto_update" />
-
-        <Preference
-            app:title="@string/settings_key_check_update"
-            app:iconSpaceReserved="false"
-            app:key="app_check_update" />
-
-    </PreferenceCategory>
-
-    <PreferenceCategory
-        app:iconSpaceReserved="false"
-        app:title="@string/settings_header_panorama">
-
-        <SwitchPreferenceCompat
-            app:iconSpaceReserved="false"
-            app:defaultValue="false"
-            app:key="enable_full_chunks"
-            app:title="@string/settings_key_enable_full_chunks"
-            app:summary="@string/settings_summary_enable_full_chunks" />
-
-        <SwitchPreferenceCompat
-            app:iconSpaceReserved="false"
-            app:defaultValue="true"
-            app:key="enable_view_cache"
-            app:title="@string/settings_key_enable_view_cache"
-            app:summary="@string/settings_summary_enable_view_cache" />
-
-        <SwitchPreferenceCompat
-            app:iconSpaceReserved="false"
-            app:defaultValue="true"
-            app:key="enable_drag_velocity"
-            app:title="@string/settings_key_enable_drag_velocity" />
-
-        <SwitchPreferenceCompat
-            app:iconSpaceReserved="false"
-            app:defaultValue="false"
-            app:key="enable_non_fullscreen"
-            app:title="@string/settings_key_enable_non_fullscreen" />
-
-        <SwitchPreferenceCompat
-            app:iconSpaceReserved="false"
-            app:defaultValue="false"
-            app:key="enable_keep_screen_on"
-            app:title="@string/settings_key_enable_keep_screen_on" />
-
-        <SwitchPreferenceCompat
-            app:iconSpaceReserved="false"
-            app:defaultValue="false"
-            app:key="do_not_check_pano_normal_size"
-            app:title="@string/settings_key_do_not_check_pano_normal_size"
-            app:summary="@string/settings_summary_do_not_check_pano_normal_size" />
-
-
-    </PreferenceCategory>
-
-    <PreferenceCategory
-        app:iconSpaceReserved="false"
         app:title="@string/settings_header_others">
 
-        <SwitchPreferenceCompat
-            app:iconSpaceReserved="false"
-            app:defaultValue="false"
-            app:key="show_debug_tool"
-            app:title="@string/settings_key_show_debug_tool" />
+        <Preference
+            app:icon="@drawable/ic_menu_panorama_horizontal"
+            app:key="settings_key_go_panorama"
+            app:title="@string/settings_header_panorama" />
 
         <Preference
-            app:title="@string/settings_key_clear_cache"
-            app:iconSpaceReserved="false"
-            app:key="settings_key_clear_cache" />
+            app:icon="@drawable/ic_menu_settings"
+            app:key="settings_key_go_common"
+            app:title="@string/settings_header_common" />
 
     </PreferenceCategory>
 
     <PreferenceCategory
-        app:iconSpaceReserved="false"
+        app:title="@string/settings_header_data_backup">
+
+        <Preference
+            app:key="data_backup"
+            app:title="@string/settings_key_data_backup" />
+
+        <Preference
+            app:key="data_restore_backup"
+            app:title="@string/settings_key_data_restore_backup" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
         app:title="@string/settings_header_about">
 
         <Preference
-            app:title="@string/settings_key_about"
-            app:iconSpaceReserved="false"
-            app:key="app_about" />
+            app:icon="@drawable/ic_menu_about"
+            app:key="app_about"
+            app:title="@string/settings_key_about" />
 
         <Preference
-            app:title="@string/settings_key_privacy_policy"
-            app:iconSpaceReserved="false"
-            app:key="app_privacy_policy" />
+            app:icon="@drawable/ic_menu_receipt_long"
+            app:key="app_privacy_policy"
+            app:title="@string/settings_key_privacy_policy" />
 
     </PreferenceCategory>
 
+    <PreferenceCategory
+        app:title="@string/settings_header_others">
+
+
+    </PreferenceCategory>
 
 </PreferenceScreen>

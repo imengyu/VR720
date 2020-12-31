@@ -13,7 +13,6 @@ void CCDecodeQueue::Init(CCVideoPlayerExternalData *data) {
 
         pthread_mutex_init(&packetRequestLock, nullptr);
         pthread_mutex_init(&frameRequestLock, nullptr);
-        pthread_mutex_init(&videoDropLock,  nullptr);
 
         AllocFramePool(data->InitParams->FramePoolSize);
         AllocPacketPool(data->InitParams->PacketPoolSize);
@@ -36,7 +35,6 @@ void CCDecodeQueue::Destroy() {
 
         pthread_mutex_destroy(&frameRequestLock);
         pthread_mutex_destroy(&packetRequestLock);
-        pthread_mutex_destroy(&videoDropLock);
     }
 }
 
@@ -52,28 +50,26 @@ AVPacket *CCDecodeQueue::AudioDequeue() {
     audioQueue.pop_front();
     return pkt;
 }
+void CCDecodeQueue::AudioQueueBack(AVPacket * packet) {
+    audioQueue.push_front(packet);
+}
 size_t CCDecodeQueue::AudioQueueSize() {
     return audioQueue.size();
 }
 void CCDecodeQueue::VideoEnqueue(AVPacket *pkt) {
-
-    pthread_mutex_lock(&videoDropLock);
-
     videoQueue.emplace_back(pkt);
-
-    pthread_mutex_unlock(&videoDropLock);
 }
 AVPacket *CCDecodeQueue::VideoDequeue() {
     if(videoQueue.empty())
         return nullptr;
 
-    pthread_mutex_lock(&videoDropLock);
-
     AVPacket *pkt = videoQueue.front();
     videoQueue.pop_front();
 
-    pthread_mutex_unlock(&videoDropLock);
     return pkt;
+}
+void CCDecodeQueue::VideoQueueBack(AVPacket * packet) {
+    videoQueue.push_front(packet);
 }
 size_t CCDecodeQueue::VideoQueueSize() {
     return videoQueue.size();
@@ -83,27 +79,16 @@ size_t CCDecodeQueue::VideoQueueSize() {
 
 AVFrame *CCDecodeQueue::VideoFrameDequeue() {
 
-    pthread_mutex_lock(&videoDropLock);
-
-    if(videoFrameQueue.empty()) {
-        pthread_mutex_unlock(&videoDropLock);
+    if(videoFrameQueue.empty())
         return nullptr;
-    }
 
     AVFrame * frame = videoFrameQueue.front();
     videoFrameQueue.pop_front();
 
-    pthread_mutex_unlock(&videoDropLock);
-
     return frame;
 }
 void CCDecodeQueue::VideoFrameEnqueue(AVFrame *frame) {
-
-    pthread_mutex_lock(&videoDropLock);
-
     videoFrameQueue.push_back(frame);
-
-    pthread_mutex_unlock(&videoDropLock);
 }
 AVFrame *CCDecodeQueue::AudioFrameDequeue() {
 
@@ -141,24 +126,24 @@ void CCDecodeQueue::ClearAll() {
 //视频太慢丢包
 int CCDecodeQueue::VideoDrop(double targetClock) {
 
+    double frameClock;
     int droppedCount = 0;
-
-    pthread_mutex_lock(&videoDropLock);
-
     if (!videoFrameQueue.empty()) {
         for (auto it = videoFrameQueue.begin(); it != videoFrameQueue.end();) {
             AVFrame *frame = *it;
-            //还没有解码，需要判断它不是I帧，否则会影响后续的B帧，P帧的解码过程
-            if ((frame->flags & AV_PKT_FLAG_KEY) == AV_PKT_FLAG_KEY &&
-                it != videoFrameQueue.begin()) {
+            frameClock = frame->best_effort_timestamp == AV_NOPTS_VALUE ?
+                         frame->pts : frame->best_effort_timestamp * av_q2d(externalData->VideoTimeBase);
+            if(droppedCount >= videoFrameQueue.size() / 3
+                || frameClock >= targetClock
+                && it != videoFrameQueue.begin())
+                break;
+            else {
                 ReleaseFrame(frame);
                 it = videoFrameQueue.erase(it);
                 droppedCount++;
-            } else it++;
+            }
         }
     }
-
-    pthread_mutex_unlock(&videoDropLock);
 
     return droppedCount;
 }
@@ -168,6 +153,8 @@ int CCDecodeQueue::VideoDrop(double targetClock) {
 
 void CCDecodeQueue::ReleasePacket(AVPacket *pkt) {
 
+    if(pkt)
+        av_packet_unref(pkt);
     if(!initState)
         return;
 
@@ -176,7 +163,7 @@ void CCDecodeQueue::ReleasePacket(AVPacket *pkt) {
     if(packetPool.size() >= externalData->InitParams->PacketPoolSize) {
         av_packet_free(&pkt);
     } else {
-        av_packet_unref(pkt);
+
         packetPool.push_back(pkt);
     }
 

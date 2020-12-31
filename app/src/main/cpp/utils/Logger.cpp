@@ -99,6 +99,12 @@ void Logger::SetLogLevel(LogLevel logLevel)
 LogLevel Logger::GetLogLevel() {
 	return this->level;
 }
+bool Logger::GetEnabled() const {
+	return this->enabled;
+}
+void Logger::SetEnabled(bool enable) {
+	this->enabled = enable;
+}
 void Logger::SetLogOutPut(LogOutPut output)
 {
 	this->outPut = output;
@@ -136,16 +142,22 @@ void Logger::WritePendingLog(const char* str, LogLevel logLevel)
 
 void Logger::LogInternalWithCodeAndLine(LogLevel logLevel, const char * tag, const char* str, const char* file, int line, const char* functon, va_list arg)
 {
+	if(!enabled)
+		return;
 	std::string format1 = CStringHlp::FormatString("%s\n[In] %s:%d : %s", str, file, line, functon);
 	LogInternal(logLevel, tag, format1.c_str(), arg);
 }
 void Logger::LogInternal(LogLevel logLevel, const char * tag, const char* str, va_list arg)
 {
+	if(!enabled)
+		return;
 	std::string out = CStringHlp::FormatString(str, arg);
 	LogOutput(logLevel, tag, out.c_str(), str, out.size());
 }
 void Logger::LogOutput(LogLevel logLevel, const char * tag, const char* str, const char* srcStr, size_t len)
 {
+	if(!enabled)
+		return;
 	if (outPut == LogOutPutFile && logFile)
 		fprintf(logFile, "[%s] %s", tag, str);
 	else if (outPut == LogOutPutConsolne) {
@@ -171,14 +183,19 @@ void Logger::CloseLogFile()
 	}
 }
 
-Logger globalStaticLogger = Logger("VR720Native");
+Logger *globalStaticLogger = nullptr;
 Logger* Logger::GetStaticInstance() {
-	return &globalStaticLogger;
+	return globalStaticLogger;
 }
 void Logger::InitConst() {
-	globalStaticLogger.SetLogOutPut(LogOutPutConsolne);
+	globalStaticLogger = new Logger("VR720Native");
+	globalStaticLogger->SetLogOutPut(LogOutPutConsolne);
 }
 void Logger::DestroyConst() {
+	if(globalStaticLogger != nullptr)  {
+		delete globalStaticLogger;
+		globalStaticLogger = nullptr;
+	}
 }
 
 void Logger::SetWithWarp(bool e) {

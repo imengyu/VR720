@@ -118,7 +118,8 @@ public class NativeVR720Renderer {
     public static final int PROP_VIDEO_VOLUME = 20;
     public static final int PROP_PANORAMA_MODE = 21;
     public static final int PROP_SMALL_PANORAMA_PATH = 22;
-
+    public static final int PROP_LOG_LEVEL = 23;
+    public static final int PROP_ENABLE_LOG = 24;
 
     //C++代码声明
     //***********************************

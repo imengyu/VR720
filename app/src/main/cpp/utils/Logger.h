@@ -10,7 +10,7 @@
 //日志级别
 enum LogLevel {
 	//文字
-	LogLevelText,
+	LogLevelText = 0,
 	//信息
 	LogLevelInfo,
 	//警告
@@ -76,6 +76,9 @@ public:
 	void SetLogOutPutCallback(LogCallBack callback, void* lparam);
 	void SetLogOutPutFile(const char *filePath);
 
+	bool GetEnabled() const;
+	void SetEnabled(bool enable);
+
 	void SetWithWarp(bool e);
 	void ResentNotCaputureLog();
 private:
@@ -85,9 +88,11 @@ private:
     FILE *logFile = nullptr;
     LogLevel level = LogLevelText;
     bool withWarp = true;
+	bool enabled = true;
     LogOutPut outPut = LogOutPutConsolne;
     LogCallBack callBack = nullptr;
     void* callBackData{};
+
 
 	void WritePendingLog(const char *str, LogLevel logLevel);
 
@@ -95,6 +100,8 @@ private:
 	void LogInternal(LogLevel logLevel, const char * tag, const char *str, va_list arg);
 	void LogOutput(LogLevel logLevel, const char * tag, const char *str, const char *srcStr, size_t len);
 	void CloseLogFile();
+
+
 };
 
 #define LogError2(tag, str, ...) LogError2(tag, str, __FILE__, __LINE__, __FUNCTION__,__VA_ARGS__)

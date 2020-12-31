@@ -11,12 +11,9 @@ import android.view.MotionEvent;
 import android.view.VelocityTracker;
 
 import com.imengyu.vr720.core.representation.Quaternion;
+import com.imengyu.vr720.core.utils.FPSController;
 
 import java.nio.IntBuffer;
-import java.util.TimerTask;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
@@ -27,24 +24,49 @@ import javax.microedition.khronos.opengles.GL10;
 public class NativeVR720GLSurfaceView extends GLSurfaceView {
 
     private static final String TAG = "VR720GLSurfaceView";
+    private static final int FPS = 45;
+    private static final int LOW_FPS = 25;
 
     public NativeVR720GLSurfaceView(Context context) {
         super(context);
+        init();
     }
     public NativeVR720GLSurfaceView(Context context, AttributeSet attrs) {
         super(context, attrs);
+        init();
+    }
+
+    private void init() {
+        fpsController = new FPSController(this, FPS);
     }
 
     private NativeVR720Renderer nativeVR720Renderer = null;
     private RendererWrapper renderer = null;
     private boolean dragVelocityEnabled = true;
+    private FPSController fpsController = null;
+
+    /**
+     * 设置是否使用低FPS
+     * @param useLowFps 是否使用低FPS
+     */
+    public void setUseLowFps(boolean useLowFps) {
+        fpsController.setFramesPerSecond(useLowFps ? LOW_FPS : FPS);
+    }
+
+    /**
+     * 设置FPS
+     * @param fps 帧率
+     */
+    public void setFps(int fps) {
+        fpsController.setFramesPerSecond(fps);
+    }
 
     /**
      * 设置本地渲染器
      * @param nativeRenderer 本地渲染器
      */
     public void setNativeRenderer(NativeVR720Renderer nativeRenderer) {
-        if(renderer == null) {
+        if (renderer == null) {
             nativeVR720Renderer = nativeRenderer;
             renderer = new RendererWrapper(this, nativeVR720Renderer);
 
@@ -66,15 +88,16 @@ public class NativeVR720GLSurfaceView extends GLSurfaceView {
      * 获取当前帧率
      * @return 当前帧率
      */
-    public double getFps() { return framesPerSecond; }
+    public double getFps() { return fpsController.getFramesPerSecond(); }
 
     /**
-     * 设置目标帧率
-     * @param fps 目标帧率
+     * 启动定时渲染
      */
-    public void setFps(float fps) {
-        this.frameExecuteTime = (int)(1000.0f / fps);
-    }
+    public void startRenderer() { fpsController.startRenderer(); }
+    /**
+     * 停止定时渲染
+     */
+    public void stopRenderer() { fpsController.stopRenderer(); }
 
     /**
      * 开始截图
@@ -142,8 +165,7 @@ public class NativeVR720GLSurfaceView extends GLSurfaceView {
     //变量
     //********************************
 
-    private int frameExecuteTime = 1000 / 20;
-    private ScheduledExecutorService pool = null;
+
     private boolean isTakePic = false;
     private OnCaptureCallback captureCallback = null;
     private OnRendererCallback rendererCallback = null;
@@ -153,8 +175,7 @@ public class NativeVR720GLSurfaceView extends GLSurfaceView {
 
     private static class ContextFactory implements GLSurfaceView.EGLContextFactory {
 
-        public EGLContext createContext(
-                EGL10 egl, EGLDisplay display, EGLConfig eglConfig) {
+        public EGLContext createContext(EGL10 egl, EGLDisplay display, EGLConfig eglConfig) {
 
             double glVersion = 3.0;
             Log.i(TAG, "Creating OpenGL ES " + glVersion + " context");
@@ -171,75 +192,18 @@ public class NativeVR720GLSurfaceView extends GLSurfaceView {
         }
     }
 
-    //帧率计算
-    private double framesPerSecond;
-    private double lastTime;
-
-    private void calculateFrameRate() {
-        double currentTime = System.currentTimeMillis();
-        ++framesPerSecond;
-        if (currentTime - lastTime > 1000) {
-            lastTime = currentTime;
-            framesPerSecond = 0;
-        }
-    }
-
-    /**
-     * 启动定时渲染
-     */
-    public void startRenderer() {
-        if(pool == null) {
-            Log.i(TAG, "startRenderer");
-            pool = Executors.newScheduledThreadPool(1);
-            pool.scheduleAtFixedRate(task, 0, frameExecuteTime, TimeUnit.MILLISECONDS);
-        }
-    }
-
-    /**
-     * 停止定时渲染
-     */
-    public void stopRenderer() {
-        if(pool != null) {
-            Log.i(TAG, "stopRenderer");
-            pool.shutdown();
-            try {
-                if(!pool.awaitTermination(1000, TimeUnit.MILLISECONDS))
-                    pool.shutdownNow();
-                pool = null;
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                pool.shutdownNow();
-                pool = null;
-            }
-        }
-    }
-
-    public void forceStop() {
-        stopRenderer();
-    }
-
-    /**
-     * 更新任务
-     */
-    private final TimerTask task = new TimerTask() {
-        @Override
-        public void run() {
-            requestRender();
-        }
-    };
-
     /**
      * Base Game renderer
      */
     private static class RendererWrapper implements android.opengl.GLSurfaceView.Renderer {
 
         public RendererWrapper(NativeVR720GLSurfaceView surfaceView, NativeVR720Renderer nativeRenderer) {
-            nativeVR720Renderer = nativeRenderer;
-            nativeVR720GLSurfaceView = surfaceView;
+            this.nativeRenderer = nativeRenderer;
+            this.surfaceView = surfaceView;
         }
 
-        private final NativeVR720GLSurfaceView nativeVR720GLSurfaceView;
-        private final NativeVR720Renderer nativeVR720Renderer;
+        private final NativeVR720GLSurfaceView surfaceView;
+        private final NativeVR720Renderer nativeRenderer;
 
         private int width = 0;
         private int height = 0;
@@ -247,41 +211,40 @@ public class NativeVR720GLSurfaceView extends GLSurfaceView {
 
         @Override
         public void onSurfaceCreated(GL10 gl10, javax.microedition.khronos.egl.EGLConfig eglConfig) {
-            nativeVR720Renderer.onSurfaceCreated();
+            nativeRenderer.onSurfaceCreated();
         }
         @Override
         public void onSurfaceChanged(GL10 gl10, int w, int h) {
             width = w;
             height = h;
-            nativeVR720Renderer.onSurfaceChanged(w, h);
+            nativeRenderer.onSurfaceChanged(w, h);
         }
         @Override
         public void onDrawFrame(GL10 gl10) {
 
             //更新陀螺仪数据
-            if(nativeVR720Renderer.getGyroEnable()) {
-                nativeVR720Renderer.requestGyroValue(gyroQuaternion);
-                nativeVR720Renderer.updateGyroValue(gyroQuaternion.x(),
+            if(nativeRenderer.getGyroEnable()) {
+                nativeRenderer.requestGyroValue(gyroQuaternion);
+                nativeRenderer.updateGyroValue(gyroQuaternion.x(),
                         gyroQuaternion.y(), gyroQuaternion.z(), gyroQuaternion.w());
             }
 
             //绘制
-            nativeVR720Renderer.onDrawFrame();
+            nativeRenderer.onDrawFrame();
 
             //刷新FPS
-            nativeVR720GLSurfaceView.calculateFrameRate();
-            nativeVR720Renderer.onUpdateFps((float) nativeVR720GLSurfaceView.framesPerSecond);
-            //System.out.println("onDrawFrame: " + gl10.glGetError());
+            surfaceView.fpsController.calculateFrameRate();
+            nativeRenderer.onUpdateFps((float) surfaceView.fpsController.getFramesPerSecond());
 
             //渲染回调
-            if(nativeVR720GLSurfaceView.rendererCallback != null)
-                nativeVR720GLSurfaceView.rendererCallback.onRender(gl10);
+            if(surfaceView.rendererCallback != null)
+                surfaceView.rendererCallback.onRender(gl10);
 
             //截屏控制
-            if (nativeVR720GLSurfaceView.isTakePic) {
-                nativeVR720GLSurfaceView.isTakePic = false;
-                Bitmap bmp = nativeVR720GLSurfaceView.createBitmapFromGLSurface(width, height, gl10);
-                nativeVR720GLSurfaceView.captureFinish(bmp);
+            if (surfaceView.isTakePic) {
+                surfaceView.isTakePic = false;
+                Bitmap bmp = surfaceView.createBitmapFromGLSurface(width, height, gl10);
+                surfaceView.captureFinish(bmp);
             }
         }
     }
@@ -313,6 +276,7 @@ public class NativeVR720GLSurfaceView extends GLSurfaceView {
     */
 
     public void onDestroyComplete() {
+        stopRenderer();
         nativeVR720Renderer.nativeSetNativePtr(0);
     }
 
@@ -349,12 +313,11 @@ public class NativeVR720GLSurfaceView extends GLSurfaceView {
             lastIncrement = 0;
             lastIsZoom = true;
             nativeVR720Renderer.processMouseDragVelocity(0, 0);
-        }
-        else {
+        } else {
             switch (action) {
                 case MotionEvent.ACTION_DOWN: {
                     nativeVR720Renderer.processMouseDragVelocity(0, 0);
-                    if(pCount == 1) {
+                    if (pCount == 1) {
                         nativeVR720Renderer.processMouseDown(event.getX(), event.getY());
                         lastIsZoom = false;
                     }
@@ -363,14 +326,14 @@ public class NativeVR720GLSurfaceView extends GLSurfaceView {
                 }
                 case MotionEvent.ACTION_UP: {
                     nativeVR720Renderer.processMouseDragVelocity(0, 0);
-                    if(!lastIsZoom && pCount == 1) {
+                    if (!lastIsZoom && pCount == 1) {
                         eventAddedToVelocityTracker = true;
 
                         mVelocityTracker.addMovement(vtev);
-                        mVelocityTracker.computeCurrentVelocity(30, (float)200);
+                        mVelocityTracker.computeCurrentVelocity(30, (float) 200);
                         float yVelocity = -mVelocityTracker.getYVelocity();
                         float xVelocity = -mVelocityTracker.getXVelocity();
-                        if(dragVelocityEnabled)
+                        if (dragVelocityEnabled)
                             nativeVR720Renderer.processMouseDragVelocity(xVelocity, yVelocity);
 
                         nativeVR720Renderer.processMouseUp(event.getX(), event.getY());
@@ -381,7 +344,7 @@ public class NativeVR720GLSurfaceView extends GLSurfaceView {
                 }
                 case MotionEvent.ACTION_MOVE: {
                     nativeVR720Renderer.processMouseDragVelocity(0, 0);
-                    if(lastIsZoom && pCount == 2) {
+                    if (lastIsZoom && pCount == 2) {
 
                         int xLen = Math.abs((int) event.getX(0) - (int) event.getX(1)); // 获取抬起时候两个坐标的y轴的水平距离，取绝对值
                         int yLen = Math.abs((int) event.getY(0) - (int) event.getY(1)); // 根据x轴和y轴的水平距离，求平方和后再开方获取两个点之间的直线距离。此时就获取到了两个手指抬起时的直线距离
@@ -392,7 +355,7 @@ public class NativeVR720GLSurfaceView extends GLSurfaceView {
                         lastIncrement = nowInc;
 
                         nativeVR720Renderer.processViewZoom((float) incNew);
-                    } else if(!lastIsZoom)
+                    } else if (!lastIsZoom)
                         nativeVR720Renderer.processMouseMove(event.getX(), event.getY());
                     result = true;
                     break;
@@ -404,8 +367,8 @@ public class NativeVR720GLSurfaceView extends GLSurfaceView {
             mVelocityTracker.addMovement(vtev);
         vtev.recycle();
 
-        if(result == null)
-            return super.onTouchEvent(event);
+        if (result == null)
+            result = super.onTouchEvent(event);
         return result;
     }
 

@@ -23,7 +23,7 @@ public:
     virtual void Destroy();
     virtual void Start(bool isStartBySeek);
     virtual void Reset();
-    virtual void Pause();
+    virtual void Stop();
 
     virtual CCVideoDevice* GetVideoDevice() { return videoDevice; }
     virtual CCAudioDevice *GetAudioDevice() { return audioDevice; }
@@ -36,10 +36,8 @@ public:
     virtual void SetVolume(int i);
     virtual int GetVolume() { return 0; }
 
-    virtual void SetSeekDest(int64_t dest);
-
-    virtual bool IsCurrentSeekToPosFinished() {
-        if(currentSeekToPosFinished) {
+    virtual bool GetCurrentSeekToPosFinished() {
+        if (currentSeekToPosFinished) {
             currentSeekToPosFinished = false;
             return true;
         }
@@ -74,10 +72,6 @@ private:
     double currentVideoClock = 0;
 
 
-    int64_t seekDest = 0;
-    bool audioSeeking = false;
-    bool videoSeeking = false;
-
     //
     //状态控制
 
@@ -97,7 +91,7 @@ private:
     AVPixelFormat outFrameDestFormat = AV_PIX_FMT_RGBA;
 
     pthread_t renderVideoThread = 0;
-    pthread_t renderAudioThread = 0;
+    //pthread_t renderAudioThread = 0;
 
     static void* RenderVideoThreadStub(void *param);
     //static void* RenderAudioThreadStub(void *param);
@@ -105,16 +99,6 @@ private:
     static void RenderAudioThreadStub(CCAudioDevice* dev, void* customData, uint8_t **buf, int *len);
     void RenderAudioThread(CCAudioDevice* dev, uint8_t **buf, int *len);
     void* RenderVideoThread();
-
-    double videoLastPlayTime,  //上一帧的播放时间
-        videoPlayTime,             //当前帧的播放时间
-        videoLastDelay,    // 上一次播放视频的两帧视频间隔时间
-        videoDelay,         //两帧视频间隔时间
-        videoActualDelay,//真正需要延迟时间
-        syncThreshold, //合理的范围
-        startTime;  //从第一帧开始的绝对时间
-
-    double VideoPlayTimeSynchronize(AVFrame *frame, double play);
 };
 
 

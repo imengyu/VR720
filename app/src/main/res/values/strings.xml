@@ -220,6 +220,12 @@
     <string name="settings_header_panorama">全景图浏览</string>
     <string name="settings_header_others">其他</string>
     <string name="settings_header_about">关于</string>
+    <string name="settings_header_screen">屏幕</string>
+    <string name="settings_header_performance">性能</string>
+    <string name="settings_header_cache">缓存</string>
+    <string name="settings_header_update">更新</string>
+    <string name="settings_header_debug">调试</string>
+    <string name="settings_header_data_backup">数据备份</string>
 
     <string name="settings_key_enable_full_chunks">启用完整全景图浏览</string>
     <string name="settings_summary_enable_full_chunks">
@@ -228,21 +234,35 @@
     </string>
     <string name="settings_key_do_not_check_pano_normal_size">不检查全景图的正常比例</string>
     <string name="settings_summary_do_not_check_pano_normal_size">
-        如果全景图的比例不是正常的 720 度全景图，软件浏览可能会出现变形的情况，因此软件会给出提示，您可以开启此选项禁用提示
+        如果全景图的比例不是正常的 720 度全景图，软件打开后渲染可能会出现图像变形的情况，因此软件会给出提示询问您要不要继续加载。
+        您可以通过开启此选项禁用这个提示
     </string>
     <string name="settings_key_about">关于软件</string>
     <string name="settings_key_check_update">检查更新</string>
     <string name="settings_key_auto_update">自动更新软件</string>
+    <string name="settings_key_go_app_store_check_update">去应用商店查看更新</string>
     <string name="settings_key_privacy_policy">隐私政策以及许可协议</string>
     <string name="settings_key_enable_drag_velocity">开启惯性拖动</string>
     <string name="settings_key_show_debug_tool">开启全景调试界面</string>
     <string name="settings_key_enable_non_fullscreen">全景页面显示状态栏</string>
     <string name="settings_key_enable_keep_screen_on">全景页面中保持屏幕常亮</string>
+    <string name="settings_key_data_backup">备份设置数据至文件</string>
+    <string name="settings_key_data_restore_backup">从文件备份恢复设置数据</string>
     <string name="settings_key_enable_view_cache">启用浏览缓存</string>
     <string name="settings_key_clear_cache">清理缓存</string>
+    <string name="settings_key_enable_program_cache">启用程序缓存</string>
     <string name="settings_summary_enable_view_cache">
         启用全景图浏览缓存后可以加快非常大的全景图的读取速度
     </string>
+    <string name="settings_key_enable_low_fps">降低渲染FPS</string>
+    <string name="settings_summary_enable_low_fps">降低FPS可以通过减少渲染次数（0至25帧每秒）以减少电池电量损耗，但画面可能会卡顿</string>
+    <string name="settings_key_enable_custom_fps">自定义渲染FPS</string>
+    <string name="settings_key_custom_fps">FPS 数值</string>
+    <string name="settings_key_native_log_level">内核日志记录等级</string>
+    <string name="settings_key_enable_native_log">启用内核日志</string>
+    <string name="settings_key_enable_exception_catch">启用错误异常信息抓取和自动反馈</string>
+    <string name="settings_summary_enable_exception_catch">启用后程序可以在发生错误时抓取错误异常信息，在下次启动时传回服务器
+        （不包含您的个人信息），以帮助我们更好的改进软件（建议开启）</string>
 
     <!-- agreement -->
     <string name="text_agreement_base_welcome">

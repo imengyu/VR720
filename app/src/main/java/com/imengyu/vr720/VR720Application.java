@@ -44,6 +44,9 @@ public class VR720Application extends Application {
         super.onCreate();
         Log.i(TAG, "onCreate");
 
+        //设置错误回调
+
+
         //初始化数据服务
         listDataService = new ListDataService(getApplicationContext());
         listImageCacheService = new ListImageCacheService(getApplicationContext());
@@ -53,6 +56,8 @@ public class VR720Application extends Application {
         ToastUtils.init(this);
         //初始化内核
         checkAndInit();
+
+
     }
 
     @Override

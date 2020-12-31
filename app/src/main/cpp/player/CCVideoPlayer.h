@@ -61,7 +61,6 @@ protected:
 
     int lastError = 0;
     std::string currentFile;
-    CCVideoState playerStatus = CCVideoState::NotOpen;
 
     CCVideoPlayerEventCallback videoPlayerEventCallback = nullptr;
     void*videoPlayerEventCallbackData = nullptr;
@@ -77,14 +76,10 @@ protected:
     AVCodecContext * audioCodecContext = nullptr;//解码器上下文
     AVCodecContext * videoCodecContext = nullptr;//解码器上下文
 
-
-    int64_t currentTime = 0;
-    int64_t startedTime = -1;// 开始播放的时间
     long duration = 0;// 总时长
 
     CCDecodeState decodeState = CCDecodeState::NotInit;// 解码状态
     CCVideoState videoState = CCVideoState::NotOpen;
-    bool forceStopSeek = false;
 
     CCDecodeQueue decodeQueue;
     CCPlayerRender *render = nullptr;
@@ -141,7 +136,8 @@ private:
     UCHAR playerSeeking = 0;
 
     int64_t seekDest = 0;
-    int64_t seekPos = 0;
+    int64_t seekPosVideo = 0;
+    int64_t seekPosAudio = 0;
 
     void DoOpenVideo();
     void DoCloseVideo();

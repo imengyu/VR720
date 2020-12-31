@@ -1,0 +1,83 @@
+<PreferenceScreen
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    app:iconSpaceReserved="false">
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="@string/settings_header_panorama">
+
+        <SwitchPreferenceCompat
+            app:iconSpaceReserved="false"
+            app:defaultValue="false"
+            app:key="enable_full_chunks"
+            app:title="@string/settings_key_enable_full_chunks"
+            app:summary="@string/settings_summary_enable_full_chunks" />
+
+        <SwitchPreferenceCompat
+            app:iconSpaceReserved="false"
+            app:defaultValue="true"
+            app:key="enable_view_cache"
+            app:title="@string/settings_key_enable_view_cache"
+            app:summary="@string/settings_summary_enable_view_cache" />
+
+        <SwitchPreferenceCompat
+            app:iconSpaceReserved="false"
+            app:defaultValue="true"
+            app:key="enable_drag_velocity"
+            app:title="@string/settings_key_enable_drag_velocity" />
+
+        <SwitchPreferenceCompat
+            app:iconSpaceReserved="false"
+            app:defaultValue="false"
+            app:key="do_not_check_pano_normal_size"
+            app:title="@string/settings_key_do_not_check_pano_normal_size"
+            app:summary="@string/settings_summary_do_not_check_pano_normal_size" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="@string/settings_header_performance">
+
+        <SwitchPreferenceCompat
+            app:iconSpaceReserved="false"
+            app:defaultValue="false"
+            app:key="enable_low_fps"
+            app:title="@string/settings_key_enable_low_fps"
+            app:summary="@string/settings_summary_enable_low_fps" />
+
+        <SwitchPreferenceCompat
+            app:iconSpaceReserved="false"
+            app:defaultValue="false"
+            app:key="enable_custom_fps"
+            app:title="@string/settings_key_enable_custom_fps" />
+
+        <ListPreference
+            app:iconSpaceReserved="false"
+            app:persistent="false"
+            app:key="custom_fps_value"
+            app:title="@string/settings_key_custom_fps"
+            app:entries="@array/custom_fps_entries"
+            app:entryValues="@array/custom_fps_values" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="@string/settings_header_screen">
+
+        <SwitchPreferenceCompat
+            app:iconSpaceReserved="false"
+            app:defaultValue="false"
+            app:key="enable_non_fullscreen"
+            app:title="@string/settings_key_enable_non_fullscreen" />
+
+        <SwitchPreferenceCompat
+            app:iconSpaceReserved="false"
+            app:defaultValue="false"
+            app:key="enable_keep_screen_on"
+            app:title="@string/settings_key_enable_keep_screen_on" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

@@ -436,8 +436,8 @@ void CMobileGameRenderer::MouseCallback(COpenGLView* view, float xpos, float ypo
         }
         case ViewMouseEventType::ViewMouseMouseUp: {
             if(renderer->DragCurrentVelocity.x > 0 || renderer->DragCurrentVelocity.y > 0) {
-                renderer->VelocityDragLastOffest.x = renderer->xoffset;
-                renderer->VelocityDragLastOffest.y = renderer->yoffset;
+                renderer->VelocityDragLastOffset.x = renderer->xoffset;
+                renderer->VelocityDragLastOffset.y = renderer->yoffset;
                 renderer->VelocityDragCurrentIsInSim = true;
             }
             break;
@@ -595,9 +595,9 @@ void CMobileGameRenderer::Render(float FrameTime)
         float targetPosY = lastY;
 
         if(DragCurrentVelocity.x > 0)
-            targetPosX += (DragCurrentVelocity.x) * (VelocityDragLastOffest.x < 0 ? -1.0f : 1.0f);
+            targetPosX += (DragCurrentVelocity.x) * (VelocityDragLastOffset.x < 0 ? -1.0f : 1.0f);
         if(DragCurrentVelocity.y > 0)
-            targetPosY -= (DragCurrentVelocity.y) * (VelocityDragLastOffest.y < 0 ? -1.0f : 1.0f);
+            targetPosY -= (DragCurrentVelocity.y) * (VelocityDragLastOffset.y < 0 ? -1.0f : 1.0f);
 
         MouseCallback(View, targetPosX, targetPosY, 0, ViewMouseEventType::ViewMouseMouseMove);
 
@@ -1047,6 +1047,7 @@ void CMobileGameRenderer::SetIntProp(int id, int value) {
     switch(id) {
         case PROP_VIDEO_VOLUME: player->SetVideoVolume(value); break;
         case PROP_PANORAMA_MODE: SwitchMode((PanoramaMode)value);
+        case PROP_LOG_LEVEL: LOG->SetLogLevel((LogLevel)value);
         default:
             break;
     }
@@ -1056,6 +1057,7 @@ int CMobileGameRenderer::GetIntProp(int id) {
         case PROP_VIDEO_VOLUME: return player->GetVideoVolume();
         case PROP_PANORAMA_MODE: return (int)mode;
         case PROP_LAST_ERROR: return lastError;
+        case PROP_LOG_LEVEL: return (int)LOG->GetLogLevel();
         default: break;
     }
     return 0;
@@ -1067,6 +1069,7 @@ void CMobileGameRenderer::SetBoolProp(int id, bool value) {
         case PROP_GYRO_ENABLED: SetGyroEnabled(value); break;
         case PROP_FULL_CHUNK_LOAD_ENABLED: SetEnableFullChunkLoad(value); break;
         case PROP_VIEW_CACHE_ENABLED: SetViewCacheEnabled(value); break;
+        case PROP_ENABLE_LOG: return LOG->SetEnabled(value);
         default: break;
     }
 }
@@ -1081,6 +1084,7 @@ bool CMobileGameRenderer::GetBoolProp(int id) {
         case PROP_GYRO_ENABLED: return gyroEnabled;
         case PROP_FULL_CHUNK_LOAD_ENABLED: return fullChunkLoadEnabled;
         case PROP_VIEW_CACHE_ENABLED: return enableViewCache;
+        case PROP_ENABLE_LOG: return LOG->GetEnabled();
         default: break;
     }
     return false;

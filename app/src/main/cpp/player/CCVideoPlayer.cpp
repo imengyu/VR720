@@ -2,6 +2,7 @@
 // Created by roger on 2020/12/19.
 //
 
+#include <utils/CommonUtils.h>
 #include "CCVideoPlayer.h"
 #include "../utils/CStringHlp.h"
 #include "../core/CCErrors.h"
@@ -20,7 +21,7 @@ int CCVideoPlayer::GetLastError() const { return lastError; }
 void CCVideoPlayer::DoOpenVideo() {
     LOGD(LOG_TAG, "DoOpenVideo");
 
-    playerStatus = CCVideoState::Loading;
+    videoState = CCVideoState::Loading;
 
     if(!InitDecoder()) {
         CallPlayerEventCallback(PLAYER_EVENT_OPEN_FAIED);
@@ -36,7 +37,7 @@ void CCVideoPlayer::DoOpenVideo() {
         return;
     }
 
-    playerStatus = CCVideoState::Opened;
+    videoState = CCVideoState::Opened;
     CallPlayerEventCallback(PLAYER_EVENT_OPEN_DONE);
 }
 void CCVideoPlayer::DoCloseVideo() {
@@ -48,34 +49,63 @@ void CCVideoPlayer::DoCloseVideo() {
     render->Destroy();
     decodeQueue.Destroy();
 
-    playerStatus = CCVideoState::NotOpen;
+    videoState = CCVideoState::NotOpen;
     CallPlayerEventCallback(PLAYER_EVENT_CLOSED);
 }
 void CCVideoPlayer::DoSeekVideo() {
 
-    //清空队列
-    decodeQueue.ClearAll();
+    if(decodeState == CCDecodeState::DecodingToSeekPos) return;
+
+    //先停止序列
+    StopDecoderThread();
+    render->Stop();
 
     //跳转到指定帧
-    int ret = av_seek_frame(formatContext, audioIndex, seekPos, (uint)AVSEEK_FLAG_BACKWARD | (uint)AVSEEK_FLAG_FRAME);
-    if(ret) {
-        LOGEF(LOG_TAG, "av_seek_frame failed : %d", ret);
-        playerSeeking = 0;
-        render->SetSeekDest(-1);
-        return;
+
+    int ret;
+    {
+        seekPosVideo = av_rescale_q(seekDest * 1000, AV_TIME_BASE_Q, formatContext->streams[videoIndex]->time_base);
+        if(seekPosVideo > render->GetCurVideoPts())
+            ret = av_seek_frame(formatContext, videoIndex, seekPosVideo, AVSEEK_FLAG_FRAME);
+        else
+            ret = av_seek_frame(formatContext, videoIndex, seekPosVideo, AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME);
+        if (ret != 0) {
+            LOGEF(LOG_TAG, "av_seek_frame video failed : %d", ret);
+            playerSeeking = 0;
+            return;
+        }
+        avcodec_flush_buffers(videoCodecContext);//清空缓存数据
     }
 
-    LOGDF(LOG_TAG, "Seek to pos : %ld", seekPos);
+    /*
+    if(audioIndex != -1) {
+        seekPosAudio = av_rescale_q(seekDest * 1000, AV_TIME_BASE_Q, formatContext->streams[audioIndex]->time_base);
+        ret = av_seek_frame(formatContext, audioIndex, seekPosAudio,
+                                (uint) AVSEEK_FLAG_BACKWARD | (uint) AVSEEK_FLAG_ANY);
+        if (ret != 0)
+            LOGEF(LOG_TAG, "av_seek_frame audio failed : %d", ret);
+        else
+            avcodec_flush_buffers(audioCodecContext);//清空缓存数据
+    }
+    */
 
-    render->SetSeekDest(seekPos);
+    //清空队列中所有残留数据
+    decodeQueue.ClearAll();
 
-    //如果解码线程没有启动，则启动线程，解码到指定目标然后停止
-    if(decodeState != CCDecodeState::Decoding) {
-        LOGD(LOG_TAG, "Start all for seek");
+    //启动线程
+    LOGD(LOG_TAG, "Start all for seek");
+
+    decoderAudioFinish = audioIndex == -1;
+    decoderVideoFinish = false;
+
+    if(videoState == CCVideoState::Playing) {
+        StartDecoderThread();
+        render->Start(false);
+    } else {
         StartDecoderThread(true);
         render->Start(true);
     }
-
+    playerSeeking = 0;
 }
 
 //播放器公共方法
@@ -83,19 +113,19 @@ void CCVideoPlayer::DoSeekVideo() {
 
 bool CCVideoPlayer::OpenVideo(const char *filePath) {
 
-    if(playerStatus == CCVideoState::Loading) {
+    if(videoState == CCVideoState::Loading) {
         LOGE(LOG_TAG, "Player is loading, please wait a second");
         lastError = VR_ERR_VIDEO_PLAYER_NOW_IS_LOADING;
         return false;
     }
-    if(playerStatus > CCVideoState::NotOpen) {
+    if(videoState > CCVideoState::NotOpen) {
         LOGE(LOG_TAG, "A video has been opened. Please close it first");
         lastError = VR_ERR_VIDEO_PLAYER_ALREADY_OPEN;
         return false;
     }
 
     currentFile = filePath;
-    playerStatus = CCVideoState::Loading;
+    videoState = CCVideoState::Loading;
 
     if(playerOpen == 0) {
         playerOpen = 1;
@@ -105,7 +135,7 @@ bool CCVideoPlayer::OpenVideo(const char *filePath) {
 }
 bool CCVideoPlayer::CloseVideo() {
 
-    if(playerStatus == CCVideoState::NotOpen || playerStatus == CCVideoState::Failed) {
+    if(videoState == CCVideoState::NotOpen || videoState == CCVideoState::Failed) {
         LOGE(LOG_TAG, "Can not close video because video not load");
         return false;
     }
@@ -121,7 +151,11 @@ void CCVideoPlayer::SetVideoState(CCVideoState newState) {
 
     switch (newState) {
         case CCVideoState::NotOpen: CloseVideo(); break;
-        case CCVideoState::Playing: StartAll(); break;
+        case CCVideoState::Playing:
+            if(GetVideoPos() > GetVideoLength() - 500)
+                SetVideoPos(0);
+            StartAll();
+            break;
         case CCVideoState::Paused: StopAll(); break;
         case CCVideoState::Ended:
         case CCVideoState::Failed:
@@ -131,20 +165,18 @@ void CCVideoPlayer::SetVideoState(CCVideoState newState) {
             return;
     }
 
-    LOGDF(LOG_TAG, "SetVideoState : %d", newState);
+    LOGDF(LOG_TAG, "SetVideoState : %s", CCVideoStateToString(newState));
 }
 void CCVideoPlayer::SetVideoPos(int64_t pos) {
-    if(playerSeeking == 0)
+    if(playerSeeking == 0) {
         playerSeeking = 1;
-
-    seekDest = externalData.StartTime + pos;
-    seekPos = seekDest * AV_TIME_BASE / 1000;
-
-    LOGDF(LOG_TAG, "SetVideoPos : %ld/%ld", seekDest, GetVideoLength());
+        seekDest = externalData.StartTime + pos;
+        LOGDF(LOG_TAG, "SetVideoPos : %ld/%ld", seekDest, GetVideoLength());
+    }
 }
 int64_t CCVideoPlayer::GetVideoPos() {
 
-    if(playerStatus <= CCVideoState::NotOpen) {
+    if(videoState <= CCVideoState::NotOpen) {
         lastError = VR_ERR_VIDEO_PLAYER_NOT_OPEN;
         return -1;
     }
@@ -200,7 +232,7 @@ void CCVideoPlayer::StopAll() {
     pthread_mutex_lock(&stopAllLock);
 
     StopDecoderThread();
-    render->Pause();
+    render->Stop();
 
     pthread_mutex_unlock(&stopAllLock);
 }
@@ -277,10 +309,20 @@ bool CCVideoPlayer::InitDecoder() {
 
     AVCodecParameters *codecParameters=formatContext->streams[videoIndex]->codecpar;
     videoCodec = avcodec_find_decoder(codecParameters->codec_id);
+
     if (videoCodec == nullptr) {
         LOGE(LOG_TAG, "Not find video decoder");
         lastError = VR_ERR_VIDEO_PLAYER_VIDEO_NOT_SUPPORT;
         return false;
+    }
+
+    if(strcmp(videoCodec->name, "h264") == 0 || strcmp(videoCodec->name, "hevc") == 0 || strcmp(videoCodec->name, "mpeg4") == 0
+       || strcmp(videoCodec->name, "vp8") == 0 || strcmp(videoCodec->name, "vp9") == 0) {
+        char newName[32];
+        strcpy(newName, videoCodec->name);
+        strcat(newName, "_mediacodec");
+        LOGDF(LOG_TAG, "Replace video decoder %s to : %s", videoCodec->name, newName);
+        videoCodec = avcodec_find_decoder_by_name(newName);
     }
 
     //通过解码器分配(并用  默认值   初始化)一个解码器context
@@ -382,9 +424,12 @@ void CCVideoPlayer::StartDecoderThread(bool isStartBySeek) {
 
     decodeState = isStartBySeek ? CCDecodeState::DecodingToSeekPos : CCDecodeState::Decoding;
 
-    pthread_create(&decoderWorkerThread, nullptr, DecoderWorkerThreadStub, this);
-    pthread_create(&decoderVideoThread, nullptr, DecoderVideoThreadStub, this);
-    pthread_create(&decoderAudioThread, nullptr, DecoderAudioThreadStub, this);
+    if(decoderWorkerThread == 0)
+        pthread_create(&decoderWorkerThread, nullptr, DecoderWorkerThreadStub, this);
+    if(decoderVideoThread == 0)
+        pthread_create(&decoderVideoThread, nullptr, DecoderVideoThreadStub, this);
+    if(decoderAudioThread == 0)
+        pthread_create(&decoderAudioThread, nullptr, DecoderAudioThreadStub, this);
 }
 void CCVideoPlayer::StopDecoderThread() {
     decodeState = CCDecodeState::Ready;
@@ -396,29 +441,33 @@ void CCVideoPlayer::StopDecoderThread() {
         pthread_join(decoderVideoThread, &retVal);
     if(decoderAudioThread)
         pthread_join(decoderAudioThread, &retVal);
-
-    decoderWorkerThread = 0;
-    decoderAudioThread = 0;
-    decoderVideoThread = 0;
 }
 
 //线程入口包装函数
 
 void* CCVideoPlayer::PlayerWorkerThreadStub(void *param) {
     prctl(PR_SET_NAME, "PlayerWorker");
-    return ((CCVideoPlayer*)param)->PlayerWorkerThread();
+    void* result = ((CCVideoPlayer*)param)->PlayerWorkerThread();
+    ((CCVideoPlayer*)param)->playerWorkerThread = 0;
+    return result;
 }
 void* CCVideoPlayer::DecoderWorkerThreadStub(void *param) {
     prctl(PR_SET_NAME, "DecoderWorker");
-    return ((CCVideoPlayer*)param)->DecoderWorkerThread();
+    void* result =  ((CCVideoPlayer*)param)->DecoderWorkerThread();
+    ((CCVideoPlayer*)param)->decoderWorkerThread = 0;
+    return result;
 }
 void* CCVideoPlayer::DecoderVideoThreadStub(void *param) {
     prctl(PR_SET_NAME, "DecoderVideo");
-    return ((CCVideoPlayer*)param)->DecoderVideoThread();
+    void* result =  ((CCVideoPlayer*)param)->DecoderVideoThread();
+    ((CCVideoPlayer*)param)->decoderVideoThread = 0;
+    return result;
 }
 void* CCVideoPlayer::DecoderAudioThreadStub(void *param) {
     prctl(PR_SET_NAME, "DecoderAudio");
-    return ((CCVideoPlayer*)param)->DecoderAudioThread();
+    void* result =  ((CCVideoPlayer*)param)->DecoderAudioThread();
+    ((CCVideoPlayer*)param)->decoderAudioThread = 0;
+    return result;
 }
 
 //线程主函数
@@ -447,23 +496,18 @@ void* CCVideoPlayer::PlayerWorkerThread() {
             int64_t pos = GetVideoPos();
             if(pos >= GetVideoLength() - 10 || pos == -1) {
 
-                if(decodeState == CCDecodeState::DecodingToSeekPos)
-                    forceStopSeek = true;
-
-                decodeState = CCDecodeState::Finished;
-                playerStatus = CCVideoState::Ended;
-
                 decodeQueue.ClearAll();//清空数据
                 StopAll();
+
+                decodeState = CCDecodeState::Finished;
+                videoState = CCVideoState::Ended;
 
                 CallPlayerEventCallback(PLAYER_EVENT_PLAY_DONE);
                 LOGI(LOG_TAG, "decodeState -> Finished");
             }
         }
-        if(render->IsCurrentSeekToPosFinished() || forceStopSeek) {
-            forceStopSeek = false;
+        if(render->GetCurrentSeekToPosFinished()) {
             StopDecoderThread();
-            render->Pause();
             playerSeeking = 0;
         }
 
@@ -476,18 +520,21 @@ void* CCVideoPlayer::PlayerWorkerThread() {
 void* CCVideoPlayer::DecoderWorkerThread() {
     //读取线程，解复用线程
     int ret;
-    LOGI(LOG_TAG, "DecoderWorkerThread : Start");
+    LOGIF(LOG_TAG, "DecoderWorkerThread : Start: [%s]", CCDecodeStateToString(decodeState));
 
     while (decodeState == CCDecodeState::Decoding || decodeState == CCDecodeState::DecodingToSeekPos) {
 
-        uint maxMaxRenderQueueSize = (decodeState == CCDecodeState::DecodingToSeekPos ? 8 : InitParams.MaxRenderQueueSize);
+        uint maxMaxRenderQueueSize = (decodeState == CCDecodeState::DecodingToSeekPos ? 15 : InitParams.MaxRenderQueueSize);
         if (decodeQueue.AudioQueueSize() > maxMaxRenderQueueSize && decodeQueue.VideoQueueSize() > maxMaxRenderQueueSize) {
             av_usleep(1000 * 20);
-            continue;
+            if(decodeState == CCDecodeState::DecodingToSeekPos) return nullptr;
+            else continue;
         } else
             av_usleep(1000);
 
         AVPacket *avPacket = decodeQueue.RequestPacket();
+        if(!avPacket)
+            break;
         ret = av_read_frame(formatContext, avPacket);
         //等于0成功，其它失败
         if (ret == 0) {
@@ -513,118 +560,149 @@ void* CCVideoPlayer::DecoderWorkerThread() {
         }
     }
 
-    LOGI(LOG_TAG, "DecoderWorkerThread : End");
+    LOGIF(LOG_TAG, "DecoderWorkerThread : End [%s]", CCDecodeStateToString(decodeState));
     return nullptr;
 }
 void* CCVideoPlayer::DecoderVideoThread() {
     //视频解码线程
-    LOGI(LOG_TAG, "DecoderVideoThread : Start");
+    LOGIF(LOG_TAG, "DecoderVideoThread : Start: [%s]", CCDecodeStateToString(decodeState));
 
     int ret;
     AVPacket *packet;
+    AVFrame *frame;
     while (decodeState >= CCDecodeState::Decoding) {
-
-        if(playerSeeking != 2 && decodeQueue.VideoFrameQueueSize() >
-            (decodeState == CCDecodeState::DecodingToSeekPos ? 10 : 50)) {
-            usleep(1000 * 10);
-            continue;
-        }
-        else usleep(1000);
 
         packet = decodeQueue.VideoDequeue();
         if (!packet) {
 
             //如果主线程标记已经结束，那么没有收到包即意味着结束，退出线程
-            if(!decoderVideoFinish && decodeState == CCDecodeState::Finish) {
+            if (!decoderVideoFinish && decodeState == CCDecodeState::Finish) {
                 decoderVideoFinish = true;
-                LOGI(LOG_TAG, "DecoderVideoThread : End by Finish");
-                return nullptr;
+                LOGI(LOG_TAG, "DecoderVideoThread : Finish");
+                goto QUIT;
             }
-            if(decoderVideoFinish)
-                return nullptr;
+            if (decoderVideoFinish) goto QUIT;
 
-            usleep(1000 * 2);
+            av_usleep(1000 * 50);
             continue;
+        }
+
+        //延时
+        if (decodeQueue.VideoFrameQueueSize() >
+            (decodeState == CCDecodeState::DecodingToSeekPos ? 10 : 50)) {
+            av_usleep(1000 * 100);
+            if(decodeState == CCDecodeState::DecodingToSeekPos) {
+                decodeQueue.ReleasePacket(packet);
+                goto QUIT;
+            }
         }
 
         //把包丢给解码器
         ret = avcodec_send_packet(videoCodecContext, packet);
-        decodeQueue.ReleasePacket(packet);
 
-        if (ret != 0) {
+        if(ret == AVERROR(EAGAIN)) {
+            decodeQueue.VideoQueueBack(packet);
+            goto RECEIVE;
+        } else if (ret != 0) {
+            decodeQueue.ReleasePacket(packet);
             LOGEF(LOG_TAG, "DecoderVideoThread : avcodec_send_packet failed : %d", ret);
             break;
         }
 
-        AVFrame *frame = decodeQueue.RequestFrame();
-        ret = avcodec_receive_frame(videoCodecContext, frame);
-        if (ret == AVERROR(EAGAIN)) {
-            continue;
-        }
-        else if (ret != 0) {
-            LOGEF(LOG_TAG, "DecoderVideoThread : avcodec_receive_frame failed : %d", ret);
+        decodeQueue.ReleasePacket(packet);
+
+RECEIVE:
+        frame = decodeQueue.RequestFrame();
+        if(!frame)
             break;
-        }
-        //再开一个线程 播放。
-        decodeQueue.VideoFrameEnqueue(frame);
+        do {
+            ret = avcodec_receive_frame(videoCodecContext, frame) ;
+            if (ret == 0) {
+                //入队列
+                decodeQueue.VideoFrameEnqueue(frame);
+                frame = decodeQueue.RequestFrame();
+            } else {
+                decodeQueue.ReleaseFrame(frame);
+                if (ret != AVERROR(EAGAIN))
+                    LOGEF(LOG_TAG, "DecoderVideoThread : avcodec_receive_frame failed : %d", ret);
+            }
+        } while(ret == 0);
+
     }
 
-    LOGI(LOG_TAG, "DecoderVideoThread : End");
+QUIT:
+    LOGIF(LOG_TAG, "DecoderVideoThread : End [%s]", CCDecodeStateToString(decodeState));
     return nullptr;
 }
 void* CCVideoPlayer::DecoderAudioThread() {
     //音频解码线程
-    LOGI(LOG_TAG, "DecoderAudioThread : Start");
+    LOGIF(LOG_TAG, "DecoderAudioThread : Start: [%s]", CCDecodeStateToString(decodeState));
 
     int ret;
     AVPacket *packet;
+    AVFrame *frame;
     while (decodeState >= CCDecodeState::Decoding) {
 
-        if(playerSeeking != 2 &&
-            decodeQueue.AudioFrameQueueSize() > (decodeState == CCDecodeState::DecodingToSeekPos ? 10 : 50)) {
-            usleep(1000 * 10);
-            continue;
-        }
-        else usleep(1000 * 10);
-
         packet = decodeQueue.AudioDequeue();
+        //延时
         if (!packet) {
 
             //如果主线程标记已经结束，那么没有收到包即意味着结束，退出线程
             if(!decoderAudioFinish && decodeState == CCDecodeState::Finish) {
                 decoderAudioFinish = true;
-                LOGI(LOG_TAG, "DecoderAudioThread : End by Finish");
-                return nullptr;
+                LOGI(LOG_TAG, "DecoderAudioThread : Finish");
+                goto QUIT;
             }
             if(decoderAudioFinish)
-                return nullptr;
+                goto QUIT;
 
-            usleep(1000 * 5);
+            av_usleep(1000 * 50);
             continue;
+        }
+
+        if (decodeQueue.AudioFrameQueueSize() >
+            (decodeState == CCDecodeState::DecodingToSeekPos ? 10 : 20)) {
+            av_usleep(1000 * 200);
+            if(decodeState == CCDecodeState::DecodingToSeekPos) {
+                decodeQueue.ReleasePacket(packet);
+                goto QUIT;
+            }
         }
 
         //把包丢给解码器
         ret = avcodec_send_packet(audioCodecContext, packet);
-        decodeQueue.ReleasePacket(packet);
 
-        if (ret != 0) {
+        if(ret == AVERROR(EAGAIN)) {
+            decodeQueue.AudioQueueBack(packet);
+            goto RECEIVE;
+        } else if (ret != 0) {
             LOGEF(LOG_TAG, "DecoderAudioThread : avcodec_send_packet failed : %d", ret);
             break;
         }
 
-        AVFrame *frame = decodeQueue.RequestFrame();
-        ret = avcodec_receive_frame(audioCodecContext, frame);
-        if (ret == AVERROR(EAGAIN))
-            continue;
-        else if (ret != 0) {
-            LOGEF(LOG_TAG, "DecoderAudioThread : avcodec_receive_frame failed : %d", ret);
-            break;
-        }
+        decodeQueue.ReleasePacket(packet);
 
-        decodeQueue.AudioFrameEnqueue(frame);
+RECEIVE:
+        frame = decodeQueue.RequestFrame();
+        if(!frame)
+            break;
+        do {
+            ret = avcodec_receive_frame(audioCodecContext, frame) ;
+            if (ret == 0) {
+                //入队列
+                decodeQueue.AudioFrameEnqueue(frame);
+                frame = decodeQueue.RequestFrame();
+            }
+            else {
+                decodeQueue.ReleaseFrame(frame);
+                if (ret != AVERROR(EAGAIN))
+                    LOGEF(LOG_TAG, "DecoderAudioThread : avcodec_receive_frame failed : %d", ret);
+            }
+        } while(ret == 0);
     }
 
-    LOGI(LOG_TAG, "DecoderAudioThread : End");
+QUIT:
+    LOGIF(LOG_TAG, "DecoderAudioThread : End [%s]", CCDecodeStateToString(decodeState));
     return nullptr;
 }
 
@@ -647,7 +725,9 @@ void CCVideoPlayer::Init(CCVideoPlayerInitParams *initParams) {
     externalData.DecodeQueue = &decodeQueue;
 
     playerWorking = true;
-    pthread_create(&playerWorkerThread, nullptr, PlayerWorkerThreadStub, this);
+
+    if(playerWorkerThread == 0)
+        pthread_create(&playerWorkerThread, nullptr, PlayerWorkerThreadStub, this);
 
     //av_log
 
@@ -660,14 +740,14 @@ void CCVideoPlayer::Init(CCVideoPlayerInitParams *initParams) {
 }
 void CCVideoPlayer::Destroy() {
 
-    if(playerStatus > CCVideoState::NotOpen)
+    if(videoState > CCVideoState::NotOpen)
         DoCloseVideo();
 
     playerWorking = false;
+
     void* retVal;
     if(playerWorkerThread)
         pthread_join(playerWorkerThread, &retVal);
-    playerWorkerThread = 0;
 
     pthread_mutex_destroy(&startAllLock);
     pthread_mutex_destroy(&stopAllLock);

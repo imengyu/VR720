@@ -155,9 +155,9 @@ private:
 	void KeyMoveCallback(CCameraMovement move);
 
 	glm::vec2 DragCurrentVelocity = glm::vec2(0);
-	glm::vec2 VelocityDragLastOffest = glm::vec2(0);
+	glm::vec2 VelocityDragLastOffset = glm::vec2(0);
 	bool VelocityDragCurrentIsInSim = false;
-	float VelocityDragCutSensitivity = 5.0f;
+	float VelocityDragCutSensitivity = 1.0f;
 
     void DoOpenAsImage();
 	void DoOpenAsVideo();

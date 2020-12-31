@@ -1,12 +1,31 @@
 <resources>
-    <!-- Reply Preference -->
-    <string-array name="reply_entries">
-        <item>Reply</item>
-        <item>Reply to all</item>
+    <string-array name="custom_fps_entries">
+        <item>20帧/秒</item>
+        <item>25帧/秒</item>
+        <item>30帧/秒</item>
+        <item>45帧/秒</item>
+        <item>60帧/秒</item>
+    </string-array>
+    <string-array name="custom_fps_values">
+        <item>20</item>
+        <item>25</item>
+        <item>30</item>
+        <item>45</item>
+        <item>60</item>
     </string-array>
 
-    <string-array name="reply_values">
-        <item>reply</item>
-        <item>reply_all</item>
+    <string-array name="log_level_entries">
+        <item>DEBUG</item>
+        <item>INFO</item>
+        <item>WARNING</item>
+        <item>ERROR</item>
+        <item>DISABLE</item>
+    </string-array>
+    <string-array name="log_level_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
     </string-array>
 </resources>

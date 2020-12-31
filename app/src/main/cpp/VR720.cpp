@@ -86,6 +86,8 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
         return -1;
     }
 
+    av_jni_set_java_vm((void*)vm, nullptr);
+
     return JNI_VERSION_1_6;
 }
 JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved) {

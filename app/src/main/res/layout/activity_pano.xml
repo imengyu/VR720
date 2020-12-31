@@ -110,8 +110,8 @@
 
     <LinearLayout
         android:id="@+id/layout_debug"
-        android:layout_width="200dp"
-        android:layout_height="109dp"
+        android:layout_width="143dp"
+        android:layout_height="131dp"
         android:layout_marginStart="24dp"
         android:layout_marginTop="8dp"
         android:background="@color/colorPanoBarBackground"

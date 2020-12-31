@@ -8,6 +8,7 @@
 #include "stdafx.h"
 extern "C" {
 #include "libavcodec/avcodec.h"
+#include "libavcodec/jni.h"
 #include "libavformat/avformat.h"
 #include "libswscale/swscale.h"
 #include "libswresample/swresample.h"
@@ -35,7 +36,7 @@ public:
     /**
      * 同步队列最大大小
      */
-    size_t MaxRenderQueueSize = 100;
+    size_t MaxRenderQueueSize = 60;
     /**
      * 同步队列增长步长
      */
@@ -98,24 +99,32 @@ enum class CCVideoState {
     Paused = 6,
 };
 
+const char* CCVideoStateToString(CCVideoState state);
+
 enum class CCDecodeState {
-    NotInit,
-    Preparing,
-    Ready,
-    Paused,
-    Finished,
-    FinishedWithError,
-    Decoding,
-    DecodingToSeekPos,
-    Finish,
+    NotInit = 0,
+    Preparing = 1,
+    Ready = 2,
+    Paused = 3,
+    Finished = 4,
+    FinishedWithError = 5,
+    Decoding = 6,
+    DecodingToSeekPos = 7,
+    Finish = 8,
 };
+
+const char* CCDecodeStateToString(CCDecodeState state);
 
 enum class CCRenderState {
-    NotRender,
-    Rendering,
-    RenderingToSeekPos,
+    NotRender = 0,
+    Rendering = 1,
+    RenderingToSeekPos = 2,
 };
 
+const char* CCRenderStateToString(CCRenderState state);
+
+
+//音频输出配置
 #define AUDIO_DEST_SAMPLE_RATE 44100
 #define AUDIO_DEST_CHANNEL_COUNTS 2
 #define AUDIO_DEST_CHANNEL_LAYOUT AV_CH_LAYOUT_STEREO

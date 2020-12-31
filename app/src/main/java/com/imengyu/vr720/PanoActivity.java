@@ -49,6 +49,7 @@ import com.imengyu.vr720.core.NativeVR720;
 import com.imengyu.vr720.core.NativeVR720GLSurfaceView;
 import com.imengyu.vr720.core.NativeVR720Renderer;
 import com.imengyu.vr720.core.sensor.ImprovedOrientationSensor1Provider;
+import com.imengyu.vr720.core.utils.GameUpdateThread;
 import com.imengyu.vr720.dialog.CommonDialog;
 import com.imengyu.vr720.dialog.LoadingDialog;
 import com.imengyu.vr720.model.ImageInfo;
@@ -272,29 +273,19 @@ public class PanoActivity extends AppCompatActivity {
     }
 
     private NativeVR720Renderer renderer;
-    /**
-     * 更新任务
-     */
-    private final TimerTask task = new TimerTask() {
-        @Override
-        public void run() {
-            Thread.currentThread().setName("GameUpdate");
-            renderer.onMainThread();
-        }
-    };
-    private ScheduledExecutorService pool = null;
-
+    private GameUpdateThread gameUpdateThread = null;
     private int updateFpsTick = 0;
     private final StringBuilder debugString = new StringBuilder();
 
     private void initRenderer() {
-
         renderer = new NativeVR720Renderer(handler);
         renderer.setEnableFullChunks(panoEnableFull);
         renderer.setOnRequestGyroValueCallback(quaternion -> orientationSensor1Provider.getQuaternion(quaternion));
         renderer.setCachePath(StorageDirUtils.getViewCachePath());
         renderer.setEnableCache(panoEnableCache);
         renderer.setPanoramaMode(currentPanoMode);
+        renderer.setProp(NativeVR720Renderer.PROP_LOG_LEVEL, logLevel);
+        renderer.setProp(NativeVR720Renderer.PROP_ENABLE_LOG, logEnabled);
         glSurfaceView = findViewById(R.id.pano_view);
         glSurfaceView.setNativeRenderer(renderer);
         glSurfaceView.setCaptureCallback(this::screenShotCallback);
@@ -305,8 +296,10 @@ public class PanoActivity extends AppCompatActivity {
             } else updateFpsTick = 0;
         });
         glSurfaceView.setDragVelocityEnabled(dragVelocityEnabled);
-
-        startUpdateThread();
+        if(enableCustomFps) glSurfaceView.setFps(customFps);
+        else glSurfaceView.setUseLowFps(enableLowFps);
+        gameUpdateThread = new GameUpdateThread(renderer);
+        gameUpdateThread.startUpdateThread();
     }
     private void initControls() {
         titlebar = findViewById(R.id.titlebar);
@@ -400,6 +393,12 @@ public class PanoActivity extends AppCompatActivity {
         dragVelocityEnabled = sharedPreferences.getBoolean("enable_drag_velocity", true);
         debugEnabled = sharedPreferences.getBoolean("show_debug_tool", false);
         dontCheckImageNormalSize = sharedPreferences.getBoolean("do_not_check_pano_normal_size", false);
+        enableCustomFps = sharedPreferences.getBoolean("enable_custom_fps", false);
+        enableLowFps = sharedPreferences.getBoolean("enable_low_fps", false);
+        customFps = sharedPreferences.getInt("custom_fps_value", 0);
+        logLevel = sharedPreferences.getInt("native_log_level", 0);
+        logEnabled = sharedPreferences.getBoolean("enable_native_log", true);
+
         //no full screen
         if(sharedPreferences.getBoolean("enable_non_fullscreen", false))
             ScreenUtils.setFullScreen(this, false);
@@ -558,17 +557,24 @@ public class PanoActivity extends AppCompatActivity {
         seek_video.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-
+                updateVideoControlState();
             }
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
+                lastVideoIsPlay = renderer.getVideoState() == NativeVR720Renderer.VideoState_Playing;
+                renderer.updateVideoState(NativeVR720Renderer.VideoState_Paused);
                 lockVideoSeekUpdate = true;
+                updateVideoControlPlayState();
             }
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
                 lockVideoSeekUpdate = false;
                 if(fileLoaded)
                     renderer.setVideoPos((int) ((seekBar.getProgress() / 100.0f) * currentVideoLength));
+                if(lastVideoIsPlay)
+                    renderer.updateVideoState(NativeVR720Renderer.VideoState_Playing);
+                updateVideoControlPlayState();
+                updateVideoControlState();
             }
         });
 
@@ -585,25 +591,6 @@ public class PanoActivity extends AppCompatActivity {
         editor.putBoolean("do_not_check_pano_normal_size", dontCheckImageNormalSize);
 
         editor.apply();
-    }
-    private void startUpdateThread() {
-        if(pool == null) {
-            pool = Executors.newScheduledThreadPool(1);
-            pool.scheduleAtFixedRate(task, 0, 150, TimeUnit.MILLISECONDS);
-        }
-    }
-    private void stopUpdateThread() {
-        if(pool != null) {
-            pool.shutdown();
-            try {
-                if(!pool.awaitTermination(1000, TimeUnit.MILLISECONDS))
-                    pool.shutdownNow();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                pool.shutdownNow();
-            }
-            pool = null;
-        }
     }
     private void updateDebugSeek() {
         renderer.updateDebugValue(
@@ -632,7 +619,6 @@ public class PanoActivity extends AppCompatActivity {
         //视频控件状态更新
         if(currentVideoPlaying)
             updateVideoControlState();
-        updateToolbarStateInVideoMode();
     }
 
     //界面控制
@@ -645,14 +631,20 @@ public class PanoActivity extends AppCompatActivity {
     private Size currentImageSize = new Size(0,0);
     private ImageItem currentImageItem = null;
     private int currentPanoMode = 0;
+    private int logLevel = 0;
+    private boolean logEnabled = true;
     private boolean panoEnableCache = true;
     private boolean panoEnableFull = false;
     private boolean vrEnabled = false;
     private boolean gyroEnabled = false;
     private boolean dragVelocityEnabled = true;
     private boolean debugEnabled = true;
+    private boolean enableLowFps = false;
+    private boolean enableCustomFps = false;
+    private int customFps = 0;
     private boolean dontCheckImageNormalSize = true;
     private boolean lockVideoSeekUpdate = false;
+    private boolean lastVideoIsPlay = false;
 
     private void changeMode() {
         if(currentPanoMode < NativeVR720Renderer.PanoramaMode_PanoramaModeMax - 1)
@@ -742,12 +734,8 @@ public class PanoActivity extends AppCompatActivity {
             })
             .show();
     }
-    private void openWithOtherApp() {
-        FileUtils.openFileWithApp(this, filePath);
-    }
-    private void shareThisImage() {
-        FileUtils.shareFile(this, filePath);
-    }
+    private void openWithOtherApp() { FileUtils.openFileWithApp(this, filePath); }
+    private void shareThisImage() { FileUtils.shareFile(this, filePath); }
     private void showErr(String err) {
         pano_error.setVisibility(View.VISIBLE);
         pano_loading.setVisibility(View.GONE);
@@ -814,21 +802,12 @@ public class PanoActivity extends AppCompatActivity {
         currentVideoPlaying = (state == NativeVR720Renderer.VideoState_Playing);
         button_video_play_pause.setCompoundDrawables(currentVideoPlaying ? ic_pause : ic_play, null, null, null);
     }
-    private void updateToolbarStateInVideoMode() {
-        if(currentFileIsVideo && toolbarOn) {
-            if(toolbarShowTick > 0)
-                toolbarShowTick --;
-            if(toolbarShowTick <= 0)
-                setToolBarStatus(false);
-        }
-    }
 
     private boolean currentCanNext = false;
     private boolean currentCanPrev = false;
     private LoadingDialog captureLoadingDialog = null;
 
     private boolean toolbarOn = true;
-    private int toolbarShowTick = 0;
     private boolean panoInfoShow = false;
     private boolean panoMenuShow = false;
     private boolean isLandscape = false;
@@ -858,7 +837,6 @@ public class PanoActivity extends AppCompatActivity {
                 button_prev.startAnimation(fade_show);
             }
 
-            toolbarShowTick = 8;
         } else {
             pano_tools.startAnimation(bottom_down);
             pano_tools.setVisibility(View.GONE);
@@ -873,8 +851,6 @@ public class PanoActivity extends AppCompatActivity {
                 button_prev.startAnimation(fade_hide);
                 button_prev.setVisibility(View.GONE);
             }
-
-            toolbarShowTick = 0;
         }
     }
     private void setPanoMenuStatus(boolean show, boolean anim) {
@@ -990,7 +966,6 @@ public class PanoActivity extends AppCompatActivity {
         else {
             layout_video_control.setVisibility(View.GONE);
         }
-        glSurfaceView.setFps(30);
 
         setPanoInfoStatus(false, false);
         setPanoMenuStatus(false, false);
@@ -1040,8 +1015,6 @@ public class PanoActivity extends AppCompatActivity {
             case NativeVR720Renderer.MobileGameUIEvent_UiInfoChanged: break;
             case NativeVR720Renderer.MobileGameUIEvent_DestroyComplete: {
                 Log.i(TAG, "DestroyComplete");
-
-                glSurfaceView.forceStop();
                 fileLoaded = false;
                 fileLoading = false;
                 glSurfaceView.onDestroyComplete();
@@ -1079,7 +1052,7 @@ public class PanoActivity extends AppCompatActivity {
             renderer.updateVideoState(NativeVR720Renderer.VideoState_Paused);
 
         saveSettings();
-        stopUpdateThread();
+        gameUpdateThread.stopUpdateThread();
 
         if(gyroEnabled)
             orientationSensor1Provider.stop();
@@ -1098,8 +1071,7 @@ public class PanoActivity extends AppCompatActivity {
                 orientationSensor1Provider.start();
 
             glSurfaceView.onResume();
-
-            startUpdateThread();
+            gameUpdateThread.startUpdateThread();
         }
 
         super.onResume();
@@ -1180,7 +1152,6 @@ public class PanoActivity extends AppCompatActivity {
             layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT;
             pano_menu.setLayoutParams(layoutParams);
         }
-
         flushToolStatus();
     }
 
@@ -1326,9 +1297,6 @@ public class PanoActivity extends AppCompatActivity {
             showErr(getString(R.string.text_not_provide_path));
             return;
         }
-
-        //设置FPS
-        glSurfaceView.setFps(10);
 
         if(FileUtils.getFileIsImage(filePath)) {
 

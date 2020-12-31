@@ -1,0 +1,68 @@
+<PreferenceScreen
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    app:iconSpaceReserved="false">
+
+    <PreferenceCategory
+        app:title="@string/settings_header_update">
+
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:key="calc_auto_update"
+            app:title="@string/settings_key_auto_update" />
+
+        <Preference
+            app:icon="@drawable/ic_menu_upgrade"
+            app:key="app_check_update"
+            app:title="@string/settings_key_check_update" />
+
+        <Preference
+            app:key="app_go_app_store_check_update"
+            app:title="@string/settings_key_go_app_store_check_update" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:title="@string/settings_header_cache">
+
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:key="enable_program_cache"
+            app:title="@string/settings_key_enable_program_cache" />
+
+        <Preference
+            app:icon="@drawable/ic_menu_delete"
+            app:key="settings_key_clear_cache"
+            app:title="@string/settings_key_clear_cache" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:title="@string/settings_header_debug">
+
+        <SwitchPreferenceCompat
+            app:defaultValue="false"
+            app:key="show_debug_tool"
+            app:title="@string/settings_key_show_debug_tool" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:key="enable_exception_catch"
+            app:title="@string/settings_key_enable_exception_catch"
+            app:summary="@string/settings_summary_enable_exception_catch" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:key="enable_native_log"
+            app:title="@string/settings_key_enable_native_log" />
+
+        <ListPreference
+            app:defaultValue="0"
+            app:persistent="false"
+            app:key="native_log_level"
+            app:title="@string/settings_key_native_log_level"
+            app:entries="@array/log_level_entries"
+            app:entryValues="@array/log_level_values" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>
