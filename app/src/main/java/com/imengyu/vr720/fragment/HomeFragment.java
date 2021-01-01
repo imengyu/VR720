@@ -110,7 +110,9 @@ public class HomeFragment extends Fragment implements IMainFragment {
 
     private void initView(View view) {
         final FloatingActionButton fab = view.findViewById(R.id.fab);
+        final FloatingActionButton fab_search = view.findViewById(R.id.fab_search);
         fab.setOnClickListener(v -> onAddImageClick());
+
 
         final LinearLayout footerSelection = view.findViewById(R.id.footer_select_main);
         footerSelection.setVisibility(View.GONE);
@@ -131,6 +133,7 @@ public class HomeFragment extends Fragment implements IMainFragment {
         mainList.setListCheckableChangedListener(checkable -> {
             if (checkable) {
                 fab.hide();
+                fab_search.hide();
                 AnimationSet animationSet = (AnimationSet) AnimationUtils.loadAnimation(getContext(), R.anim.bottom_up);
                 footerSelection.startAnimation(animationSet);
                 footerSelection.setVisibility(View.VISIBLE);
@@ -140,6 +143,7 @@ public class HomeFragment extends Fragment implements IMainFragment {
                             true, 0, false);
             } else {
                 fab.show();
+                fab_search.show();
                 AnimationSet animationSet = (AnimationSet) AnimationUtils.loadAnimation(getContext(), R.anim.bottom_down);
                 footerSelection.startAnimation(animationSet);
                 footerSelection.setVisibility(View.GONE);
@@ -209,6 +213,8 @@ public class HomeFragment extends Fragment implements IMainFragment {
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if(listDataService.isDataDirty())
+            handler.sendEmptyMessageDelayed(MainMessages.MSG_FORCE_LOAD_LIST, 1000);
         if (requestCode == Codes.REQUEST_CODE_OPEN_IMAGE && data != null) {
             //获取选择器返回的数据
             ArrayList<Photo> resultPhotos = data.getParcelableArrayListExtra(EasyPhotos.RESULT_PHOTOS);
@@ -266,6 +272,9 @@ public class HomeFragment extends Fragment implements IMainFragment {
                 break;
             case MainMessages.MSG_ADD_IMAGE:
                 onAddImageClick();
+                break;
+            case MainMessages.MSG_FORCE_LOAD_LIST:
+                loadList();
                 break;
         }
     }

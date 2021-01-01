@@ -1,6 +1,8 @@
 package com.imengyu.vr720.model;
 
-public class GalleryItem {
+import java.io.Serializable;
+
+public class GalleryItem implements Serializable {
     public String name;
     public int id;
     public String createTime;

@@ -2,14 +2,18 @@ package com.imengyu.vr720.model;
 
 import com.imengyu.vr720.utils.FileUtils;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ImageItem {
+public class ImageItem implements Serializable {
     public String path;
     public List<Integer> belongGalleries = new ArrayList<>();
     public boolean isVideo = false;
 
+    public ImageItem() {
+
+    }
     public ImageItem(String path, String belongGalleriesStr) {
         this.path = path;
         this.isVideo = FileUtils.getFileIsVideo(path);

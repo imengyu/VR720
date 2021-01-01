@@ -1,0 +1,180 @@
+html {
+  line-height: 1.42857;
+  color: #404040;
+  background-color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial,
+    sans-serif;
+  font-feature-settings: "tnum";
+  font-variant: tabular-nums;
+}
+
+body {
+  padding: 0;
+  margin: 0;
+}
+.padding {
+  padding: 20px;
+}
+img:not(.small) {
+  max-width: 100%;
+  border: 1px solid #ddd;
+}
+img.small {
+  vertical-align: baseline;
+}
+a img {
+  margin: 0 2px;
+}
+h3 {
+  margin: 20px 0 15px 0;
+  border-bottom: 1px dashed #ccc;
+  padding-bottom: 8px;
+}
+h3.padding {
+  padding-top: 0;
+  padding-bottom: 8px;
+}
+h6 {
+  margin: 20px 0 5px 0;
+  padding-bottom: 5px;
+  border-bottom: 1px dashed #ddd;
+}
+.box-notice {
+  padding: 5px;
+  background-color: #f7f7f7;
+  border-radius: 5px;
+  margin-bottom: 8px;
+}
+.box-notice.small {
+  font-size: 13px;
+}
+ul,
+ol {
+  padding-inline-start: 20px;
+}
+
+.img-box {
+  text-align: center;
+  position: relative;
+  margin: 10px 0;
+}
+.img-box span {
+  display: block;
+
+  color: #6b6b6b;
+  font-size: 12px;
+  margin-top: 8px;
+}
+.flex {
+  display: flex;
+}
+.flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.img-grid {
+  display: inline-block;
+  width: 30%;
+}
+.faq {
+  border-bottom: 1px dashed #999;
+  padding-bottom: 10px;
+  margin: 10px 0;
+  font-weight: bold;
+}
+.faq-a {
+  margin: 0 0 4px 0;
+  border-bottom: 1px dashed #ececec;
+  padding-bottom: 10px;
+}
+.help-item {
+  display: block;
+  background-color: #fff;
+  border-bottom: 1px solid #ececec;
+  font-weight: normal;
+  font-size: 13px;
+  padding: 10px 20px;
+  transition: all ease-in-out 0.25s;
+  cursor: pointer;
+}
+.help-item.first {
+  border-top: 1px solid #ececec;
+}
+.help-item:hover {
+  background-color: #f8f8f8;
+}
+button {
+  background: #e2e2e2;
+  border-radius: 30px;
+  padding: 10px 20px;
+  color: #000;
+  outline: none;
+  cursor: pointer;
+  border: none;
+}
+button:hover,
+button:active {
+  background: #afafaf;
+}
+button.primary {
+  background: #787cc5;
+  color: #fff;
+}
+button.primary:hover,
+button.primary:active {
+  background: #54589b;
+  color: #fff;
+}
+.back {
+  margin: 40px 0 20px 0;
+}
+.block {
+  display: block;
+  width: 100%;
+}
+.text-center {
+  text-align: center;
+}
+.text-primary {
+  color: #54589b;
+}
+a {
+  color: #54589b;
+  text-decoration: none;
+}
+a:hover,
+a:active {
+  color: #54589b;
+  text-decoration: underline;
+}
+.no-border {
+  border: none !important;
+}
+
+.icon {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin: 0 4px;
+}
+.icon-search {
+  background-image: url(../images/icon_search.png);
+}
+.icon-warn {
+  background-image: url(../images/icon_warn.png);
+}
+.icon-err {
+  background-image: url(../images/icon_err.png);
+}
+.icon-tip {
+  background-image: url(../images/icon_tip.png);
+}
+.icon-qusetion {
+  background-image: url(../images/icon_qusetion.png);
+}
+.content-translate {
+  display: none;
+}

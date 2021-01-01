@@ -49,7 +49,6 @@ void CMobileGameRenderer::DoOpenFile()
     }
     else {
         lastError = fileManager->GetLastError();
-        LOGEF(LOG_TAG, "File %s open failed : %d", currentOpenFilePath.c_str(), lastError);
         FinishLoadAndNotifyError();
     }
 }
@@ -96,7 +95,10 @@ void CMobileGameRenderer::DoOpenAsVideo() {
     thisFileShouldLoadInCache = false;
 
     //打开视频
-    player->OpenVideo(currentOpenFilePath.c_str());
+    if(!player->OpenVideo(currentOpenFilePath.c_str())) {
+        lastError = player->GetLastError();
+        FinishLoadAndNotifyError();
+    }
 }
 void CMobileGameRenderer::MarkCloseFile() {
     if(fileOpened)
@@ -105,6 +107,7 @@ void CMobileGameRenderer::MarkCloseFile() {
         uiEventDistributor->SendEvent(CCMobileGameUIEvent::FileClosed);
 }
 void CMobileGameRenderer::FinishLoadAndNotifyError() {
+    LOGEF(LOG_TAG, "File open failed : %d", lastError);
     fileOpened = false;
     renderer->renderOn = false;
     uiInfo->currentImageOpened = false;
@@ -809,6 +812,7 @@ void CMobileGameRenderer::FileCloseCallback(void* data) {
         _this->logger->Log(LOG_TAG, "Go close video");
         _this->player->CloseVideo();
     } else {
+        _this->currentFileSmallThumbnailCachePath = "";
         _this->renderer->panoramaThumbnailTex = nullptr;
         _this->renderer->renderPanoramaFull = false;
         _this->texLoadQueue->Clear();
@@ -864,7 +868,6 @@ void CMobileGameRenderer::VideoPlayerEventCallBack(CCVideoPlayer* player, int me
         }
         case PLAYER_EVENT_OPEN_FAIED: {
             _this->lastError = player->GetLastError();
-            _this->logger->LogError2(LOG_TAG, "Video file open failed : %s", player->GetLastError());
             _this->FinishLoadAndNotifyError();
             break;
         }
@@ -1067,8 +1070,8 @@ void CMobileGameRenderer::SetBoolProp(int id, bool value) {
     switch (id) {
         case PROP_VR_ENABLED: SetVREnabled(value); break;
         case PROP_GYRO_ENABLED: SetGyroEnabled(value); break;
-        case PROP_FULL_CHUNK_LOAD_ENABLED: SetEnableFullChunkLoad(value); break;
-        case PROP_VIEW_CACHE_ENABLED: SetViewCacheEnabled(value); break;
+        case PROP_FULL_CHUNK_LOAD_ENABLED: fullChunkLoadEnabled = value; break;
+        case PROP_VIEW_CACHE_ENABLED: enableViewCache = value; break;
         case PROP_ENABLE_LOG: return LOG->SetEnabled(value);
         default: break;
     }
@@ -1092,7 +1095,7 @@ bool CMobileGameRenderer::GetBoolProp(int id) {
 
 void CMobileGameRenderer::SetProp(int id, char* string) {
     switch (id) {
-        case PROP_CACHE_PATH: SetCachePath(string); break;
+        case PROP_CACHE_PATH: viewCachePath = string; break;
         case PROP_SMALL_PANORAMA_PATH: currentFileSmallThumbnailCachePath = string; break;
         case PROP_FILE_PATH: currentOpenFilePath = string; break;
         default: break;
@@ -1119,15 +1122,10 @@ void CMobileGameRenderer::SetGyroEnabled(bool enable) {
         renderer->ResetModel();
     }
 }
-void CMobileGameRenderer::SetEnableFullChunkLoad(bool enable) {
-    fullChunkLoadEnabled = enable;
-}
 void CMobileGameRenderer::SetVREnabled(bool enable) {
     vREnabled = enable;
     if (!vREnabled)
         CMobileGameRenderer::Resize(Width, Height);
 }
-void CMobileGameRenderer::SetViewCacheEnabled(bool enable) { enableViewCache = enable; }
-void CMobileGameRenderer::SetCachePath(char* path) { viewCachePath = path; }
 
 

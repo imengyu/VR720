@@ -93,7 +93,7 @@ public class GalleryGridAdapter extends CheckableListAdapter<MainListItem> {
                 viewHolder.view_item_outer.setLayoutParams(layoutParams);
 
                 if (item.isThumbnailFail())
-                    viewHolder.image.setImageResource(R.drawable.ic_noprob);
+                    viewHolder.image.setImageResource(R.drawable.ic_noprob_small);
                 else if (item.isThumbnailLoading())
                     viewHolder.image.setImageResource(R.drawable.ic_tumb);
                 else {

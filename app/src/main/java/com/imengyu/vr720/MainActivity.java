@@ -25,6 +25,7 @@ import androidx.viewpager.widget.ViewPager;
 import com.google.android.material.navigation.NavigationView;
 import com.hjq.toast.ToastUtils;
 import com.imengyu.vr720.adapter.MyFragmentAdapter;
+import com.imengyu.vr720.config.Codes;
 import com.imengyu.vr720.config.MainMessages;
 import com.imengyu.vr720.dialog.AppDialogs;
 import com.imengyu.vr720.fragment.GalleryFragment;
@@ -334,6 +335,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if(requestCode == Codes.REQUEST_CODE_SETTING && data != null
+                && data.getBooleanExtra("needRestart", false)) {
+            Intent intent = new Intent(this, LunchActivity.class);
+            intent.setAction(Intent.ACTION_MAIN);
+            intent.addCategory(Intent.CATEGORY_LAUNCHER);
+            startActivity(intent);
+            finish();
+        }
         for(Fragment fragment : fragments)
             ((IMainFragment)fragment).onActivityResult(requestCode, resultCode, data);
         super.onActivityResult(requestCode, resultCode, data);

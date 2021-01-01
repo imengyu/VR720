@@ -112,6 +112,18 @@ public class ListDataService {
     public static final int GALLERY_LIST_ID_I_LIKE = -1;
     public static final int GALLERY_LIST_ID_VIDEOS = -2;
 
+    private boolean dataDirty = false;
+
+    public void setDataDirty(boolean dataDirty) {
+        this.dataDirty = dataDirty;
+    }
+    public boolean isDataDirty() {
+        if(dataDirty) {
+            dataDirty = false;
+            return true;
+        }
+        return false;
+    }
     public ImageItem addImageItem(String path) {
         return addImageItem(path, 0);
     }
@@ -124,6 +136,7 @@ public class ListDataService {
         }
         item = new ImageItem(path, belongGallery != 0 ? String.valueOf(belongGallery) : "");
         imageList.add(item);
+        dataDirty = true;
         return item;
     }
     public ImageItem findImageItem(String path) {
@@ -132,8 +145,27 @@ public class ListDataService {
                 return imageList.get(i);
             return null;
     }
+    public void importImageItems(List<ImageItem> list, boolean merge) {
+        if(!merge)
+            imageList.clear();
+
+        for(ImageItem item : list)
+            if(item.belongGalleries == null)
+                item.belongGalleries = new ArrayList<>();
+
+        imageList.addAll(list);
+        dataDirty = true;
+    }
+    public void importGalleryItem(List<GalleryItem> list, boolean merge) {
+        if(!merge)
+            galleryList.clear();
+
+        galleryList.addAll(list);
+        dataDirty = true;
+    }
     public void clearImageItems() {
         imageList.clear();
+        dataDirty = true;
     }
     public void removeImageItem(String path) {
         for(int i = imageList.size() - 1; i>=0;i--)
@@ -142,6 +174,7 @@ public class ListDataService {
     }
     public void removeImageItem(ImageItem imageItem) {
         imageList.remove(imageItem);
+        dataDirty = true;
     }
     public ArrayList<ImageItem> getImageList() {
         return imageList;

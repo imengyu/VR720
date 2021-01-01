@@ -1,7 +1,6 @@
 package com.imengyu.vr720.dialog;
 
 import android.app.Activity;
-import android.app.Dialog;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Handler;
@@ -18,12 +17,14 @@ import android.widget.TextView;
 import androidx.appcompat.app.AlertDialog;
 
 import com.imengyu.vr720.AboutActivity;
-import com.imengyu.vr720.FeedBackActivity;
 import com.imengyu.vr720.HelpActivity;
+import com.imengyu.vr720.HtmlActivity;
 import com.imengyu.vr720.R;
 import com.imengyu.vr720.SettingsActivity;
 import com.imengyu.vr720.adapter.SimpleListAdapter;
 import com.imengyu.vr720.adapter.SmallGalleryListAdapter;
+import com.imengyu.vr720.config.Codes;
+import com.imengyu.vr720.config.Constants;
 import com.imengyu.vr720.config.MainMessages;
 import com.imengyu.vr720.model.GalleryItem;
 import com.imengyu.vr720.model.list.GalleryListItem;
@@ -38,8 +39,6 @@ import java.util.List;
 
 public class AppDialogs {
 
-  public static final int RESULT_SETTING_ACTIVITY = 0;
-
   public static void showHelp(Activity activity) {
     activity.startActivity(new Intent(activity, HelpActivity.class));
   }
@@ -47,10 +46,12 @@ public class AppDialogs {
     activity.startActivity(new Intent(activity, AboutActivity.class));
   }
   public static void showSettings(Activity activity) {
-    activity.startActivityForResult(new Intent(activity, SettingsActivity.class), RESULT_SETTING_ACTIVITY);
+    activity.startActivityForResult(new Intent(activity, SettingsActivity.class), Codes.REQUEST_CODE_SETTING);
   }
   public static void showFeedBack(Activity activity) {
-    activity.startActivity(new Intent(activity, FeedBackActivity.class));
+    Intent intent = new Intent(activity, HtmlActivity.class);
+    intent.putExtra("url", Constants.FEED_BACK_URL);
+    activity.startActivity(intent);
   }
 
   public interface OnAgreementCloseListener {

@@ -125,6 +125,14 @@ void CCPanoramaRenderer::Render(float deltaTime) {
 
     shader->Use();
 
+    //视频贴图更新
+    if(videoTextureFlushEnabled && !videoTextureLock && !panoramaThumbnailTex.IsNullptr()) {
+        if(videoTexMarkDirty) {
+            videoTexMarkDirty = false;
+            panoramaThumbnailTex->ReBufferData(false);
+        }
+    }
+
     //墨卡托投影
     if(renderOn && currentFrameMercatorCylinder) {
         currentFrameMercatorCylinder = false;
@@ -144,14 +152,6 @@ void CCPanoramaRenderer::Render(float deltaTime) {
     //模型位置和矩阵映射
     model = mainModel->GetModelMatrix();
     glUniformMatrix4fv(globalRenderInfo->modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-
-    //视频贴图更新
-    if(videoTextureFlushEnabled && !videoTextureLock && !panoramaThumbnailTex.IsNullptr()) {
-        if(videoTexMarkDirty) {
-            videoTexMarkDirty = false;
-            panoramaThumbnailTex->ReBufferData(false);
-        }
-    }
 
     //完整绘制
     if (!renderOn)
@@ -261,9 +261,7 @@ void CCPanoramaRenderer::RenderMercatorCylinder() {
     RenderFlat();
 }
 void CCPanoramaRenderer::RenderThumbnail() const { mainModel->Render(); }
-void CCPanoramaRenderer::RenderFlat() const {
-    mainFlatModel->Render();
-}
+void CCPanoramaRenderer::RenderFlat() const { mainFlatModel->Render(); }
 void CCPanoramaRenderer::RenderFullChunks(float deltaTime)
 {
     if (renderPanoramaFullTest && !renderPanoramaFullRollTest) {

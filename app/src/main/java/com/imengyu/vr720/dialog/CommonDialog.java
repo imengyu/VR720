@@ -139,7 +139,7 @@ public class CommonDialog extends Dialog {
     if (!TextUtils.isEmpty(negative)) {
       negativeBn.setText(negative);
     } else {
-      negativeBn.setText("取消");
+      negativeBn.setText(getContext().getString(R.string.action_cancel));
     }
     negativeBn.setEnabled(negativeEnable);
     if (!TextUtils.isEmpty(checkText)) {

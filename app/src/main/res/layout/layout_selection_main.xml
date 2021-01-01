@@ -19,7 +19,7 @@
         <com.imengyu.vr720.widget.ToolbarButton
             android:id="@+id/button_mainsel_openwith"
             style="@style/Widget.AppCompat.Button.Borderless"
-            android:layout_width="90dp"
+            android:layout_width="100dp"
             android:layout_height="70dp"
             android:drawableTop="@drawable/ic_menu_open"
             android:text="@string/text_open_way"

@@ -118,7 +118,10 @@ public class MainThumbnailImageView extends AppCompatImageView {
         if(!imageText.isEmpty()) {
             paint.setColor(imageTextColor);
             paint.setTextAlign(Paint.Align.LEFT);
-            canvas2.drawText(imageText, leftTextReserveSpace ? 130 : 20, getHeight() - imageTextSize + 5, paint);
+            if(imageText.length() >= 32)
+                canvas2.drawText(imageText.substring(0, 30) + "...", leftTextReserveSpace ? 130 : 20, getHeight() - imageTextSize + 5, paint);
+            else
+                canvas2.drawText(imageText, leftTextReserveSpace ? 130 : 20, getHeight() - imageTextSize + 5, paint);
         }
 
         if(!imageSize.isEmpty()) {

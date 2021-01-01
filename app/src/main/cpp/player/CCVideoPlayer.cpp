@@ -43,8 +43,10 @@ void CCVideoPlayer::DoOpenVideo() {
 void CCVideoPlayer::DoCloseVideo() {
     LOGD(LOG_TAG, "DoCloseVideo");
 
-    SetVideoState(CCVideoState::Paused);
+    //停止
+    StopAll();
 
+    //释放
     DestroyDecoder();
     render->Destroy();
     decodeQueue.Destroy();
@@ -119,7 +121,7 @@ bool CCVideoPlayer::OpenVideo(const char *filePath) {
         return false;
     }
     if(videoState > CCVideoState::NotOpen) {
-        LOGE(LOG_TAG, "A video has been opened. Please close it first");
+        LOGEF(LOG_TAG, "A video has been opened. Please close it first [%s]", CCVideoStateToString(videoState));
         lastError = VR_ERR_VIDEO_PLAYER_ALREADY_OPEN;
         return false;
     }
@@ -492,7 +494,8 @@ void* CCVideoPlayer::PlayerWorkerThread() {
             playerSeeking = 2;
             DoSeekVideo();
         }
-        if(playerSeeking != 2 && decoderVideoFinish && decoderAudioFinish && decodeState != CCDecodeState::Finished) {
+        if(playerSeeking != 2 && decoderVideoFinish && decoderAudioFinish &&
+                (decodeState > CCDecodeState::NotInit && decodeState != CCDecodeState::Finished)) {
             int64_t pos = GetVideoPos();
             if(pos >= GetVideoLength() - 10 || pos == -1) {
 

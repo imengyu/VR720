@@ -6,11 +6,9 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
-import android.graphics.drawable.Drawable;
 import android.hardware.SensorManager;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
@@ -26,19 +24,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
-import android.widget.Button;
-import android.widget.ImageButton;
 import android.widget.SeekBar;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.SwitchCompat;
-import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
-import androidx.core.content.res.ResourcesCompat;
 import androidx.core.widget.TextViewCompat;
 import androidx.exifinterface.media.ExifInterface;
 import androidx.preference.PreferenceManager;
@@ -46,8 +36,8 @@ import androidx.preference.PreferenceManager;
 import com.hjq.toast.ToastUtils;
 import com.imengyu.vr720.config.MainMessages;
 import com.imengyu.vr720.core.NativeVR720;
-import com.imengyu.vr720.core.NativeVR720GLSurfaceView;
 import com.imengyu.vr720.core.NativeVR720Renderer;
+import com.imengyu.vr720.core.panorama.PanoramaViewBinder;
 import com.imengyu.vr720.core.sensor.ImprovedOrientationSensor1Provider;
 import com.imengyu.vr720.core.utils.GameUpdateThread;
 import com.imengyu.vr720.dialog.CommonDialog;
@@ -66,8 +56,6 @@ import com.imengyu.vr720.utils.ScreenUtils;
 import com.imengyu.vr720.utils.StatusBarUtils;
 import com.imengyu.vr720.utils.StorageDirUtils;
 import com.imengyu.vr720.utils.StringUtils;
-import com.imengyu.vr720.widget.MyTitleBar;
-import com.imengyu.vr720.widget.ToolbarButton;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -76,17 +64,12 @@ import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.TimerTask;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 public class PanoActivity extends AppCompatActivity {
 
     /** Tag for logging. */
     public static final String TAG = PanoActivity.class.getSimpleName();
 
-    private Context mContext;
     private Resources resources;
 
     private String filePathReal;
@@ -103,56 +86,6 @@ public class PanoActivity extends AppCompatActivity {
         return -1;
     }
 
-    private View pano_error;
-    private View pano_loading;
-    private View pano_menu;
-    private View pano_info;
-    private View pano_tools;
-    private TextView text_pano_error;
-    private TextView text_pano_info_size;
-    private TextView text_pano_info_file_size;
-    private TextView text_pano_info_file_path;
-    private TextView text_pano_info_image_time;
-    private TextView text_pano_info_shutter_time;
-    private TextView text_pano_info_exposure_bias_value;
-    private TextView text_pano_info_iso_sensitivit;
-    private TextView text_sensor_cant_use_in_mode;
-    private TextView text_debug;
-    private TextView text_video_current_pos;
-    private TextView text_video_length;
-    private View layout_debug;
-    private View layout_video_control;
-    private ImageButton button_prev;
-    private ImageButton button_next;
-    private Button button_video_play_pause;
-    private SeekBar seek_video;
-    private SeekBar seek_x;
-    private SeekBar seek_y;
-    private SeekBar seek_z;
-    private MyTitleBar titlebar;
-    private NativeVR720GLSurfaceView glSurfaceView;
-    private ToolbarButton button_like;
-    private ToolbarButton button_short;
-    private ToolbarButton button_mode;
-    private ToolbarButton button_more;
-    private ConstraintLayout activity_pano;
-
-    private Drawable iconModeBall;
-    private Drawable iconModeLittlePlanet;
-    private Drawable iconModeRectiliner;
-    private Drawable iconModeSource;
-    private Drawable iconModeMercator;
-    private Drawable iconModeVideoBall;
-
-    private Drawable ic_play;
-    private Drawable ic_pause;
-
-    private Animation bottom_up, bottom_down;
-    private Animation fade_hide, fade_show;
-    private Animation top_down, top_up;
-    private Animation left_to_right_out, right_to_left_in;
-    private ColorStateList likeColorStateList;
-
     private Size screenSize;
 
     private String openNextPath;
@@ -160,6 +93,9 @@ public class PanoActivity extends AppCompatActivity {
     private boolean closeMarked = false;
     private boolean initialized = false;
     private boolean lastTouchMoved = false;
+    private boolean lastDoubleClick = false;
+    private long firstClickTime = 0;
+    private final int MAX_LONG_PRESS_TIME = 250;// 长按/双击最长等待时间
 
     private ListDataService listDataService;
     private ListImageCacheService listImageCacheService;
@@ -180,20 +116,18 @@ public class PanoActivity extends AppCompatActivity {
         listImageCacheService = application.getListImageCacheService();
         listDataService = application.getListDataService();
         resources = getResources();
-        mContext = getApplicationContext();
         screenSize = ScreenUtils.getScreenSize(this);
 
         //初始化内核
         application.checkAndInit();
         NativeVR720.updateAssetManagerPtr(getAssets());
 
-        initAnimations();
-        initResources();
+        viewBinder = new PanoramaViewBinder(this);
+
         initSettings();
         initSensor();
         initRenderer();
-        initControls();
-        initButtons();
+        initView();
 
         //检查
         if(!NativeVR720Renderer.checkSupportsEs3(this)) {
@@ -267,13 +201,14 @@ public class PanoActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         unInitSensor();
-        glSurfaceView.setCaptureCallback(null);
+        viewBinder.glSurfaceView.setCaptureCallback(null);
         renderer.onDestroy();
         super.onDestroy();
     }
 
     private NativeVR720Renderer renderer;
     private GameUpdateThread gameUpdateThread = null;
+    private PanoramaViewBinder viewBinder = null;
     private int updateFpsTick = 0;
     private final StringBuilder debugString = new StringBuilder();
 
@@ -286,209 +221,122 @@ public class PanoActivity extends AppCompatActivity {
         renderer.setPanoramaMode(currentPanoMode);
         renderer.setProp(NativeVR720Renderer.PROP_LOG_LEVEL, logLevel);
         renderer.setProp(NativeVR720Renderer.PROP_ENABLE_LOG, logEnabled);
-        glSurfaceView = findViewById(R.id.pano_view);
-        glSurfaceView.setNativeRenderer(renderer);
-        glSurfaceView.setCaptureCallback(this::screenShotCallback);
-        glSurfaceView.setRendererCallback((gl10) -> {
+        viewBinder.glSurfaceView.setNativeRenderer(renderer);
+        viewBinder.glSurfaceView.setCaptureCallback(this::screenShotCallback);
+        viewBinder.glSurfaceView.setRendererCallback((gl10) -> {
             if(updateFpsTick < 0xffff) {
                 updateFpsTick++;
                 if(updateFpsTick % 20 == 0) doRenderTick();
             } else updateFpsTick = 0;
         });
-        glSurfaceView.setDragVelocityEnabled(dragVelocityEnabled);
-        if(enableCustomFps) glSurfaceView.setFps(customFps);
-        else glSurfaceView.setUseLowFps(enableLowFps);
+        viewBinder.glSurfaceView.setDragVelocityEnabled(dragVelocityEnabled);
+        if(enableCustomFps) viewBinder.glSurfaceView.setFps(customFps);
+        else viewBinder.glSurfaceView.setUseLowFps(enableLowFps);
         gameUpdateThread = new GameUpdateThread(renderer);
         gameUpdateThread.startUpdateThread();
     }
-    private void initControls() {
-        titlebar = findViewById(R.id.titlebar);
-        titlebar.setLeftIconOnClickListener((v) -> onBackPressed());
-        titlebar.setRightIconOnClickListener((v) -> shareThisImage());
+    private void initView() {
 
-        activity_pano = findViewById(R.id.activity_pano);
-
-        layout_video_control = findViewById(R.id.layout_video_control);
-        layout_video_control.setVisibility(View.GONE);
-        layout_debug = findViewById(R.id.layout_debug);
-        layout_debug.setVisibility(debugEnabled ? View.VISIBLE : View.GONE);
-
-        pano_error = findViewById(R.id.pano_error_view);
-        pano_error.setVisibility(View.GONE);
-        pano_loading = findViewById(R.id.pano_loading_view);
-        pano_menu = findViewById(R.id.pano_menu);
-        pano_info = findViewById(R.id.pano_info);
-        pano_tools = findViewById(R.id.pano_tools);
-        pano_info.setVisibility(View.GONE);
-        pano_menu.setVisibility(View.GONE);
-        pano_tools.setVisibility(View.VISIBLE);
-        pano_info.setOnTouchListener((view, motionEvent) -> {
+        viewBinder.titlebar.setLeftIconOnClickListener((v) -> onBackPressed());
+        viewBinder.titlebar.setRightIconOnClickListener((v) -> shareThisImage());
+        viewBinder.layout_video_control.setVisibility(View.GONE);
+        viewBinder.layout_debug.setVisibility(debugEnabled ? View.VISIBLE : View.GONE);
+        viewBinder.pano_error.setVisibility(View.GONE);
+        viewBinder.pano_info.setVisibility(View.GONE);
+        viewBinder.pano_menu.setVisibility(View.GONE);
+        viewBinder.pano_tools.setVisibility(View.VISIBLE);
+        viewBinder.pano_info.setOnTouchListener((view, motionEvent) -> {
             if (motionEvent.getAction() == MotionEvent.ACTION_UP)
                 view.performClick();
             return true;
         });
-
-        text_debug = findViewById(R.id.text_debug);
-        text_debug.setVisibility(debugEnabled ? View.VISIBLE : View.GONE);
-        text_sensor_cant_use_in_mode = findViewById(R.id.text_sensor_cant_use_in_mode);
-        text_sensor_cant_use_in_mode.setVisibility(View.GONE);
-        text_pano_error = findViewById(R.id.text_pano_error);
-        text_pano_info_size = findViewById(R.id.text_pano_info_size);
-        text_pano_info_file_size = findViewById(R.id.text_pano_info_file_size);
-        text_pano_info_file_path = findViewById(R.id.text_pano_info_file_path);
-        text_pano_info_image_time = findViewById(R.id.text_pano_info_image_time);
-        text_pano_info_shutter_time = findViewById(R.id.text_pano_info_shutter_time);
-        text_pano_info_exposure_bias_value = findViewById(R.id.text_pano_info_exposure_bias_value);
-        text_pano_info_iso_sensitivit = findViewById(R.id.text_pano_info_iso_sensitivit);
-        text_pano_error = findViewById(R.id.text_pano_error);
-        text_video_length = findViewById(R.id.text_video_length);
-        text_video_current_pos = findViewById(R.id.text_video_current_pos);
-
-        seek_x = findViewById(R.id.seek_x);
-        seek_y = findViewById(R.id.seek_y);
-        seek_z = findViewById(R.id.seek_z);
-
-        seek_video = findViewById(R.id.seek_video);
-        button_video_play_pause = findViewById(R.id.button_video_play_pause);
-    }
-    private void initAnimations() {
-        bottom_up = AnimationUtils.loadAnimation(PanoActivity.this, R.anim.bottom_up);
-        bottom_down = AnimationUtils.loadAnimation(PanoActivity.this, R.anim.bottom_down);
-        fade_hide = AnimationUtils.loadAnimation(PanoActivity.this, R.anim.fade_hide);
-        fade_show = AnimationUtils.loadAnimation(PanoActivity.this, R.anim.fade_show);
-        top_down = AnimationUtils.loadAnimation(PanoActivity.this, R.anim.top_down);
-        top_up = AnimationUtils.loadAnimation(PanoActivity.this, R.anim.top_up);
-        right_to_left_in = AnimationUtils.loadAnimation(PanoActivity.this, R.anim.right_to_left_in);
-        left_to_right_out = AnimationUtils.loadAnimation(PanoActivity.this, R.anim.left_to_right_out);
-    }
-    private void initResources() {
-        //加载图标
-        Resources resources = mContext.getResources();
-        iconModeBall = ResourcesCompat.getDrawable(resources, R.drawable.ic_bar_projection_ball, null);
-        iconModeLittlePlanet = ResourcesCompat.getDrawable(resources, R.drawable.ic_bar_projection_little_planet, null);
-        iconModeRectiliner = ResourcesCompat.getDrawable(resources, R.drawable.ic_bar_projection_rectilinear, null);
-        iconModeSource = ResourcesCompat.getDrawable(resources, R.drawable.ic_bar_projection_source, null);
-        iconModeVideoBall = ResourcesCompat.getDrawable(resources, R.drawable.ic_bar_projection_video_ball, null);
-        iconModeMercator = ResourcesCompat.getDrawable(resources, R.drawable.ic_bar_projection_mercator, null);
-
-        iconModeBall.setBounds(0,0, iconModeBall.getMinimumWidth(), iconModeBall.getMinimumHeight());
-        iconModeLittlePlanet.setBounds(0,0, iconModeLittlePlanet.getMinimumWidth(), iconModeLittlePlanet.getMinimumHeight());
-        iconModeRectiliner.setBounds(0,0, iconModeRectiliner.getMinimumWidth(), iconModeRectiliner.getMinimumHeight());
-        iconModeSource.setBounds(0,0, iconModeSource.getMinimumWidth(), iconModeSource.getMinimumHeight());
-        iconModeVideoBall.setBounds(0,0,iconModeVideoBall.getMinimumWidth(), iconModeVideoBall.getMinimumHeight());
-        iconModeMercator.setBounds(0,0, iconModeMercator.getMinimumWidth(), iconModeMercator.getMinimumHeight());
-
-        ic_play = ResourcesCompat.getDrawable(resources, R.drawable.ic_play, null);
-        ic_pause = ResourcesCompat.getDrawable(resources, R.drawable.ic_pause, null);
-        ic_play.setBounds(0,0,ic_play.getMinimumWidth(), ic_play.getMinimumHeight());
-        ic_pause.setBounds(0,0, ic_pause.getMinimumWidth(), ic_pause.getMinimumHeight());
-    }
-    private void initSettings() {
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        panoEnableCache = sharedPreferences.getBoolean("enable_view_cache", true);
-        panoEnableFull = sharedPreferences.getBoolean("enable_full_chunks", false);
-        currentPanoMode = sharedPreferences.getInt("pano_mode", 0);
-        vrEnabled = sharedPreferences.getBoolean("pano_enable_vr", false);
-        gyroEnabled = sharedPreferences.getBoolean("pano_enable_gyro", false);
-        dragVelocityEnabled = sharedPreferences.getBoolean("enable_drag_velocity", true);
-        debugEnabled = sharedPreferences.getBoolean("show_debug_tool", false);
-        dontCheckImageNormalSize = sharedPreferences.getBoolean("do_not_check_pano_normal_size", false);
-        enableCustomFps = sharedPreferences.getBoolean("enable_custom_fps", false);
-        enableLowFps = sharedPreferences.getBoolean("enable_low_fps", false);
-        customFps = sharedPreferences.getInt("custom_fps_value", 0);
-        logLevel = sharedPreferences.getInt("native_log_level", 0);
-        logEnabled = sharedPreferences.getBoolean("enable_native_log", true);
-
-        //no full screen
-        if(sharedPreferences.getBoolean("enable_non_fullscreen", false))
-            ScreenUtils.setFullScreen(this, false);
-        //keep screen on
-        if(sharedPreferences.getBoolean("enable_keep_screen_on", false))
-            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-    }
-    private void initButtons() {
-
-        TextView text_not_support_sensor = findViewById(R.id.text_not_support_sensor);
-        SwitchCompat switch_enable_vr = findViewById(R.id.switch_enable_vr);
-        SwitchCompat switch_enable_gyro = findViewById(R.id.switch_enable_gyro);
+        viewBinder.text_debug.setVisibility(debugEnabled ? View.VISIBLE : View.GONE);
+        viewBinder.text_sensor_cant_use_in_mode.setVisibility(View.GONE);
 
         //判断陀螺仪是否可用，否则禁用界面
         if (!orientationSensor1Provider.isDeviceSupport()) {
-            text_not_support_sensor.setVisibility(View.VISIBLE);
-            switch_enable_gyro.setChecked(false);
-            switch_enable_gyro.setEnabled(false);
+            viewBinder.text_not_support_sensor.setVisibility(View.VISIBLE);
+            viewBinder.switch_enable_gyro.setChecked(false);
+            viewBinder.switch_enable_gyro.setEnabled(false);
             gyroEnabled = false;
         } else {
-            text_not_support_sensor.setVisibility(View.GONE);
+            viewBinder.text_not_support_sensor.setVisibility(View.GONE);
         }
 
-        button_mode = findViewById(R.id.button_mode);
-        button_mode.setOnClickListener(v -> changeMode());
+        viewBinder.button_mode.setOnClickListener(v -> changeMode());
 
-        switch_enable_gyro.setOnCheckedChangeListener((compoundButton, b) -> {
+        viewBinder.switch_enable_gyro.setOnCheckedChangeListener((compoundButton, b) -> {
             gyroEnabled = compoundButton.isChecked();
             if(gyroEnabled) orientationSensor1Provider.start();
             else orientationSensor1Provider.stop();
             renderer.setGyroEnable(gyroEnabled);
-
-            updateModeText();
+            viewBinder.updateModeText(gyroEnabled, currentPanoMode);
         });
-        switch_enable_vr.setOnCheckedChangeListener((compoundButton, b) -> {
+        viewBinder.switch_enable_vr.setOnCheckedChangeListener((compoundButton, b) -> {
             vrEnabled = compoundButton.isChecked();
             renderer.setVREnable(vrEnabled);
         });
-        switch_enable_gyro.setChecked(gyroEnabled);
-        switch_enable_vr.setChecked(vrEnabled);
+        viewBinder.switch_enable_gyro.setChecked(gyroEnabled);
+        viewBinder.switch_enable_vr.setChecked(vrEnabled);
 
         renderer.setVREnable(vrEnabled);
         renderer.setGyroEnable(gyroEnabled);
 
         //视图点击事件
-        glSurfaceView.setOnTouchListener((view, motionEvent) -> {
+        viewBinder.glSurfaceView.setOnTouchListener((view, motionEvent) -> {
             switch (motionEvent.getAction()) {
-                case MotionEvent.ACTION_MOVE:
+                case MotionEvent.ACTION_MOVE: {
                     lastTouchMoved = true;
                     break;
-                case MotionEvent.ACTION_DOWN:
+                }
+                case MotionEvent.ACTION_DOWN: {
                     lastTouchMoved = false;
-                    if(panoMenuShow)
+                    if (panoMenuShow)
                         setPanoMenuStatus(false, true);
-                    if(panoInfoShow)
+                    if (panoInfoShow)
                         setPanoInfoStatus(false, false);
+
+                    if (motionEvent.getPointerCount() == 1
+                            && System.currentTimeMillis() - firstClickTime <= MAX_LONG_PRESS_TIME) {
+                        //处理双击
+                        lastDoubleClick = true;
+                        firstClickTime = 0;
+
+                        resetMode();
+                    }
                     break;
-                case MotionEvent.ACTION_UP:
-                    if(!lastTouchMoved) {
+                }
+                case MotionEvent.ACTION_UP: {
+                    if (!lastTouchMoved && motionEvent.getPointerCount() == 1)
+                        firstClickTime = System.currentTimeMillis();
+                    else
+                        firstClickTime = 0;
+                    if (!lastDoubleClick && !lastTouchMoved) {
                         switchToolBar();
                         view.performClick();
                     }
+                    if(lastDoubleClick)
+                        lastDoubleClick = false;
                     break;
+                }
             }
             return false;
         });
 
-        button_prev = findViewById(R.id.button_prev);
-        button_next = findViewById(R.id.button_next);
+        viewBinder.button_next.setOnClickListener((v) -> nextFile());
+        viewBinder.button_prev.setOnClickListener((v) -> prevFile());
 
-        button_next.setOnClickListener((v) -> nextFile());
-        button_prev.setOnClickListener((v) -> prevFile());
+        viewBinder.titlebar.setLeftIconOnClickListener(v -> onBackPressed());
 
-        titlebar.setLeftIconOnClickListener(v -> onBackPressed());
-
-        likeColorStateList = ColorStateList.valueOf(resources.getColor(R.color.colorImageLike, null));
-
-        button_short = findViewById(R.id.button_short);
-        button_more = findViewById(R.id.button_more);
-        button_like =  findViewById(R.id.button_like);
-
-        button_short.setOnClickListener(v -> {
+        viewBinder.button_short.setOnClickListener(v -> {
             if(!fileLoading && fileLoaded)
                 screenShot();
         });
-        button_more.setOnClickListener(v -> {
+        viewBinder.button_more.setOnClickListener(v -> {
             if(!fileLoading && fileLoaded)
                 setPanoMenuStatus(!panoMenuShow, true);
         });
-        button_like.setOnClickListener(v -> {
+        viewBinder.button_like.setOnClickListener(v -> {
             if(currentImageItem != null) {
                 if(currentImageItem.isInBelongGalleries(ListDataService.GALLERY_LIST_ID_I_LIKE)) {
                     currentImageItem.belongGalleries.remove((Integer) ListDataService.GALLERY_LIST_ID_I_LIKE);
@@ -502,22 +350,21 @@ public class PanoActivity extends AppCompatActivity {
             }
         });
 
-        findViewById(R.id.button_close_pano_info).setOnClickListener(v -> {
-            if(!fileLoading && fileLoaded)
-                setPanoInfoStatus(false, true);
-        });
         findViewById(R.id.action_view_file_info).setOnClickListener(v -> setPanoInfoStatus(true, true));
         findViewById(R.id.action_delete_file).setOnClickListener(v -> deleteFile());
         findViewById(R.id.action_openwith_text).setOnClickListener(v -> openWithOtherApp());
-        findViewById(R.id.button_back).setOnClickListener(v -> closeFile(true));
-
         findViewById(R.id.layout_info_path).setOnClickListener((v) -> {
             ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
             ClipData mClipData = ClipData.newPlainText(filePath, filePath);
             cm.setPrimaryClip(mClipData);
             ToastUtils.show(getString(R.string.text_path_copied_to_clipboard));
         });
-        findViewById(R.id.button_debug_close).setOnClickListener((v) -> layout_debug.setVisibility(View.GONE));
+        findViewById(R.id.button_close_pano_info).setOnClickListener(v -> {
+            if(!fileLoading && fileLoaded)
+                setPanoInfoStatus(false, true);
+        });
+        findViewById(R.id.button_back).setOnClickListener(v -> closeFile(true));
+        findViewById(R.id.button_debug_close).setOnClickListener((v) -> viewBinder.layout_debug.setVisibility(View.GONE));
 
         SeekBar.OnSeekBarChangeListener listener = new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -534,13 +381,12 @@ public class PanoActivity extends AppCompatActivity {
             }
         };
 
-        seek_x.setOnSeekBarChangeListener(listener);
-        seek_y.setOnSeekBarChangeListener(listener);
-        seek_z.setOnSeekBarChangeListener(listener);
+        viewBinder.seek_x.setOnSeekBarChangeListener(listener);
+        viewBinder.seek_y.setOnSeekBarChangeListener(listener);
+        viewBinder.seek_z.setOnSeekBarChangeListener(listener);
 
-        text_debug.setOnClickListener((v) -> layout_debug.setVisibility(View.VISIBLE));
-
-        button_video_play_pause.setOnClickListener((v) -> {
+        viewBinder.text_debug.setOnClickListener((v) -> viewBinder.layout_debug.setVisibility(View.VISIBLE));
+        viewBinder.button_video_play_pause.setOnClickListener((v) -> {
             if(fileLoaded) {
                 int state = renderer.getVideoState();
                 if(state == NativeVR720Renderer.VideoState_Playing)
@@ -553,8 +399,7 @@ public class PanoActivity extends AppCompatActivity {
                 }
             }
         });
-
-        seek_video.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+        viewBinder.seek_video.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 updateVideoControlState();
@@ -579,7 +424,30 @@ public class PanoActivity extends AppCompatActivity {
         });
 
         //设置上次模式
-        updateModeButton();
+        viewBinder.updateModeButton(gyroEnabled, currentPanoMode);
+    }
+    private void initSettings() {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        panoEnableCache = sharedPreferences.getBoolean("enable_view_cache", true);
+        panoEnableFull = sharedPreferences.getBoolean("enable_full_chunks", false);
+        currentPanoMode = sharedPreferences.getInt("pano_mode", 0);
+        vrEnabled = sharedPreferences.getBoolean("pano_enable_vr", false);
+        gyroEnabled = sharedPreferences.getBoolean("pano_enable_gyro", false);
+        dragVelocityEnabled = sharedPreferences.getBoolean("enable_drag_velocity", true);
+        debugEnabled = sharedPreferences.getBoolean("show_debug_tool", false);
+        dontCheckImageNormalSize = sharedPreferences.getBoolean("do_not_check_pano_normal_size", false);
+        enableCustomFps = sharedPreferences.getBoolean("enable_custom_fps", false);
+        enableLowFps = sharedPreferences.getBoolean("enable_low_fps", false);
+        customFps = sharedPreferences.getInt("custom_fps_value", 0);
+        logLevel = sharedPreferences.getInt("native_log_level", 0);
+        logEnabled = sharedPreferences.getBoolean("enable_native_log", true);
+
+        //no full screen
+        if(sharedPreferences.getBoolean("enable_non_fullscreen", false))
+            ScreenUtils.setFullScreen(this, false);
+        //keep screen on
+        if(sharedPreferences.getBoolean("enable_keep_screen_on", false))
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
     private void saveSettings() {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
@@ -594,21 +462,17 @@ public class PanoActivity extends AppCompatActivity {
     }
     private void updateDebugSeek() {
         renderer.updateDebugValue(
-                (seek_x.getProgress() / 100.0f) * 360.0f,
-                (seek_y.getProgress() / 100.0f) * 360.0f,
-                (seek_z.getProgress() / 100.0f) * 360.0f,
+                (viewBinder.seek_x.getProgress() / 100.0f) * 360.0f,
+                (viewBinder.seek_y.getProgress() / 100.0f) * 360.0f,
+                (viewBinder.seek_z.getProgress() / 100.0f) * 360.0f,
                 0,0,0);
-    }
-    private void updateDebugValue() {
-        text_debug.setText(debugString.toString());
-        debugString.delete(0, debugString.length());
     }
     private void doRenderTick() {
         //FPS计算
         if(debugEnabled) {
             //FPS
             debugString.append("FPS: ");
-            debugString.append(glSurfaceView.getFps());
+            debugString.append(viewBinder.glSurfaceView.getFps());
 
             handler.sendEmptyMessage(MainMessages.MSG_TEST_VAL);
         }
@@ -652,59 +516,7 @@ public class PanoActivity extends AppCompatActivity {
         else
             currentPanoMode = NativeVR720Renderer.PanoramaMode_PanoramaSphere;
         renderer.setPanoramaMode(currentPanoMode);
-        updateModeButton();
-    }
-    private void updateModeButton() {
-        switch (currentPanoMode) {
-            case NativeVR720Renderer.PanoramaMode_PanoramaSphere:
-                button_mode.setText(getString(R.string.text_mode_ball));
-                button_mode.setCompoundDrawables(null, iconModeBall, null, null);
-                break;
-            case NativeVR720Renderer.PanoramaMode_PanoramaCylinder:
-                button_mode.setText(getString(R.string.text_mode_rectilinear));
-                button_mode.setCompoundDrawables(null, iconModeRectiliner, null, null);
-                break;
-            case NativeVR720Renderer.PanoramaMode_PanoramaAsteroid:
-                button_mode.setText(getString(R.string.text_mode_little_planet));
-                button_mode.setCompoundDrawables(null, iconModeLittlePlanet, null, null);
-                break;
-            case NativeVR720Renderer.PanoramaMode_PanoramaOuterBall:
-                button_mode.setText(getString(R.string.text_mode_video_ball));
-                button_mode.setCompoundDrawables(null, iconModeVideoBall, null, null);
-                break;
-            case NativeVR720Renderer.PanoramaMode_PanoramaFull360:
-                button_mode.setText(getString(R.string.text_mode_360_pano));
-                button_mode.setCompoundDrawables(null, iconModeRectiliner, null, null);
-                break;
-            case NativeVR720Renderer.PanoramaMode_PanoramaFullOrginal:
-                button_mode.setText(getString(R.string.text_mode_source));
-                button_mode.setCompoundDrawables(null, iconModeSource, null, null);
-                break;
-            case NativeVR720Renderer.PanoramaMode_PanoramaMercator:
-                button_mode.setText(getString(R.string.text_mode_mercator));
-                button_mode.setCompoundDrawables(null, iconModeMercator, null, null);
-                break;
-        }
-        updateModeText();
-    }
-    private void updateModeText() {
-        if(gyroEnabled) {
-            switch (currentPanoMode) {
-                case NativeVR720Renderer.PanoramaMode_PanoramaSphere:
-                case NativeVR720Renderer.PanoramaMode_PanoramaOuterBall:
-                case NativeVR720Renderer.PanoramaMode_PanoramaCylinder:
-                case NativeVR720Renderer.PanoramaMode_PanoramaAsteroid:
-                case NativeVR720Renderer.PanoramaMode_PanoramaMercator:
-                    text_sensor_cant_use_in_mode.setVisibility(View.GONE);
-                    break;
-                case NativeVR720Renderer.PanoramaMode_PanoramaFull360:
-                case NativeVR720Renderer.PanoramaMode_PanoramaFullOrginal:
-                    text_sensor_cant_use_in_mode.setVisibility(View.VISIBLE);
-                    break;
-            }
-        }else {
-            text_sensor_cant_use_in_mode.setVisibility(View.GONE);
-        }
+        viewBinder.updateModeButton(gyroEnabled, currentPanoMode);
     }
     private void deleteFile() {
         new CommonDialog(this)
@@ -737,16 +549,20 @@ public class PanoActivity extends AppCompatActivity {
     private void openWithOtherApp() { FileUtils.openFileWithApp(this, filePath); }
     private void shareThisImage() { FileUtils.shareFile(this, filePath); }
     private void showErr(String err) {
-        pano_error.setVisibility(View.VISIBLE);
-        pano_loading.setVisibility(View.GONE);
-        text_pano_error.setText(err);
-        titlebar.setTitle(getString(R.string.app_name));
+        viewBinder.pano_error.setVisibility(View.VISIBLE);
+        viewBinder.pano_loading.setVisibility(View.GONE);
+        viewBinder.text_pano_error.setText(err);
+        viewBinder.titlebar.setTitle(getString(R.string.app_name));
         currentFileHasError = true;
+    }
+    private void clearErr() {
+        viewBinder.pano_error.setVisibility(View.GONE);
+        currentFileHasError = false;
     }
     private void screenShot() {
         captureLoadingDialog = new LoadingDialog(this);
         captureLoadingDialog.show();
-        glSurfaceView.startCapture();
+        viewBinder.glSurfaceView.startCapture();
     }
     private void screenShotCallback(Bitmap b) {
 
@@ -764,44 +580,7 @@ public class PanoActivity extends AppCompatActivity {
         });
 
     }
-    private void updatePrevNextBtnState() {
-        if(fileList == null) {
-            currentCanNext = false;
-            currentCanPrev = false;
-            button_next.setVisibility(View.GONE);
-            button_prev.setVisibility(View.GONE);
-        } else {
-            int currentIndex = findIndexInPathList(filePath);
-            currentCanNext = currentIndex < fileList.size() - 1;
-            currentCanPrev = currentIndex > 0;
-            button_next.setVisibility(currentCanNext ? View.VISIBLE : View.GONE);
-            button_prev.setVisibility(currentCanPrev ? View.VISIBLE : View.GONE);
-        }
-    }
-    private void updateLikeButtonState() {
-        currentImageItem = listDataService.findImageItem(filePath);
-       if(currentImageItem == null) {
-           TextViewCompat.setCompoundDrawableTintList(button_like, null);
-           button_like.setEnabled(false);
-       }else {
-           button_like.setEnabled(true);
-           TextViewCompat.setCompoundDrawableTintList(button_like,
-                   currentImageItem.isInBelongGalleries(ListDataService.GALLERY_LIST_ID_I_LIKE) ?
-                           likeColorStateList : null);
-       }
-    }
-    private void updateVideoControlState() {
-        if(fileLoaded) {
-            text_video_current_pos.setText(StringUtils.getTimeString(renderer.getVideoPos()));
-            if (!lockVideoSeekUpdate)
-                seek_video.setProgress((int) ((renderer.getVideoPos() / (float) currentVideoLength) * 100));
-        }
-    }
-    private void updateVideoControlPlayState() {
-        int state = fileLoaded ? renderer.getVideoState() : NativeVR720Renderer.VideoState_NotOpen;
-        currentVideoPlaying = (state == NativeVR720Renderer.VideoState_Playing);
-        button_video_play_pause.setCompoundDrawables(currentVideoPlaying ? ic_pause : ic_play, null, null, null);
-    }
+    private void resetMode() { renderer.setPanoramaMode(currentPanoMode); }
 
     private boolean currentCanNext = false;
     private boolean currentCanPrev = false;
@@ -812,44 +591,47 @@ public class PanoActivity extends AppCompatActivity {
     private boolean panoMenuShow = false;
     private boolean isLandscape = false;
 
-    /*
+    //界面相关刷新函数
+    //**********************
+
+    /**
      *  标题栏开启关闭
      */
     private void switchToolBar() {
-        if(toolbarOn && pano_tools.getVisibility() != View.VISIBLE)
+        if(toolbarOn && viewBinder.pano_tools.getVisibility() != View.VISIBLE)
             setPanoInfoStatus(false, false);
         setToolBarStatus(!toolbarOn);
     }
     private void setToolBarStatus(boolean show) {
         toolbarOn = show;
         if (toolbarOn) {
-            pano_tools.startAnimation(bottom_up);
-            pano_tools.setVisibility(View.VISIBLE);
-            titlebar.startAnimation(top_down);
-            titlebar.setVisibility(View.VISIBLE);
+            viewBinder.pano_tools.startAnimation(viewBinder.bottom_up);
+            viewBinder.pano_tools.setVisibility(View.VISIBLE);
+            viewBinder.titlebar.startAnimation(viewBinder.top_down);
+            viewBinder.titlebar.setVisibility(View.VISIBLE);
 
             if(currentCanNext) {
-                button_next.setVisibility(View.VISIBLE);
-                button_next.startAnimation(fade_show);
+                viewBinder.button_next.setVisibility(View.VISIBLE);
+                viewBinder.button_next.startAnimation(viewBinder.fade_show);
             }
             if(currentCanPrev) {
-                button_prev.setVisibility(View.VISIBLE);
-                button_prev.startAnimation(fade_show);
+                viewBinder.button_prev.setVisibility(View.VISIBLE);
+                viewBinder.button_prev.startAnimation(viewBinder.fade_show);
             }
 
         } else {
-            pano_tools.startAnimation(bottom_down);
-            pano_tools.setVisibility(View.GONE);
-            titlebar.startAnimation(top_up);
-            titlebar.setVisibility(View.GONE);
+            viewBinder.pano_tools.startAnimation(viewBinder.bottom_down);
+            viewBinder.pano_tools.setVisibility(View.GONE);
+            viewBinder.titlebar.startAnimation(viewBinder.top_up);
+            viewBinder.titlebar.setVisibility(View.GONE);
 
             if(currentCanNext) {
-                button_next.setVisibility(View.GONE);
-                button_next.startAnimation(fade_hide);
+                viewBinder.button_next.setVisibility(View.GONE);
+                viewBinder.button_next.startAnimation(viewBinder.fade_hide);
             }
             if(currentCanPrev) {
-                button_prev.startAnimation(fade_hide);
-                button_prev.setVisibility(View.GONE);
+                viewBinder.button_prev.startAnimation(viewBinder.fade_hide);
+                viewBinder.button_prev.setVisibility(View.GONE);
             }
         }
     }
@@ -857,12 +639,12 @@ public class PanoActivity extends AppCompatActivity {
         panoMenuShow = show;
         if(show) {
             if(anim)
-                pano_menu.startAnimation(isLandscape ? right_to_left_in : bottom_up);
-            pano_menu.setVisibility(View.VISIBLE);
+                viewBinder.pano_menu.startAnimation(isLandscape ? viewBinder.right_to_left_in : viewBinder.bottom_up);
+            viewBinder.pano_menu.setVisibility(View.VISIBLE);
         } else {
             if(anim)
-                pano_menu.startAnimation(isLandscape ? left_to_right_out : fade_hide);
-            pano_menu.setVisibility(View.GONE);
+                viewBinder.pano_menu.startAnimation(isLandscape ? viewBinder.left_to_right_out : viewBinder.fade_hide);
+            viewBinder.pano_menu.setVisibility(View.GONE);
         }
     }
     private void setPanoInfoStatus(boolean show, boolean anim) {
@@ -873,44 +655,83 @@ public class PanoActivity extends AppCompatActivity {
             if(isLandscape && toolbarOn)
                 switchToolBar();
             else {
-                pano_tools.startAnimation(fade_hide);
-                pano_tools.setVisibility(View.GONE);
+                viewBinder.pano_tools.startAnimation(viewBinder.fade_hide);
+                viewBinder.pano_tools.setVisibility(View.GONE);
             }
 
             if(anim)
-                pano_info.startAnimation(bottom_up);
-            pano_info.setVisibility(View.VISIBLE);
+                viewBinder.pano_info.startAnimation(viewBinder.bottom_up);
+            viewBinder.pano_info.setVisibility(View.VISIBLE);
 
         } else {
 
             if(anim)
-                pano_info.startAnimation(isLandscape ? left_to_right_out : bottom_down);
-            pano_info.setVisibility(View.GONE);
+                viewBinder.pano_info.startAnimation(isLandscape ? viewBinder.left_to_right_out : viewBinder.bottom_down);
+            viewBinder.pano_info.setVisibility(View.GONE);
 
             if(!isLandscape) {
                 if(anim)
-                    pano_tools.startAnimation(bottom_up);
-                pano_tools.setVisibility(View.VISIBLE);
+                    viewBinder.pano_tools.startAnimation(viewBinder.bottom_up);
+                viewBinder.pano_tools.setVisibility(View.VISIBLE);
             }
         }
     }
     private void flushToolStatus() {
         if (toolbarOn) {
-            pano_tools.setVisibility(View.VISIBLE);
-            titlebar.setVisibility(View.VISIBLE);
+            viewBinder.pano_tools.setVisibility(View.VISIBLE);
+            viewBinder.titlebar.setVisibility(View.VISIBLE);
 
-            if(currentCanNext) button_next.setVisibility(View.VISIBLE);
-            if(currentCanPrev) button_prev.setVisibility(View.VISIBLE);
+            if(currentCanNext) viewBinder.button_next.setVisibility(View.VISIBLE);
+            if(currentCanPrev) viewBinder.button_prev.setVisibility(View.VISIBLE);
 
         } else {
-            pano_tools.setVisibility(View.GONE);
-            titlebar.setVisibility(View.GONE);
+            viewBinder.pano_tools.setVisibility(View.GONE);
+            viewBinder.titlebar.setVisibility(View.GONE);
 
-            if(currentCanNext) button_next.setVisibility(View.GONE);
-            if(currentCanPrev) button_prev.setVisibility(View.GONE);
+            if(currentCanNext) viewBinder.button_next.setVisibility(View.GONE);
+            if(currentCanPrev) viewBinder.button_prev.setVisibility(View.GONE);
         }
-        pano_menu.setVisibility(panoMenuShow ? View.VISIBLE : View.GONE);
-        pano_info.setVisibility(panoInfoShow ? View.VISIBLE : View.GONE);
+        viewBinder.pano_menu.setVisibility(panoMenuShow ? View.VISIBLE : View.GONE);
+        viewBinder.pano_info.setVisibility(panoInfoShow ? View.VISIBLE : View.GONE);
+    }
+    private void updatePrevNextBtnState() {
+        if(fileList == null) {
+            currentCanNext = false;
+            currentCanPrev = false;
+            viewBinder.button_next.setVisibility(View.GONE);
+            viewBinder.button_prev.setVisibility(View.GONE);
+        } else {
+            int currentIndex = findIndexInPathList(filePath);
+            currentCanNext = currentIndex < fileList.size() - 1;
+            currentCanPrev = currentIndex > 0;
+            viewBinder.button_next.setVisibility(currentCanNext ? View.VISIBLE : View.GONE);
+            viewBinder.button_prev.setVisibility(currentCanPrev ? View.VISIBLE : View.GONE);
+        }
+    }
+    private void updateLikeButtonState() {
+        currentImageItem = listDataService.findImageItem(filePath);
+        if(currentImageItem == null) {
+            TextViewCompat.setCompoundDrawableTintList(viewBinder.button_like, null);
+            viewBinder.button_like.setEnabled(false);
+        }else {
+            viewBinder.button_like.setEnabled(true);
+            TextViewCompat.setCompoundDrawableTintList(viewBinder.button_like,
+                    currentImageItem.isInBelongGalleries(ListDataService.GALLERY_LIST_ID_I_LIKE) ?
+                            viewBinder.likeColorStateList : null);
+        }
+    }
+    private void updateVideoControlState() {
+        if(fileLoaded) {
+            viewBinder.text_video_current_pos.setText(StringUtils.getTimeString(renderer.getVideoPos()));
+            if (!lockVideoSeekUpdate)
+                viewBinder.seek_video.setProgress((int) ((renderer.getVideoPos() / (float) currentVideoLength) * 100));
+        }
+    }
+    private void updateVideoControlPlayState() {
+        int state = fileLoaded ? renderer.getVideoState() : NativeVR720Renderer.VideoState_NotOpen;
+        currentVideoPlaying = (state == NativeVR720Renderer.VideoState_Playing);
+        viewBinder.button_video_play_pause.setCompoundDrawables(currentVideoPlaying ?
+                viewBinder.ic_pause : viewBinder.ic_play, null, null, null);
     }
 
     /**
@@ -926,14 +747,15 @@ public class PanoActivity extends AppCompatActivity {
 
         @Override
         public void handleMessage(Message msg) {
+            PanoActivity activity = mTarget.get();
             switch (msg.what) {
-                case MainMessages.MSG_NATIVE_MESSAGE: mTarget.get().onRendererMessage((int)msg.obj); break;
-                case MainMessages.MSG_LOAD_IMAGE_INFO: mTarget.get().loadImageInfoToUI(); break;
-                case MainMessages.MSG_LOAD_VIDEO_INFO: mTarget.get().loadVideoInfoToUI(); break;
-                case MainMessages.MSG_QUIT_LATE: mTarget.get().onQuitLate(); break;
-                case MainMessages.MSG_FORCE_PAUSE: mTarget.get().onPause(); break;
-                case MainMessages.MSG_TEST_VAL: mTarget.get().updateDebugValue(); break;
-                case MainMessages.MSG_RENDER_TICK: mTarget.get().handleRenderTick(); break;
+                case MainMessages.MSG_NATIVE_MESSAGE: activity.onRendererMessage((int)msg.obj); break;
+                case MainMessages.MSG_LOAD_IMAGE_INFO: activity.loadImageInfoToUI(); break;
+                case MainMessages.MSG_LOAD_VIDEO_INFO: activity.loadVideoInfoToUI(); break;
+                case MainMessages.MSG_QUIT_LATE: activity.onQuitLate(); break;
+                case MainMessages.MSG_FORCE_PAUSE: activity.onPause(); break;
+                case MainMessages.MSG_TEST_VAL: activity.viewBinder.updateDebugValue(activity.debugString); break;
+                case MainMessages.MSG_RENDER_TICK: activity.handleRenderTick(); break;
                 default: super.handleMessage(msg);
             }
         }
@@ -944,27 +766,25 @@ public class PanoActivity extends AppCompatActivity {
     //**********************
 
     private void onRendererIsReady() {
-        Log.d(TAG, "Renderer is ok");
-        Log.d(TAG, "Load file : " + filePath);
 
         if(!ImageUtils.checkSizeIs720Panorama(currentImageSize) && ImageUtils.checkSizeIs320Panorama(currentImageSize))
             currentPanoMode = NativeVR720Renderer.PanoramaMode_PanoramaFull360;
 
-        titlebar.setTitle(FileUtils.getFileName(filePath));
-        pano_loading.setVisibility(View.GONE);
+        viewBinder.titlebar.setTitle(FileUtils.getFileName(filePath));
+        viewBinder.pano_loading.setVisibility(View.GONE);
 
         currentFileHasError = false;
         currentFileIsVideo = renderer.getCurrentFileIsVideo();
         if(currentFileIsVideo) {
-            layout_video_control.setVisibility(View.VISIBLE);
+            viewBinder.layout_video_control.setVisibility(View.VISIBLE);
             //写入视频初始信息到UI上
             currentVideoLength = renderer.getVideoLength();
-            text_video_length.setText(StringUtils.getTimeString(currentVideoLength));
-            seek_video.setProgress(0);
+            viewBinder.text_video_length.setText(StringUtils.getTimeString(currentVideoLength));
+            viewBinder.seek_video.setProgress(0);
             renderer.updateVideoState(NativeVR720Renderer.VideoState_Playing);
         }
         else {
-            layout_video_control.setVisibility(View.GONE);
+            viewBinder.layout_video_control.setVisibility(View.GONE);
         }
 
         setPanoInfoStatus(false, false);
@@ -974,11 +794,8 @@ public class PanoActivity extends AppCompatActivity {
     private void onRendererMessage(int msg) {
         switch (msg) {
             case NativeVR720Renderer.MobileGameUIEvent_FileClosed: {
-                Log.i(TAG, "FileClosed");
-
                 fileLoaded = false;
                 if (closeMarked) {
-                    Log.i(TAG, "Destroy renderer at FileClosed");
                     renderer.destroy();
                 }
                 else if (openNextMarked) {
@@ -990,7 +807,7 @@ public class PanoActivity extends AppCompatActivity {
             }
             case NativeVR720Renderer.MobileGameUIEvent_MarkLoadFailed: {
                 fileLoading = false;
-                titlebar.setVisibility(View.VISIBLE);
+                viewBinder.titlebar.setVisibility(View.VISIBLE);
                 String error = renderer.getLastError(this);
                 Log.w(TAG, String.format("Image load failed : %s", error));
                 showErr(error);
@@ -999,25 +816,25 @@ public class PanoActivity extends AppCompatActivity {
             case NativeVR720Renderer.MobileGameUIEvent_MarkLoadingEnd: {
                 fileLoading = false;
                 fileLoaded = true;
+                clearErr();
                 onRendererIsReady();
                 break;
             }
             case NativeVR720Renderer.MobileGameUIEvent_MarkLoadingStart: {
                 fileLoading = true;
                 fileLoaded = false;
-                titlebar.setTitle(getString(R.string.text_loading_wait));
-                pano_loading.setVisibility(View.VISIBLE);
+                viewBinder.titlebar.setTitle(getString(R.string.text_loading_wait));
+                viewBinder.pano_loading.setVisibility(View.VISIBLE);
                 setPanoInfoStatus(false, false);
                 setPanoMenuStatus(false, false);
-                pano_error.setVisibility(View.GONE);
+                clearErr();
                 break;
             }
             case NativeVR720Renderer.MobileGameUIEvent_UiInfoChanged: break;
             case NativeVR720Renderer.MobileGameUIEvent_DestroyComplete: {
-                Log.i(TAG, "DestroyComplete");
                 fileLoaded = false;
                 fileLoading = false;
-                glSurfaceView.onDestroyComplete();
+                viewBinder.glSurfaceView.onDestroyComplete();
                 handler.sendEmptyMessage(MainMessages.MSG_QUIT_LATE);
             }
             case NativeVR720Renderer.MobileGameUIEvent_VideoStateChanged: {
@@ -1028,9 +845,6 @@ public class PanoActivity extends AppCompatActivity {
         }
     }
     private void onQuitLate() {
-
-        Log.i(TAG, "onQuitLate");
-
         Intent intent = new Intent();
         intent.putExtra("filePath", filePath);
         setResult(0, intent);
@@ -1039,9 +853,6 @@ public class PanoActivity extends AppCompatActivity {
 
     @Override
     protected void onPause() {
-
-        Log.i(TAG, "onPause");
-
         if(captureLoadingDialog != null) {
             captureLoadingDialog.cancel();
             captureLoadingDialog = null;
@@ -1057,20 +868,17 @@ public class PanoActivity extends AppCompatActivity {
         if(gyroEnabled)
             orientationSensor1Provider.stop();
 
-        glSurfaceView.onPause();
+        viewBinder.glSurfaceView.onPause();
 
         super.onPause();
     }
     @Override
     protected void onResume() {
-
-        Log.i(TAG, "onResume");
-
         if(initialized && !closeMarked) {
             if(gyroEnabled)
                 orientationSensor1Provider.start();
 
-            glSurfaceView.onResume();
+            viewBinder.glSurfaceView.onResume();
             gameUpdateThread.startUpdateThread();
         }
 
@@ -1081,6 +889,9 @@ public class PanoActivity extends AppCompatActivity {
         if(!closeMarked) closeFile(true);
         else super.onBackPressed();
     }
+
+    //屏幕旋转的处理
+    //**********************
 
     @Override
     public void onConfigurationChanged(@NonNull Configuration newConfig) {
@@ -1095,12 +906,12 @@ public class PanoActivity extends AppCompatActivity {
         if(newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
             isLandscape = false;
 
-            button_like.setTextVisible(true);
-            button_short.setTextVisible(true);
-            button_mode.setTextVisible(true);
-            button_more.setTextVisible(true);
+            viewBinder.button_like.setTextVisible(true);
+            viewBinder.button_short.setTextVisible(true);
+            viewBinder.button_mode.setTextVisible(true);
+            viewBinder.button_more.setTextVisible(true);
 
-            mConstraintSet.clone(activity_pano);
+            mConstraintSet.clone(viewBinder.activity_pano);
             mConstraintSet.clear(R.id.pano_info);
             mConstraintSet.clear(R.id.pano_menu);
 
@@ -1110,27 +921,27 @@ public class PanoActivity extends AppCompatActivity {
             mConstraintSet.connect(R.id.pano_info, ConstraintSet.LEFT, ConstraintSet.PARENT_ID, ConstraintSet.LEFT);
             mConstraintSet.connect(R.id.pano_menu, ConstraintSet.BOTTOM, R.id.pano_tools, ConstraintSet.TOP);
             mConstraintSet.connect(R.id.pano_info, ConstraintSet.BOTTOM, R.id.pano_tools, ConstraintSet.TOP);
-            mConstraintSet.applyTo(activity_pano);
+            mConstraintSet.applyTo(viewBinder.activity_pano);
 
-            ViewGroup.LayoutParams layoutParams = pano_info.getLayoutParams();
+            ViewGroup.LayoutParams layoutParams = viewBinder.pano_info.getLayoutParams();
             layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
             layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT;
-            pano_info.setLayoutParams(layoutParams);
-            layoutParams = pano_menu.getLayoutParams();
+            viewBinder.pano_info.setLayoutParams(layoutParams);
+            layoutParams = viewBinder.pano_menu.getLayoutParams();
             layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
             layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT;
-            pano_menu.setLayoutParams(layoutParams);
+            viewBinder.pano_menu.setLayoutParams(layoutParams);
 
         }
         else if(newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
             isLandscape = true;
 
-            button_like.setTextVisible(false);
-            button_short.setTextVisible(false);
-            button_mode.setTextVisible(false);
-            button_more.setTextVisible(false);
+            viewBinder.button_like.setTextVisible(false);
+            viewBinder.button_short.setTextVisible(false);
+            viewBinder.button_mode.setTextVisible(false);
+            viewBinder.button_more.setTextVisible(false);
 
-            mConstraintSet.clone(activity_pano);
+            mConstraintSet.clone(viewBinder.activity_pano);
             mConstraintSet.clear(R.id.pano_info);
             mConstraintSet.clear(R.id.pano_menu);
             mConstraintSet.connect(R.id.pano_info, ConstraintSet.RIGHT, ConstraintSet.PARENT_ID, ConstraintSet.RIGHT);
@@ -1140,17 +951,17 @@ public class PanoActivity extends AppCompatActivity {
             mConstraintSet.connect(R.id.pano_menu, ConstraintSet.RIGHT, ConstraintSet.PARENT_ID, ConstraintSet.RIGHT, PixelTool.dp2px(this, 36));
             mConstraintSet.connect(R.id.pano_menu, ConstraintSet.BOTTOM, R.id.pano_tools, ConstraintSet.TOP, 20);
 
-            mConstraintSet.applyTo(activity_pano);
+            mConstraintSet.applyTo(viewBinder.activity_pano);
 
-            ViewGroup.LayoutParams layoutParams = pano_info.getLayoutParams();
+            ViewGroup.LayoutParams layoutParams = viewBinder.pano_info.getLayoutParams();
             layoutParams.width = (int)(screenSize.getHeight() / 2.4);
             layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT;
-            pano_info.setLayoutParams(layoutParams);
+            viewBinder.pano_info.setLayoutParams(layoutParams);
 
-            layoutParams = pano_menu.getLayoutParams();
+            layoutParams = viewBinder.pano_menu.getLayoutParams();
             layoutParams.width = screenSize.getHeight() / 3;
             layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT;
-            pano_menu.setLayoutParams(layoutParams);
+            viewBinder.pano_menu.setLayoutParams(layoutParams);
         }
         flushToolStatus();
     }
@@ -1177,8 +988,13 @@ public class PanoActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
 
+            if(imageSize.getHeight() == imageSize.getWidth() && imageSize.getWidth() == -1) {
+                runOnUiThread(() -> showErr(getString(R.string.text_error_bad_image)));
+                return;
+            }
+
             imageInfo.imageFileSize = FileSizeUtil.getAutoFileOrFilesSize(filePath);
-            String fileTime = DateUtils.format(new Date((new File(filePath)).lastModified()));;
+            String fileTime = DateUtils.format(new Date((new File(filePath)).lastModified()));
             imageInfo.imageTime = fileTime;
 
             //加载EXIF数据
@@ -1223,17 +1039,17 @@ public class PanoActivity extends AppCompatActivity {
         }).start();
     }
     private void loadImageInfoToUI() {
-        text_pano_info_size.setText(imageInfo.imageSize);
-        text_pano_info_file_size.setText(imageInfo.imageFileSize);
-        text_pano_info_image_time.setText(imageInfo.imageTime);
-        text_pano_info_file_path.setText(filePathReal.equals("") ? filePath : filePathReal);
-        text_pano_info_shutter_time.setText(imageInfo.imageShutterTime);
-        text_pano_info_exposure_bias_value.setText(imageInfo.imageExposureBiasValue);
-        text_pano_info_iso_sensitivit.setText(imageInfo.imageISOSensitivity);
+        viewBinder.text_pano_info_size.setText(imageInfo.imageSize);
+        viewBinder.text_pano_info_file_size.setText(imageInfo.imageFileSize);
+        viewBinder.text_pano_info_image_time.setText(imageInfo.imageTime);
+        viewBinder.text_pano_info_file_path.setText(filePathReal.equals("") ? filePath : filePathReal);
+        viewBinder.text_pano_info_shutter_time.setText(imageInfo.imageShutterTime);
+        viewBinder.text_pano_info_exposure_bias_value.setText(imageInfo.imageExposureBiasValue);
+        viewBinder.text_pano_info_iso_sensitivit.setText(imageInfo.imageISOSensitivity);
 
-        text_pano_info_shutter_time.setVisibility(View.VISIBLE);
-        text_pano_info_exposure_bias_value.setVisibility(View.VISIBLE);
-        text_pano_info_iso_sensitivit.setVisibility(View.VISIBLE);
+        ((ViewGroup)viewBinder.text_pano_info_shutter_time.getParent()).setVisibility(View.VISIBLE);
+        ((ViewGroup)viewBinder.text_pano_info_exposure_bias_value.getParent()).setVisibility(View.VISIBLE);
+        ((ViewGroup)viewBinder.text_pano_info_iso_sensitivit.getParent()).setVisibility(View.VISIBLE);
     }
     private void loadVideoInfo(boolean isFromInitialization, OnLoadImageInfoFinishedListener loadImageInfoFinishedListener) {
         new Thread(() -> {
@@ -1255,11 +1071,22 @@ public class PanoActivity extends AppCompatActivity {
                         Integer.parseInt(width),
                         Integer.parseInt(height));
 
-            } catch (Exception ex) {
+            }
+            catch (Exception ex) {
                 Log.e(TAG, "MediaMetadataRetriever exception " + ex);
             } finally {
                 mmr.release();
             }
+
+            if(imageSize.getHeight() <= 0 && imageSize.getWidth() <= 0) {
+                runOnUiThread(() -> showErr(getString(R.string.text_error_video_player_av_error)));
+                return;
+            }
+
+            //尝试首先加载最小的缩略图
+            String cacheFilePath = listImageCacheService.tryGetImageThumbnailCacheFilePath(filePath);
+            if(!StringUtils.isNullOrEmpty(cacheFilePath))
+                renderer.setProp(NativeVR720Renderer.PROP_SMALL_PANORAMA_PATH, cacheFilePath);
 
             loadImageInfoFinishedListener.onLoadImageInfoFinishedListener(imageSize, isFromInitialization);
 
@@ -1267,14 +1094,14 @@ public class PanoActivity extends AppCompatActivity {
         }).start();
     }
     private void loadVideoInfoToUI() {
-        text_pano_info_size.setText(imageInfo.imageSize);
-        text_pano_info_file_size.setText(imageInfo.imageFileSize);
-        text_pano_info_image_time.setText(imageInfo.imageTime);
-        text_pano_info_file_path.setText(filePathReal.equals("") ? filePath : filePathReal);
+        viewBinder.text_pano_info_size.setText(imageInfo.imageSize);
+        viewBinder.text_pano_info_file_size.setText(imageInfo.imageFileSize);
+        viewBinder.text_pano_info_image_time.setText(imageInfo.imageTime);
+        viewBinder.text_pano_info_file_path.setText(filePathReal.equals("") ? filePath : filePathReal);
 
-        text_pano_info_shutter_time.setVisibility(View.GONE);
-        text_pano_info_exposure_bias_value.setVisibility(View.GONE);
-        text_pano_info_iso_sensitivit.setVisibility(View.GONE);
+        ((ViewGroup)viewBinder.text_pano_info_shutter_time.getParent()).setVisibility(View.GONE);
+        ((ViewGroup)viewBinder.text_pano_info_exposure_bias_value.getParent()).setVisibility(View.GONE);
+        ((ViewGroup)viewBinder.text_pano_info_iso_sensitivit.getParent()).setVisibility(View.GONE);
     }
     private void loadFile(String path, boolean isFromInitialization) {
 
@@ -1293,8 +1120,18 @@ public class PanoActivity extends AppCompatActivity {
         updatePrevNextBtnState();
         updateLikeButtonState();
 
+        //关闭工具栏
+        if(panoMenuShow)
+            setPanoMenuStatus(false, false);
+        if(panoInfoShow)
+            setPanoInfoStatus(false, false);
+
         if(StringUtils.isNullOrEmpty(path))  {
             showErr(getString(R.string.text_not_provide_path));
+            return;
+        }
+        else if(!new File(path).exists())  {
+            showErr(getString(R.string.text_error_file_not_exists));
             return;
         }
 

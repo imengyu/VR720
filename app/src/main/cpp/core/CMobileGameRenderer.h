@@ -169,10 +169,7 @@ private:
 private:
 	void SetVRViewPort(int index);
 	void SetGyroEnabled(bool enable);
-	void SetEnableFullChunkLoad(bool enable);
-	void SetViewCacheEnabled(bool enable);
 	void SetVREnabled(bool enable);
-	void SetCachePath(char* path);
 
     void TryLoadSmallThumbnail();
 };

@@ -16,6 +16,7 @@ import androidx.preference.PreferenceManager;
 
 import com.imengyu.vr720.dialog.CommonDialog;
 import com.imengyu.vr720.dialog.AppDialogs;
+import com.imengyu.vr720.utils.AppUtils;
 import com.imengyu.vr720.utils.StorageDirUtils;
 
 public class LunchActivity extends AppCompatActivity {
@@ -26,6 +27,13 @@ public class LunchActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate( savedInstanceState);
+
+        //设置语言
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        String language = sharedPreferences.getString("language", "");
+        AppUtils.setLanguage(this, language);
+
+        //
         setContentView(R.layout.activity_lunch);
         new Thread(() -> {
             try {
@@ -36,8 +44,11 @@ public class LunchActivity extends AppCompatActivity {
             //耗时任务，比如加载网络数据
             StorageDirUtils.testAndCreateStorageDirs(getApplicationContext());
             //转回UI线程
-            //检查是否同意许可以及请求权限
-            runOnUiThread(this::runPermissionAndAgreement);
+            runOnUiThread(() -> {
+
+                //检查是否同意许可以及请求权限
+                runPermissionAndAgreement();
+            });
         }).start();
     }
 

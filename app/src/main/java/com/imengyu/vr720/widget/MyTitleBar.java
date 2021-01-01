@@ -176,4 +176,18 @@ public class MyTitleBar extends ConstraintLayout {
   public void setTitle(CharSequence s) {
     this.tvTitle.setText(s);
   }
+  /**
+   * 设置标题栏文字
+   * @param s 文字
+   */
+  public void setRightText(String s) {
+    this.tvMore.setText(s);
+  }
+  /**
+   * 设置标题栏文字
+   * @param s 文字
+   */
+  public void setRightText(CharSequence s) {
+    this.tvMore.setText(s);
+  }
 }

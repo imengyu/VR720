@@ -75,6 +75,7 @@ public class MainListAdapter extends CheckableListAdapter<MainListItem> {
                     Glide.with(getContext())
                             .load(item.getThumbnail())
                             .placeholder(R.drawable.ic_tumb)
+                            .error(R.drawable.ic_noprob)
                             .transition(DrawableTransitionOptions.withCrossFade())
                             .into(viewHolder.imageView);
 

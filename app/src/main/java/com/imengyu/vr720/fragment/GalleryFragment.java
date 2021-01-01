@@ -246,6 +246,9 @@ public class GalleryFragment extends Fragment implements IMainFragment {
                 }
                 break;
             }
+            case MainMessages.MSG_FORCE_LOAD_LIST:
+                loadList();
+                break;
         }
     }
 

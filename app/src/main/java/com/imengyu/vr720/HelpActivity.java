@@ -1,6 +1,7 @@
 package com.imengyu.vr720;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.preference.PreferenceManager;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
@@ -35,7 +36,7 @@ public class HelpActivity extends AppCompatActivity {
         webSettings.setJavaScriptEnabled(true);
 
         myWebView.addJavascriptInterface(new JSInterface(this), "jsi");
-        myWebView.loadUrl("file:///android_asset/help.html");
+        myWebView.loadUrl("file:///android_asset/help/help.html");
     }
 
     public static class JSInterface {
@@ -51,6 +52,10 @@ public class HelpActivity extends AppCompatActivity {
             Intent intent = new Intent(mTarget.get(), HtmlActivity.class);
             intent.putExtra("url", url);
             mTarget.get().startActivity(intent);
+        }
+        @JavascriptInterface
+        public String getLanguage() {
+            return PreferenceManager.getDefaultSharedPreferences(mTarget.get()).getString("language", "zh");
         }
         @JavascriptInterface
         public boolean getIsGithubBuild() {

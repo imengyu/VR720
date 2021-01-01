@@ -127,6 +127,7 @@ public class MainList extends SelectableListSolver<MainListItem> {
             if(drawable != null) {
                 item.setThumbnail(drawable);
                 item.setThumbnailLoading(false);
+                item.setThumbnailFail(false);
             } else {
                 item.setThumbnailLoading(false);
                 item.setThumbnailFail(true);

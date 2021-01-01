@@ -58,8 +58,10 @@ dependencies {
     implementation 'com.scwang.smart:refresh-layout-kernel:2.0.1'//https://github.com/scwang90/SmartRefreshLayout
     implementation 'com.scwang.smart:refresh-header-classics:2.0.1'
     implementation 'com.github.bumptech.glide:glide:4.11.0'//https://github.com/bumptech/glide
+    implementation 'com.alibaba:fastjson:1.2.70'
+    //https://github.com/alibaba/fastjson
     annotationProcessor 'com.github.bumptech.glide:compiler:4.11.0'
-    testImplementation 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.13.1'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
 }

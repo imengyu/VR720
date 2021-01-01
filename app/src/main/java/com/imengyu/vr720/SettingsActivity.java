@@ -1,14 +1,17 @@
 package com.imengyu.vr720;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.preference.PreferenceManager;
 
 import com.imengyu.vr720.fragment.settings.CommonSettingsFragment;
 import com.imengyu.vr720.fragment.settings.PanoSettingsFragment;
 import com.imengyu.vr720.fragment.settings.SettingsFragment;
+import com.imengyu.vr720.utils.AppUtils;
 import com.imengyu.vr720.utils.StatusBarUtils;
 import com.imengyu.vr720.widget.MyTitleBar;
 
@@ -17,7 +20,6 @@ public class SettingsActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_settings);
 
         SettingsFragment settingsFragment = new SettingsFragment();

@@ -72,6 +72,9 @@ public class ListImageCacheService {
         if(path == null || path.isEmpty())
             return null;
 
+        if(!new File(path).exists())
+            return null;
+
         if(cacheThumbnailDataMap.containsKey(path)) {
             ImageCacheData cacheData = cacheThumbnailDataMap.get(path);
             if(cacheData != null) {

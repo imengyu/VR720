@@ -10,23 +10,25 @@
     <ImageView
         android:id="@+id/imageView2"
         android:layout_width="wrap_content"
-        android:layout_height="101dp"
+        android:layout_height="100dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
-        app:tint="@android:color/white"
-        app:srcCompat="@drawable/ic_failed" />
+        android:contentDescription="@string/text_error_image"
+        app:srcCompat="@drawable/ic_image_error"
+        app:tint="@android:color/white" />
 
     <TextView
         android:id="@+id/text_pano_error"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
+        android:layout_marginStart="48dp"
         android:layout_marginTop="44dp"
-        android:layout_marginEnd="8dp"
+        android:layout_marginEnd="48dp"
         android:paddingStart="10dp"
         android:paddingEnd="10dp"
         android:text="@string/text_placeholder"
+        android:textAlignment="center"
         android:textColor="@android:color/white" />
 
     <Button
@@ -35,7 +37,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="100dp"
+        android:layout_marginTop="150dp"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="40dp"
         android:text="@string/text_return" />
