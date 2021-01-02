@@ -1,10 +1,17 @@
 package com.imengyu.vr720.utils;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.util.DisplayMetrics;
+
+import androidx.preference.PreferenceManager;
+
+import com.imengyu.vr720.dialog.AppDialogs;
+import com.imengyu.vr720.model.TestAgreementAllowedCallback;
 
 import java.util.Locale;
 
@@ -35,5 +42,24 @@ public class AppUtils {
         Configuration configuration = context.getResources().getConfiguration();
         configuration.setLocale(StringUtils.isNullOrEmpty(val) ? Locale.getDefault() : Locale.forLanguageTag(val));
         context.getResources().updateConfiguration(configuration, metrics);
+    }
+
+    /**
+     * 检查应用许可有没有同意
+     * @param activity 活动
+     * @param callback 回调
+     */
+    public static void testAgreementAllowed(Activity activity, TestAgreementAllowedCallback callback) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(activity);
+        if(!prefs.getBoolean("app_agreement_allowed", false)) {
+            AppDialogs.showPrivacyPolicyAndAgreement(activity, (allowed) -> {
+                if(allowed) {
+                    SharedPreferences.Editor editor = prefs.edit();
+                    editor.putBoolean("app_agreement_allowed", true);
+                    editor.apply();
+                    callback.testAgreementAllowedCallback(false);
+                }else activity.finish();
+            });
+        }else callback.testAgreementAllowedCallback(true);
     }
 }

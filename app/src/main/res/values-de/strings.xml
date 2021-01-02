@@ -223,5 +223,14 @@
 	<string name="text_agreement_allow">Vereinbaren und fortfahren</string>
 	<string name="text_agreement_not_allow">Uneinigkeit und Austritt</string>
 	<string name="action_search">Suche</string>
+    <string name="text_search_your_pano">Suche nach Ihrem Panorama</string>
+    <string name="text_nothing_searched">Nichts wurde gefunden</string>
+    <string name="text_you_can_search">Sie können nach diesen Feldern suchen: Dateiname, modifiziertes Datum und Dateigröße</string>
+	<string name="text_video">Video</string>
+	<string name="text_all">Alle</string>
+	<string name="text_image">Bild</string>
+    <string name="settings_header_audio">Frequenz (Audio)</string>
+	<string name="settings_key_use_native_decoder">Native Decoder verwenden (falls verfügbar)</string>
+	<string name="settings_summary_use_native_decoder">Nach Einschalten wird die Hardware-Dekodierung verwendet. Wenn es keinen entsprechenden Decoder gibt oder das Gerät keine Hardware-Dekodierung unterstützt, wird die Software-Dekodierung verwendet.</string>
 
 </resources>

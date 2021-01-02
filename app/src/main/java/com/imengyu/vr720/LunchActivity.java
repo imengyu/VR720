@@ -16,6 +16,7 @@ import androidx.preference.PreferenceManager;
 
 import com.imengyu.vr720.dialog.CommonDialog;
 import com.imengyu.vr720.dialog.AppDialogs;
+import com.imengyu.vr720.model.TestAgreementAllowedCallback;
 import com.imengyu.vr720.utils.AppUtils;
 import com.imengyu.vr720.utils.StorageDirUtils;
 
@@ -44,34 +45,16 @@ public class LunchActivity extends AppCompatActivity {
             //耗时任务，比如加载网络数据
             StorageDirUtils.testAndCreateStorageDirs(getApplicationContext());
             //转回UI线程
-            runOnUiThread(() -> {
-
-                //检查是否同意许可以及请求权限
-                runPermissionAndAgreement();
-            });
+            //检查是否同意许可以及请求权限
+            runOnUiThread(this::runPermissionAndAgreement);
         }).start();
     }
 
-    private interface TestAgreementAllowedCallback {
-        void testAgreementAllowedCallback(boolean b);
-    }
-    private void testAgreementAllowed(TestAgreementAllowedCallback callback) {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        if(!prefs.getBoolean("app_agreement_allowed", false)) {
-            AppDialogs.showPrivacyPolicyAndAgreement(this, (allowed) -> {
-                if(allowed) {
-                    SharedPreferences.Editor editor = prefs.edit();
-                    editor.putBoolean("app_agreement_allowed", true);
-                    editor.apply();
-                    callback.testAgreementAllowedCallback(false);
-                }else finish();
-            });
-        }else callback.testAgreementAllowedCallback(true);
-    }
+
 
     private void runPermissionAndAgreement() {
         //检查是否同意许可以及请求权限
-        testAgreementAllowed((b) -> {
+        AppUtils.testAgreementAllowed(this, (b) -> {
             if(checkPermission())
                 runMainActivity();
         });

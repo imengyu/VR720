@@ -20,21 +20,43 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
+# 代码混淆压缩比，在0~7之间，默认为5，一般不做修改
+-optimizationpasses 5
+
+# 混合时不使用大小写混合，混合后的类名为小写
+-dontusemixedcaseclassnames
+
+-dontskipnonpubliclibraryclasses
+
+# 指定不去忽略非公共库的类成员
+-dontskipnonpubliclibraryclassmembers
+
+# 不做预校验，preverify是proguard的四个步骤之一，Android不需要preverify，去掉这一步能够加快混淆速度。
+-dontpreverify
+
+# 保留Annotation不混淆 这在JSON实体映射时非常重要，比如fastJson
+-keepattributes *Annotation*,InnerClasses
+
+# 避免混淆泛型
+-keepattributes Signature
+
+# 抛出异常时保留代码行号
+-keepattributes SourceFile,LineNumberTable
+
 #
--keep class com.huantansheng.easyphotos.models.** { *; }
+-keep class com.huantansheng.easyphotos.models.* { *; }
 
 # For native methods, see http://proguard.sourceforge.net/manual/examples.html#native
 -keepclasseswithmembernames class * {
     native <methods>;
 }
--keepclassmembers public class * extends android.view.View {
-   void set*(***);
-   *** get*();
-}
-
 -keepclassmembers class * extends android.app.Activity {
    public void *(android.view.View);
 }
+-keepclassmembers class * extends androidx.appcompat.app.AppCompatActivity {
+   public void *(android.view.View);
+}
+-keepclassmembers class * extends android.app.Application
 
 # For enumeration classes, see http://proguard.sourceforge.net/manual/examples.html#enumerations
 -keepclassmembers enum * {
@@ -44,6 +66,21 @@
 
 -keepclassmembers class * implements android.os.Parcelable {
   public static final android.os.Parcelable$Creator CREATOR;
+}
+-keep class * implements android.os.Parcelable {
+  public static final android.os.Parcelable$Creator *;
+}
+-keep class * implements java.io.Serializable {
+    public *;
+}
+-keepclassmembers class * implements java.io.Serializable {
+   static final long serialVersionUID;
+   private static final java.io.ObjectStreamField[] serialPersistentFields;
+   !static !transient <fields>;
+   private void writeObject(java.io.ObjectOutputStream);
+   private void readObject(java.io.ObjectInputStream);
+   java.lang.Object writeReplace();
+   java.lang.Object readResolve();
 }
 
 -keepclassmembers class **.R$* {
@@ -56,20 +93,17 @@
 -dontwarn android.support.**
 
 # Understand the @Keep support annotation.
--keep class android.support.annotation.Keep
+-keep class androidx.annotation.Keep
 
--keep @android.support.annotation.Keep class * {*;}
-
+-keep @androidx.annotation.Keep class * {*;}
 -keepclasseswithmembers class * {
-    @android.support.annotation.Keep <methods>;
+    @androidx.annotation.Keep <methods>;
 }
-
 -keepclasseswithmembers class * {
-    @android.support.annotation.Keep <fields>;
+    @androidx.annotation.Keep <fields>;
 }
-
 -keepclasseswithmembers class * {
-    @android.support.annotation.Keep <init>(...);
+    @androidx.annotation.Keep <init>(...);
 }
 
 # Depending on your ProGuard (DexGuard) config and usage,
@@ -87,5 +121,5 @@
   *** rewind();
 }
 
-# for DexGuard only
--keepresourcexmlelements manifest/application/meta-data@value=GlideModule
+# JS 调用Java 方法
+-keepattributes *JavascriptInterface*

@@ -1,5 +1,6 @@
 package com.imengyu.vr720;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.content.res.Resources;
@@ -11,8 +12,11 @@ import android.os.Message;
 import android.view.ActionMode;
 import android.view.KeyEvent;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -34,6 +38,7 @@ import com.imengyu.vr720.fragment.IMainFragment;
 import com.imengyu.vr720.model.TitleSelectionChangedCallback;
 import com.imengyu.vr720.service.ListDataService;
 import com.imengyu.vr720.utils.AlertDialogTool;
+import com.imengyu.vr720.utils.KeyBoardUtil;
 import com.imengyu.vr720.utils.StatusBarUtils;
 import com.imengyu.vr720.widget.MyTitleBar;
 import com.imengyu.vr720.widget.ToolbarButton;
@@ -358,4 +363,20 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         AlertDialogTool.notifyConfigurationChangedForDialog(this);
         super.onConfigurationChanged(newConfig);
     }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        if (ev.getAction() == MotionEvent.ACTION_DOWN) {
+            View v = getCurrentFocus();
+            if (KeyBoardUtil.isShouldHideInput(v, ev)) {//点击editText控件外部
+                KeyBoardUtil.closeKeyboard(v);//软键盘工具类
+                if (KeyBoardUtil.getCurrentEditText() != null)
+                    KeyBoardUtil.getCurrentEditText().clearFocus();
+            }
+            return super.dispatchTouchEvent(ev);
+        }
+        // 必不可少，否则所有的组件都不会有TouchEvent了
+        return getWindow().superDispatchTouchEvent(ev) || onTouchEvent(ev);
+    }
+
 }

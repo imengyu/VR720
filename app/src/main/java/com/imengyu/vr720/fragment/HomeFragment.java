@@ -1,12 +1,16 @@
 package com.imengyu.vr720.fragment;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -14,7 +18,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AnimationSet;
 import android.view.animation.AnimationUtils;
-import android.widget.GridView;
+import android.view.inputmethod.EditorInfo;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 
@@ -36,14 +42,18 @@ import com.imengyu.vr720.config.Constants;
 import com.imengyu.vr720.config.MainMessages;
 import com.imengyu.vr720.dialog.AppDialogs;
 import com.imengyu.vr720.dialog.CommonDialog;
+import com.imengyu.vr720.dialog.LoadingDialog;
 import com.imengyu.vr720.list.MainList;
 import com.imengyu.vr720.model.ImageItem;
-import com.imengyu.vr720.model.list.MainListItem;
 import com.imengyu.vr720.model.TitleSelectionChangedCallback;
+import com.imengyu.vr720.model.list.MainListItem;
 import com.imengyu.vr720.plugin.GlideEngine;
 import com.imengyu.vr720.service.ListDataService;
 import com.imengyu.vr720.utils.FileUtils;
+import com.imengyu.vr720.utils.KeyBoardUtil;
 import com.imengyu.vr720.widget.MyTitleBar;
+import com.imengyu.vr720.widget.RecyclerViewEmptySupport;
+import com.scwang.smart.refresh.footer.ClassicsFooter;
 import com.scwang.smart.refresh.header.ClassicsHeader;
 import com.scwang.smart.refresh.layout.api.RefreshLayout;
 
@@ -76,6 +86,7 @@ public class HomeFragment extends Fragment implements IMainFragment {
     private final ListDataService listDataService;
     private final Handler handler;
     private final MyTitleBar titleBar;
+    private Context context;
 
     @Nullable
     @Override
@@ -86,6 +97,7 @@ public class HomeFragment extends Fragment implements IMainFragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         resources = getResources();
+        context = requireContext();
 
         initView(view);
         initMenu();
@@ -105,18 +117,19 @@ public class HomeFragment extends Fragment implements IMainFragment {
     private Resources resources;
 
     private MainList mainList = null;
-    private GridView grid_main;
     private RefreshLayout refreshLayout;
 
     private void initView(View view) {
         final FloatingActionButton fab = view.findViewById(R.id.fab);
-        final FloatingActionButton fab_search = view.findViewById(R.id.fab_search);
-        fab.setOnClickListener(v -> onAddImageClick());
-
-
+        edit_search = view.findViewById(R.id.edit_search);
         final LinearLayout footerSelection = view.findViewById(R.id.footer_select_main);
+
+        empty_main = view.findViewById(R.id.empty_main);
+        final View empty_search_main = view.findViewById(R.id.empty_search_main);
+
         footerSelection.setVisibility(View.GONE);
-        grid_main = view.findViewById(R.id.grid_main);
+        recycler_main = view.findViewById(R.id.recycler_main);
+        recycler_main.setEmptyView(empty_main);
 
         final View button_mainsel_openwith = view.findViewById(R.id.button_mainsel_openwith);
         final View button_mainsel_delete = view.findViewById(R.id.button_mainsel_delete);
@@ -128,12 +141,14 @@ public class HomeFragment extends Fragment implements IMainFragment {
         button_mainsel_share.setOnClickListener(v -> onShareImageClick());
         button_mainsel_add_to.setOnClickListener(v -> onAddImageToClick());
 
-        mainList = new MainList(getContext(), ((VR720Application)getActivity().getApplication()).getListImageCacheService());
-        mainList.init(handler, grid_main);
+        VR720Application application = (VR720Application) requireActivity().getApplication();
+
+        //List
+        mainList = new MainList(context, application.getListImageCacheService(), application.getListDataService());
+        mainList.init(handler, recycler_main);
         mainList.setListCheckableChangedListener(checkable -> {
             if (checkable) {
                 fab.hide();
-                fab_search.hide();
                 AnimationSet animationSet = (AnimationSet) AnimationUtils.loadAnimation(getContext(), R.anim.bottom_up);
                 footerSelection.startAnimation(animationSet);
                 footerSelection.setVisibility(View.VISIBLE);
@@ -143,7 +158,6 @@ public class HomeFragment extends Fragment implements IMainFragment {
                             true, 0, false);
             } else {
                 fab.show();
-                fab_search.show();
                 AnimationSet animationSet = (AnimationSet) AnimationUtils.loadAnimation(getContext(), R.anim.bottom_down);
                 footerSelection.startAnimation(animationSet);
                 footerSelection.setVisibility(View.GONE);
@@ -171,18 +185,139 @@ public class HomeFragment extends Fragment implements IMainFragment {
             }
         });
 
-        grid_main.setEmptyView(view.findViewById(R.id.empty_main));
-
         refreshLayout = view.findViewById(R.id.refreshLayout);
-        refreshLayout.setRefreshHeader(new ClassicsHeader(getContext()));
+        refreshLayout.setRefreshHeader(new ClassicsHeader(requireContext()));
+        refreshLayout.setRefreshFooter(new ClassicsFooter(requireContext()));
+        refreshLayout.setEnableLoadMore(false);
         refreshLayout.setOnRefreshListener(refreshlayout -> loadList());
+
+        fab.setOnClickListener(v -> onAddImageClick());
+
+        //搜索类型选择
+
+        button_search_all = view.findViewById(R.id.button_search_all);
+        button_search_image = view.findViewById(R.id.button_search_image);
+        button_search_video = view.findViewById(R.id.button_search_video);
+
+        searchChooseTypeButtonArr = new Button[] {
+                button_search_all, button_search_image, button_search_video
+        };
+
+        button_search_all.setOnClickListener((v) -> {
+            checkChooseTypeButton(button_search_all);
+            currentSearchChooseType = SEARCH_TYPE_ALL;
+            startSearch();
+        });
+        button_search_image.setOnClickListener((v) -> {
+            checkChooseTypeButton(button_search_image);
+            currentSearchChooseType = SEARCH_TYPE_IMAGE;
+            startSearch();
+        });
+        button_search_video.setOnClickListener((v) -> {
+            checkChooseTypeButton(button_search_video);
+            currentSearchChooseType = SEARCH_TYPE_VIDEO;
+            startSearch();
+        });
+        button_search_all.setVisibility(View.GONE);
+        button_search_image.setVisibility(View.GONE);
+        button_search_video.setVisibility(View.GONE);
+
+        //Search
+        edit_search.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            @Override
+            public void afterTextChanged(Editable s) {
+                currentSearchKeyword = s.toString();
+                if(currentIsSearchMode) {
+                    if(s.length() > 0) {
+                        button_search_all.setVisibility(View.VISIBLE);
+                        button_search_image.setVisibility(View.VISIBLE);
+                        button_search_video.setVisibility(View.VISIBLE);
+                    } else
+                        quitSearchMode();
+                }
+            }
+        });
+        edit_search.setOnFocusChangeListener((v, hasFocus) -> {
+            if(currentIsSearchMode != hasFocus) {
+                currentIsSearchMode = hasFocus;
+                if(currentIsSearchMode) {
+                    recycler_main.setEmptyView(empty_search_main);
+                } else
+                    quitSearchMode();
+            }
+        });
+        edit_search.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+
+                if(currentSearchKeyword.isEmpty())
+                    return false;
+
+                // 当按了搜索之后关闭软键盘
+                KeyBoardUtil.closeKeyboard(edit_search);
+
+                //进行搜索
+                startSearch();
+                return true;
+            }
+            return false;
+        });
     }
+
+    private View empty_main = null;
+    private RecyclerViewEmptySupport recycler_main = null;
+    private Button button_search_all = null;
+    private Button button_search_image = null;
+    private Button button_search_video = null;
+    private boolean currentIsSearchMode = false;
+    private int currentSearchChooseType = 0;
+    private String currentSearchKeyword = "";
+    private Button[] searchChooseTypeButtonArr = null;
+    private LoadingDialog rotateLoading = null;
+    private EditText edit_search = null;
+
+    private void startSearch() {
+        mainList.doSearch(currentSearchKeyword, currentSearchChooseType);
+        rotateLoading = new LoadingDialog(context);
+        rotateLoading.show();
+        handler.sendEmptyMessageDelayed(MainMessages.MSG_CLOSE_LOADING, 500);
+    }
+    private void checkChooseTypeButton(Button target) {
+        for(Button b : searchChooseTypeButtonArr) {
+            if(b == target) {
+                b.setBackgroundResource(R.drawable.btn_round_primary_n);
+                b.setTextColor(Color.WHITE);
+            } else {
+                b.setBackgroundResource(R.drawable.btn_round_n_light);
+                b.setTextColor(Color.BLACK);
+            }
+        }
+    }
+    private void quitSearchMode() {
+        if(edit_search.getText().length() > 0)
+            edit_search.setText("");
+        if(edit_search.hasFocus())
+            edit_search.clearFocus();
+        recycler_main.setEmptyView(empty_main);
+        mainList.resetSearch();
+        button_search_all.setVisibility(View.GONE);
+        button_search_image.setVisibility(View.GONE);
+        button_search_video.setVisibility(View.GONE);
+        KeyBoardUtil.closeKeyboard(edit_search);
+    }
+
+    public static final int SEARCH_TYPE_ALL = 0;
+    public static final int SEARCH_TYPE_VIDEO = 2;
+    public static final int SEARCH_TYPE_IMAGE = 1;
 
     private void onUpdateScreenOrientation(Configuration newConfig) {
         if(newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
-            grid_main.setNumColumns(1);
+            mainList.setListIsGrid(false);
         } else if(newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            grid_main.setNumColumns(2);
+            mainList.setListIsGrid(true);
         }
     }
 
@@ -276,6 +411,12 @@ public class HomeFragment extends Fragment implements IMainFragment {
             case MainMessages.MSG_FORCE_LOAD_LIST:
                 loadList();
                 break;
+            case MainMessages.MSG_CLOSE_LOADING:
+                if(rotateLoading != null) {
+                    rotateLoading.dismiss();
+                    rotateLoading = null;
+                }
+                break;
         }
     }
 
@@ -284,6 +425,10 @@ public class HomeFragment extends Fragment implements IMainFragment {
     //====================================================
 
     private void loadList() {
+
+        if(currentIsSearchMode)
+            quitSearchMode();
+
         mainList.clear();
         ArrayList<ImageItem> items = listDataService.getImageList();
         for(ImageItem imageItem : items)
@@ -303,13 +448,13 @@ public class HomeFragment extends Fragment implements IMainFragment {
     //====================================================
 
     private void loadSettings() {
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getContext());
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         mainList.setMainSortReverse(sharedPreferences.getBoolean("main_list_sort_reverse", false));
         mainList.setMainSortType(sharedPreferences.getInt("main_list_sort_type", MainList.MAIN_SORT_DATE));
         mainList.sort();
     }
     private void saveSettings() {
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getContext());
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         SharedPreferences.Editor editor = sharedPreferences.edit();
 
         editor.putInt("main_list_sort_type", mainList.getMainSortType());

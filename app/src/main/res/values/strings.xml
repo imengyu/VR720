@@ -24,8 +24,8 @@
     <string name="title_choose_language">选择语言</string>
     <string name="title_activity_html" translatable="false">HtmlActivity</string>
 
-    <string name="version_code" translatable="false">2</string>
-    <string name="version_name" translatable="false">V1.2</string>
+    <string name="version_code" translatable="false">3</string>
+    <string name="version_name" translatable="false">V1.3.0103-arm</string>
 
     <!-- actions -->
     <string name="action_new_gallery">新建分类收藏夹</string>
@@ -115,6 +115,13 @@
     <string name="text_file_delete_count">成功删除 %d 个文件</string>
     <string name="text_open_way">打开方式</string>
     <string name="text_rename_gallery">重命名分类收藏夹</string>
+    <string name="text_search_your_pano">搜索你的全景图</string>
+    <string name="text_nothing_searched">什么都没搜到</string>
+    <string name="text_you_can_search">您可以根据这些字段进行搜索: 文件名、修改日期、文件大小</string>
+
+    <string name="text_video">视频</string>
+    <string name="text_all">全部</string>
+    <string name="text_image">图像</string>
 
     <string name="text_more_actions">更多操作</string>
     <string name="text_i_new">我知道了</string>
@@ -223,6 +230,7 @@
     <string name="settings_header_update">更新</string>
     <string name="settings_header_debug">调试</string>
     <string name="settings_header_data_backup">数据备份</string>
+    <string name="settings_header_audio">音频</string>
 
     <string name="settings_key_enable_full_chunks">启用完整全景图浏览</string>
     <string name="settings_summary_enable_full_chunks">在浏览较大全景图（大于4096x2048）时不会压缩而是以文件最高清晰度显示，虽然能有更好的效果，但这可能会增加硬件的负担。</string>
@@ -251,6 +259,8 @@
     <string name="settings_key_enable_native_log">启用内核日志</string>
     <string name="settings_key_enable_exception_catch">启用错误自动反馈</string>
     <string name="settings_summary_enable_exception_catch">启用后程序可以在发生错误时抓取错误异常信息，在下次启动时传回服务器（不包含您的个人信息），以帮助我们更好的改进软件（建议开启）</string>
+    <string name="settings_key_use_native_decoder">硬件解码（如果可用）</string>
+    <string name="settings_summary_use_native_decoder">开启后将尝试使用硬件解码，如果无对应解码器或是设备不支持硬件解码，则使用软件解码</string>
 
     <!-- agreement -->
     <string name="text_agreement_base_welcome">欢迎使用 720全景图查看器 ！\n我们非常重视您的隐私和个人信息保护。 \n在您使用 720全景图查看器 前，请认真阅读 <a href="https://imengyu.top/linkJump?to=vr720_argeement">《用户协议》</a> 及 <a href="https://imengyu.top/linkJump?to=privacy_policy">《隐私政策》</a> ，您同意并接受全部条款后方可开始使用“720全景图查看器”。\n另外为了更好地使用产品功能，需征求您的允许，获得以下权限：</string>

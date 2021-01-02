@@ -12,6 +12,7 @@
     <color name="colorPanoBarBackground">#64000000</color>
     <color name="colorButtonPressed">#4d595d66</color>
     <color name="colorButtonNormal">#D2E9E9E9</color>
+    <color name="colorButtonNormalLight">#EDFAFAFA</color>
     <color name="colorButtonDisabled">#72E9E9E9</color>
     <color name="colorButtonPrimaryDisabled">#417EAFE0</color>
 

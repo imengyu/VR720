@@ -22,14 +22,19 @@
         app:title="@string/settings_header_common">
 
         <Preference
+            app:icon="@drawable/ic_menu_settings"
+            app:key="settings_key_go_common"
+            app:title="@string/settings_header_common" />
+
+        <Preference
             app:icon="@drawable/ic_menu_panorama_horizontal"
             app:key="settings_key_go_panorama"
             app:title="@string/settings_header_panorama" />
 
         <Preference
-            app:icon="@drawable/ic_menu_settings"
-            app:key="settings_key_go_common"
-            app:title="@string/settings_header_common" />
+            app:icon="@drawable/ic_menu_video"
+            app:key="settings_key_go_video"
+            app:title="@string/text_video" />
 
     </PreferenceCategory>
 

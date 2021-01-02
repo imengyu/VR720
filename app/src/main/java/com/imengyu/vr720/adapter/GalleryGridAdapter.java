@@ -10,12 +10,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.ArrayAdapter;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.res.ResourcesCompat;
 
 import com.imengyu.vr720.R;
 import com.imengyu.vr720.list.GalleryGridList;
+import com.imengyu.vr720.model.OnListCheckableChangedListener;
 import com.imengyu.vr720.model.holder.GalleryListViewHolder;
 import com.imengyu.vr720.model.list.MainListItem;
 import com.imengyu.vr720.utils.ScreenUtils;
@@ -25,7 +27,7 @@ import java.util.List;
 /**
  * 主列表适配器
  */
-public class GalleryGridAdapter extends CheckableListAdapter<MainListItem> {
+public class GalleryGridAdapter extends ArrayAdapter<MainListItem> implements CheckableListAdapter<MainListItem> {
 
     private final GalleryGridList galleryGridList;
     private final int layoutId;
@@ -123,5 +125,23 @@ public class GalleryGridAdapter extends CheckableListAdapter<MainListItem> {
             viewHolder.video_mark.setVisibility(item.isVideo() ? View.VISIBLE : View.GONE);
         }
         return convertView;
+    }
+
+    private boolean mCheckable;
+    private OnListCheckableChangedListener mainListCheckableChangedListener;
+
+    @Override
+    public void setCheckable(boolean mCheckable) {
+        this.mCheckable = mCheckable;
+        if (this.mainListCheckableChangedListener != null)
+            this.mainListCheckableChangedListener.onListCheckableChangedListener(mCheckable);
+    }
+
+    @Override
+    public boolean isCheckable() { return mCheckable; }
+
+    @Override
+    public void setMainListCheckableChangedListener(OnListCheckableChangedListener mainListCheckableChangedListener) {
+        this.mainListCheckableChangedListener = mainListCheckableChangedListener;
     }
 }

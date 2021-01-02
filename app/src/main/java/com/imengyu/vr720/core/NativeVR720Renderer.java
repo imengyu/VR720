@@ -1,12 +1,12 @@
 package com.imengyu.vr720.core;
 
-import android.app.ActivityManager;
 import android.content.Context;
-import android.content.pm.ConfigurationInfo;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 
+import androidx.annotation.Keep;
+
+import com.imengyu.vr720.annotation.UnUsed;
 import com.imengyu.vr720.config.MainMessages;
 import com.imengyu.vr720.core.representation.Quaternion;
 
@@ -14,29 +14,6 @@ import com.imengyu.vr720.core.representation.Quaternion;
  * 本地渲染器
  */
 public class NativeVR720Renderer {
-
-    /**
-     * 检查是否是模拟器中
-     */
-    public static boolean isProbablyEmulator() {
-        return Build.FINGERPRINT.startsWith("generic")
-                || Build.FINGERPRINT.startsWith("unknown")
-                || Build.MODEL.contains("google_sdk")
-                || Build.MODEL.contains("Emulator")
-                || Build.MODEL.contains("Android SDK built for x86");
-    }
-
-    /**
-     * 检查本机是否支持OPENGL ES2
-     * @param context 上下文
-     * @return 是否支持
-     */
-    public static boolean checkSupportsEs3(Context context) {
-        ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-        assert activityManager != null;
-        ConfigurationInfo configurationInfo = activityManager.getDeviceConfigurationInfo();
-        return configurationInfo.reqGlEsVersion >= 0x30000 || isProbablyEmulator();
-    }
 
     /**
      * 创建本地渲染器
@@ -49,13 +26,17 @@ public class NativeVR720Renderer {
     private final Handler mainHandler;
     private long mainNativePtr = 0;
 
+    @Keep
     public void nativeFeedBackMessage(int msg) {
         Message msgObj = new Message();
         msgObj.what = MainMessages.MSG_NATIVE_MESSAGE;
         msgObj.obj = msg;
         mainHandler.sendMessage(msgObj);
     }
+    @Keep
     public void nativeSetNativePtr(long ptr) { mainNativePtr = ptr; }
+    @Keep
+    @UnUsed
     public long nativeGetNativePtr() { return mainNativePtr; }
 
     public interface OnRequestGyroValueCallback {
@@ -96,16 +77,20 @@ public class NativeVR720Renderer {
     public static final int PanoramaMode_PanoramaModeMax = 7;
 
     //视频状态
+    @UnUsed
     public static final int VideoState_Loading = 1;
+    @UnUsed
     public static final int VideoState_Failed = 2;
     public static final int VideoState_NotOpen = 3;
     public static final int VideoState_Playing = 4;
     public static final int VideoState_Ended = 5;
+    @UnUsed
     public static final int VideoState_Opened = 6;
     public static final int VideoState_Paused = 6;
 
     //属性
     public static final int PROP_IS_FILE_OPEN = 2;
+    @UnUsed
     public static final int PROP_IS_CURRENT_FILE_OPEN = 3;
     public static final int PROP_CURRENT_FILE_IS_VIDEO = 4;
 
@@ -120,10 +105,12 @@ public class NativeVR720Renderer {
     public static final int PROP_SMALL_PANORAMA_PATH = 22;
     public static final int PROP_LOG_LEVEL = 23;
     public static final int PROP_ENABLE_LOG = 24;
+    public static final int PROP_ENABLE_NATIVE_DECODER = 25;
 
     //C++代码声明
     //***********************************
 
+    @Keep
     private native void onCreate();
 
     public void onSurfaceCreated() { onSurfaceCreated(mainNativePtr); }
@@ -134,38 +121,69 @@ public class NativeVR720Renderer {
     public void onUpdateFps(float fps) { onUpdateFps(mainNativePtr, fps); }
     public void destroy() { destroy(mainNativePtr); }
 
+    @Keep
     private native void destroy(long nativePtr);
+    @Keep
     private native void onUpdateFps(long nativePtr, float fps);
+    @Keep
     private native void onSurfaceCreated(long nativePtr);
+    @Keep
     private native void onSurfaceChanged(long nativePtr, int width, int height);
+    @Keep
     private native void onDrawFrame(long nativePtr);
+    @Keep
     private native void onMainThread(long nativePtr);
+    @Keep
     private native void onDestroy(long nativePtr);
+    @Keep
     private native void openFile(long nativePtr, String path);
+    @Keep
     private native void closeFile(long nativePtr);
+    @Keep
     private native void processMouseMove(long nativePtr, float x, float y);
+    @Keep
     private native void processMouseDown(long nativePtr, float x, float y);
+    @Keep
     private native void processMouseUp(long nativePtr, float x, float y);
+    @Keep
     private native void processMouseDragVelocity(long nativePtr, float x, float y);
+    @Keep
     private native void processViewZoom(long nativePtr, float v);
+    @Keep
     private native void processKey(long nativePtr, int key, boolean down);
+    @Keep
     private native void updateGyroValue(long nativePtr, float x, float y, float z, float w);
+    @Keep
     private native void updateDebugValue(long nativePtr, float x, float y, float z, float w, float v, float u);
+    @Keep
     private native void onResume(long nativePtr);
+    @Keep
     private native void onPause(long nativePtr);
+    @Keep
     private native int getVideoState(long nativePtr);
+    @Keep
     private native void updateVideoState(long nativePtr, int newState);
+    @Keep
     private native int getVideoLength(long nativePtr);
+    @Keep
     private native int getVideoPos(long nativePtr);
+    @Keep
     private native void setVideoPos(long nativePtr, int pos);
+    @Keep
     private native String getProp(long nativePtr, int id);
+    @Keep
     private native void setProp(long nativePtr, int id, String value);
+    @Keep
     private native int getIntProp(long nativePtr, int id);
+    @Keep
     private native void setIntProp(long nativePtr, int id, int value);
+    @Keep
     private native boolean getBoolProp(long nativePtr, int id);
+    @Keep
     private native void setBoolProp(long nativePtr, int id, boolean value);
 
     public void setProp(int id, String value) { setProp(mainNativePtr, id, value); }
+    @UnUsed
     public String getProp(int id) { return getProp(mainNativePtr, id); }
     public void setProp(int id, int value) { setIntProp(mainNativePtr, id, value); }
     public int getIntProp(int id) { return getIntProp(mainNativePtr, id); }
@@ -176,12 +194,14 @@ public class NativeVR720Renderer {
      * 获取播放器音量
      * @return 播放器音量（0-100）
      */
+    @UnUsed
     public int getVolume() { return getIntProp(PROP_VIDEO_VOLUME); }
 
     /**
      * 设置播放器音量
      * @param vol 播放器音量（0-100）
      */
+    @UnUsed
     public void setVolume(int vol) { setIntProp(mainNativePtr, PROP_VIDEO_VOLUME, vol); }
 
     /**
@@ -262,6 +282,7 @@ public class NativeVR720Renderer {
      * 获取当前全景模式
      * @return 全景模式（PANO_MODE_*）
      */
+    @UnUsed
     public int getPanoramaMode() { return getIntProp(PROP_PANORAMA_MODE); }
     /**
      * 设置全景模式

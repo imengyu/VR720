@@ -47,11 +47,13 @@ import com.imengyu.vr720.model.ImageItem;
 import com.imengyu.vr720.service.ListDataService;
 import com.imengyu.vr720.service.ListImageCacheService;
 import com.imengyu.vr720.utils.AlertDialogTool;
+import com.imengyu.vr720.utils.AppUtils;
 import com.imengyu.vr720.utils.DateUtils;
 import com.imengyu.vr720.utils.FileSizeUtil;
 import com.imengyu.vr720.utils.FileUtils;
 import com.imengyu.vr720.utils.ImageUtils;
 import com.imengyu.vr720.utils.PixelTool;
+import com.imengyu.vr720.utils.RendererUtils;
 import com.imengyu.vr720.utils.ScreenUtils;
 import com.imengyu.vr720.utils.StatusBarUtils;
 import com.imengyu.vr720.utils.StorageDirUtils;
@@ -119,8 +121,7 @@ public class PanoActivity extends AppCompatActivity {
         screenSize = ScreenUtils.getScreenSize(this);
 
         //初始化内核
-        application.checkAndInit();
-        NativeVR720.updateAssetManagerPtr(getAssets());
+        NativeVR720.initNative(getAssets(), this);
 
         viewBinder = new PanoramaViewBinder(this);
 
@@ -130,7 +131,7 @@ public class PanoActivity extends AppCompatActivity {
         initView();
 
         //检查
-        if(!NativeVR720Renderer.checkSupportsEs3(this)) {
+        if(!RendererUtils.checkSupportsEs3(this)) {
             showErr(getString(R.string.text_your_device_dosnot_support_es20));
             return;
         }
@@ -147,8 +148,8 @@ public class PanoActivity extends AppCompatActivity {
     private void readArgAndLoadImage() {
         //读取输入路径
         Intent intent = getIntent();
-        if(Intent.ACTION_VIEW.equals(intent.getAction()))
-            loadImageFromAction(intent);
+        if (Intent.ACTION_VIEW.equals(intent.getAction()))
+            AppUtils.testAgreementAllowed(this, (b) -> loadImageFromAction(intent));
         else
             loadImageFromArg(intent);
     }
@@ -221,6 +222,7 @@ public class PanoActivity extends AppCompatActivity {
         renderer.setPanoramaMode(currentPanoMode);
         renderer.setProp(NativeVR720Renderer.PROP_LOG_LEVEL, logLevel);
         renderer.setProp(NativeVR720Renderer.PROP_ENABLE_LOG, logEnabled);
+        renderer.setProp(NativeVR720Renderer.PROP_ENABLE_NATIVE_DECODER, useNativeDecoder);
         viewBinder.glSurfaceView.setNativeRenderer(renderer);
         viewBinder.glSurfaceView.setCaptureCallback(this::screenShotCallback);
         viewBinder.glSurfaceView.setRendererCallback((gl10) -> {
@@ -441,6 +443,7 @@ public class PanoActivity extends AppCompatActivity {
         customFps = sharedPreferences.getInt("custom_fps_value", 0);
         logLevel = sharedPreferences.getInt("native_log_level", 0);
         logEnabled = sharedPreferences.getBoolean("enable_native_log", true);
+        useNativeDecoder = sharedPreferences.getBoolean("use_native_decoder", true);
 
         //no full screen
         if(sharedPreferences.getBoolean("enable_non_fullscreen", false))
@@ -505,6 +508,7 @@ public class PanoActivity extends AppCompatActivity {
     private boolean debugEnabled = true;
     private boolean enableLowFps = false;
     private boolean enableCustomFps = false;
+    private boolean useNativeDecoder = true;
     private int customFps = 0;
     private boolean dontCheckImageNormalSize = true;
     private boolean lockVideoSeekUpdate = false;

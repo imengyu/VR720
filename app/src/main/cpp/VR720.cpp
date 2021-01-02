@@ -8,26 +8,42 @@
 #include "./player/CCVideoPlayer.h"
 
 JavaVM *globalJvm;
+bool nativeInitStaus = false;
 
 jboolean JNICALL NativeVR720_initNative(JNIEnv *env, jclass, jobject assetManager, jobject context) {
+
+    if(nativeInitStaus) {
+        CCAssetsManager::Android_InitFromJni(env, assetManager);
+        CMobileGameRenderer::GlobalInit(env, context);
+
+        ALOGW("Native", "Can not init, already init");
+        return JNI_FALSE;
+    }
+
     Logger::InitConst();
     CCPtrPool::InitPool();
     CCMeshLoader::Init();
     CCVideoPlayer::GlobalInit();
     CCAssetsManager::Android_InitFromJni(env, assetManager);
     CMobileGameRenderer::GlobalInit(env, context);
+
+    nativeInitStaus = true;
     return JNI_TRUE;
 }
 void JNICALL NativeVR720_releaseNative(JNIEnv *env, jclass clazz) {
     UNREFERENCED_PARAMETER(env);
     UNREFERENCED_PARAMETER(clazz);
+
+    if(!nativeInitStaus) {
+        ALOGW("Native", "Can not release, Not init");
+        return;
+    }
+
     CCMeshLoader::Destroy();
     CCPtrPool::ReleasePool();
     Logger::DestroyConst();
-}
-void JNICALL NativeVR720_updateAssetManagerPtr(JNIEnv *env, jclass clazz, jobject asset_manager) {
-    UNREFERENCED_PARAMETER(clazz);
-    CCAssetsManager::Android_InitFromJni(env, asset_manager);
+
+    nativeInitStaus = false;
 }
 jstring JNICALL NativeVR720_getNativeVersion(JNIEnv *env, jclass clazz) {
     UNREFERENCED_PARAMETER(clazz);
@@ -43,7 +59,6 @@ void JNICALL NativeVR720_lowMemory(JNIEnv *env, jclass clazz) {
 static JNINativeMethod nativeMethods[] = {
         {"initNative",            "(Landroid/content/res/AssetManager;Landroid/content/Context;)Z", (void *) NativeVR720_initNative},
         {"releaseNative",         "()V",                                                            (void *) NativeVR720_releaseNative},
-        {"updateAssetManagerPtr", "(Landroid/content/res/AssetManager;)V",                          (void *) NativeVR720_updateAssetManagerPtr},
         {"getNativeVersion",      "()Ljava/lang/String;",                                           (void *) NativeVR720_getNativeVersion},
         {"lowMemory",             "()V",                                                            (void *) NativeVR720_lowMemory},
 };
@@ -52,10 +67,14 @@ static int registerNativeMethods(JNIEnv *env) {
     jclass clazz;
 
     clazz = env->FindClass("com/imengyu/vr720/core/NativeVR720");
-    if (clazz == nullptr)
+    if (clazz == nullptr) {
+        ALOGE("Native", "NativeVR720 class not found!");
         return JNI_FALSE;
-    if (env->RegisterNatives(clazz, nativeMethods, 5) < 0)
+    }
+    if (env->RegisterNatives(clazz, nativeMethods, 4) < 0) {
+        ALOGE("Native", "RegisterNatives failed!");
         return JNI_FALSE;
+    }
     return JNI_TRUE;
 }
 
@@ -71,10 +90,11 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     UNREFERENCED_PARAMETER(reserved);
 
     globalJvm = vm;
-    __android_log_print(ANDROID_LOG_INFO, "Native", "JNI_OnLoad");
+    ALOGI("Native", "JNI_OnLoad");
 
     JNIEnv *env;
     if (vm->GetEnv((void **) (&env), JNI_VERSION_1_6) != JNI_OK) {
+        ALOGE("Native", "Jni version not support !");
         return -1;
     }
     assert(env != nullptr);

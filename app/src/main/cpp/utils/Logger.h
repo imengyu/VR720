@@ -44,6 +44,11 @@ typedef void(*LogCallBack)(const char *str, LogLevel level, void* lparam);
 #define LOGEF(tag,fmt, ...) Logger::GetStaticInstance()->LogError2(tag,fmt, __VA_ARGS__)
 #define LOGDF(tag,fmt, ...) Logger::GetStaticInstance()->Log(tag,fmt, __VA_ARGS__)
 
+#define ALOGD(tag,...) __android_log_print(ANDROID_LOG_DEBUG, tag, __VA_ARGS__)
+#define ALOGI(tag,...) __android_log_print(ANDROID_LOG_INFO, tag, __VA_ARGS__)
+#define ALOGE(tag,...) __android_log_print(ANDROID_LOG_ERROR, tag, __VA_ARGS__)
+#define ALOGW(tag,...) __android_log_print(ANDROID_LOG_WARN, tag, __VA_ARGS__)
+
 //日志记录
 class Logger
 {

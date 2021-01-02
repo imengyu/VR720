@@ -79,7 +79,6 @@ public class SmallGalleryListAdapter extends ArrayAdapter<GalleryListItem> {
             viewHolder.image.setTag(position);
             viewHolder.image.setVisibility(View.VISIBLE);
             viewHolder.text_subtitle.setText(item.getSubTitle(context));
-            viewHolder.text_title.setText(item.getName());
             viewHolder.text_subtitle.setVisibility(View.VISIBLE);
 
             Drawable thumbnail = null;
@@ -104,14 +103,17 @@ public class SmallGalleryListAdapter extends ArrayAdapter<GalleryListItem> {
             if (item.id == ListDataService.GALLERY_LIST_ID_ADD) {
                 viewHolder.image.setBackgroundColor(ContextCompat.getColor(context, R.color.colorAccent));
                 viewHolder.image.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_button_add));
+                viewHolder.text_title.setText(context.getString(R.string.action_new_gallery));
                 viewHolder.text_subtitle.setVisibility(View.GONE);
             } else if (item.id == ListDataService.GALLERY_LIST_ID_I_LIKE) {
                 viewHolder.image.setBackgroundColor(ContextCompat.getColor(context, R.color.colorImageLike));
                 viewHolder.image.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_image_ilike));
+                viewHolder.text_title.setText(context.getString(R.string.text_i_like));
             } else if (item.id == ListDataService.GALLERY_LIST_ID_VIDEOS) {
                 viewHolder.image.setBackgroundColor(ContextCompat.getColor(context, R.color.colorVideo));
                 viewHolder.image.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_video));
-            }
+                viewHolder.text_title.setText(context.getString(R.string.text_videos));
+            } else viewHolder.text_title.setText(item.getName());
 
             if (thumbnail == null) {
                 viewHolder.image.setVisibility(View.VISIBLE);

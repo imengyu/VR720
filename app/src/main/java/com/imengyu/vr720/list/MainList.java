@@ -12,13 +12,21 @@ import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.ListView;
 
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.OrientationHelper;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.imengyu.vr720.R;
 import com.imengyu.vr720.adapter.MainListAdapter;
 import com.imengyu.vr720.config.MainMessages;
+import com.imengyu.vr720.fragment.HomeFragment;
 import com.imengyu.vr720.model.ImageItem;
 import com.imengyu.vr720.model.OnListCheckableChangedListener;
 import com.imengyu.vr720.model.list.MainListItem;
+import com.imengyu.vr720.service.ListDataService;
 import com.imengyu.vr720.service.ListImageCacheService;
+import com.imengyu.vr720.utils.DateUtils;
 import com.imengyu.vr720.utils.FileSizeUtil;
 import com.imengyu.vr720.utils.FileUtils;
 import com.imengyu.vr720.utils.ImageUtils;
@@ -27,6 +35,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -34,63 +43,126 @@ import java.util.List;
  */
 public class MainList extends SelectableListSolver<MainListItem> {
 
-    public MainList(Context context, ListImageCacheService listImageCacheService) {
+    public MainList(Context context, ListImageCacheService listImageCacheService, ListDataService listDataService) {
         this.context = context;
         this.listImageCacheService = listImageCacheService;
+        this.listDataService = listDataService;
         resources = context.getResources();
     }
 
-    public void init(Handler handler, GridView gridView) {
+    public void init(Handler handler, RecyclerView recycler_main) {
         this.handler = handler;
+        this.recycler_main = recycler_main;
 
         mainListAdapter = new MainListAdapter(this, context, R.layout.item_main, mainListItems);
-        mainListAdapter.registerDataSetObserver(new DataSetObserver() {
 
-            private boolean nextChangedDoNotNotify = false;
-            @Override
-            public void onChanged() {
-                super.onChanged();
-                if(nextChangedDoNotNotify){
-                    nextChangedDoNotNotify = false;
-                    return;
-                }
-                if(mainListItems.size() >= 4){
-                    for(int i = mainListItems.size() - 1;i>=0;i--){
-                        MainListItem item = mainListItems.get(i);
-                        if(item.getForceItemType() == MainListItem.ITEM_TYPE_TEXT)
-                            mainListItems.remove(item);
-                    }
-                    mainListItems.add(new MainListItem(resources.getString(R.string.text_end)));
-                    nextChangedDoNotNotify=true;
-                    mainListAdapter.notifyDataSetChanged();
-                }else if(mainListItems.size() > 0){
-                    for(int i = mainListItems.size() - 1;i>=0;i--){
-                        MainListItem item = mainListItems.get(i);
-                        if(item.getForceItemType() == MainListItem.ITEM_TYPE_TEXT)
-                            mainListItems.remove(item);
-                    }
-                    nextChangedDoNotNotify=true;
-                    mainListAdapter.notifyDataSetChanged();
-
-                }
-
-            }
-        });
+        linearLayoutManager = new LinearLayoutManager(context);
+        gridLayoutManager = new GridLayoutManager(context, 2);
 
         super.init(mainListAdapter, mainListItems);
         super.setListOnNotifyChangeListener(this::notifyChange);
 
-        gridView.setAdapter(mainListAdapter);
-        gridView.setChoiceMode(AbsListView.CHOICE_MODE_NONE);
+        recycler_main.setLayoutManager(linearLayoutManager);
+        recycler_main.setAdapter(mainListAdapter);
     }
+
+    private LinearLayoutManager linearLayoutManager;
+    private GridLayoutManager gridLayoutManager;
+    private RecyclerView recycler_main;
 
     private final Resources resources;
     private final Context context;
+    private final ListDataService listDataService;
     private final ListImageCacheService listImageCacheService;
     private Handler handler;
 
-    public Resources getResources() {
-        return resources;
+    /**
+     * 获取资源
+     */
+    public Resources getResources() { return resources; }
+
+    /**
+     * 设置列表是否以宫格模式显示
+     * @param isGrid 是否以宫格模式显示
+     */
+    public void setListIsGrid(boolean isGrid) {
+        recycler_main.setLayoutManager(isGrid ? gridLayoutManager : linearLayoutManager);
+    }
+
+    private final List<MainListItem> searchedItems = new ArrayList<>();
+    private final List<MainListItem> preSearchItems = new ArrayList<>();
+
+    /**
+     * 进行搜索
+     * @param s 关键字
+     */
+    public void doSearch(String s, int searchType) {
+        searchedItems.clear();
+        preSearchItems.clear();
+        preSearchItems.addAll(mainListItems);
+
+        String[] keys = s.split(" ");
+        MainListItem item ;
+        for(int i = preSearchItems.size() - 1; i>=0; i--) {
+
+            item = preSearchItems.get(i);
+            if(searchType != HomeFragment.SEARCH_TYPE_ALL) {
+                if (!item.isVideo() && searchType != HomeFragment.SEARCH_TYPE_IMAGE) continue;
+                if (item.isVideo() && searchType != HomeFragment.SEARCH_TYPE_VIDEO) continue;
+            }
+
+            boolean breakNext = false;
+            for(String key : keys)
+                if(item.getFileName().contains(key)) {
+                    searchedItems.add(item);
+                    preSearchItems.remove(i);
+                    breakNext = true;
+                    break;
+                }
+
+            if(breakNext) continue;
+
+            for(String key : keys)
+                if(item.getFileModifyDate().contains(key)) {
+                    searchedItems.add(item);
+                    preSearchItems.remove(i);
+                    breakNext = true;
+                    break;
+                }
+
+            if(breakNext) continue;
+
+            for(String key : keys)
+                if(item.getFileSize().contains(key)) {
+                    searchedItems.add(item);
+                    preSearchItems.remove(i);
+                    break;
+                }
+        }
+
+        List<MainListItem> selectedItems = getSelectedItems();
+        for(int i = preSearchItems.size() - 1; i >= 0; i--)
+            preSearchItems.get(i).setSearchHidden(true);
+        for(int i = searchedItems.size() - 1; i >= 0; i--) {
+            item = searchedItems.get(i);
+            item.setSearchHidden(false);
+            if(selectedItems.contains(item)) {
+                item.setChecked(false);
+                selectedItems.remove(item);
+            }
+        }
+
+        notifyChange();
+        notifyCheckItemCountChanged();
+    }
+
+    /**
+     * 清空搜索
+     */
+    public void resetSearch() {
+        for(int i = mainListItems.size() - 1; i>=0; i--)
+            mainListItems.get(i).setSearchHidden(false);
+        mainListAdapter.notifyDataSetChanged();
     }
 
     //====================================================
@@ -181,12 +253,21 @@ public class MainList extends SelectableListSolver<MainListItem> {
 
             newItem.setThumbnailLoading(true);
             newItem.setThumbnailFail(false);
-            newItem.setFileModifyDate(f.lastModified());
+            newItem.setFileModifyDateValue(f.lastModified());
+            newItem.setFileModifyDate(DateUtils.format(new Date(f.lastModified()), DateUtils.FORMAT_SHORT));
             newItem.setFileSizeValue(f.length());
 
             mainListItems.add(newItem);
-            if (notify) mainListAdapter.notifyDataSetChanged();
+        } else {
+            final MainListItem newItem = new MainListItem(imageItem);
+
+            newItem.setThumbnailLoading(false);
+            newItem.setThumbnailFail(true);
+
+            mainListItems.add(newItem);
         }
+
+        if (notify) mainListAdapter.notifyDataSetChanged();
     }
     /**
      * 清空
@@ -238,15 +319,15 @@ public class MainList extends SelectableListSolver<MainListItem> {
         public int compare(MainListItem m1, MainListItem m2) {
             int result = 0;
             if(mainSortType==MAIN_SORT_DATE){
-                long old1=m1.getFileModifyDate();
-                long old2=m2.getFileModifyDate();
+                long old1 = m1.getFileModifyDateValue();
+                long old2 = m2.getFileModifyDateValue();
                 if (old1> old2) result = 1;
                 if (old1 < old2) result = -1;
             } else if(mainSortType==MAIN_SORT_NAME){
                 result = m1.getFileName().compareTo(m2.getFileName());
             } else if(mainSortType==MAIN_SORT_SIZE){
-                long old1=m1.getFileSizeValue();
-                long old2=m2.getFileSizeValue();
+                long old1 = m1.getFileSizeValue();
+                long old2 = m2.getFileSizeValue();
                 if (old1> old2) result = 1;
                 if (old1 < old2) result = -1;
             }

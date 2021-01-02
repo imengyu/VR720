@@ -223,5 +223,14 @@
 	<string name="text_agreement_allow">Accord et suite</string>
 	<string name="text_agreement_not_allow">Désaccord et retrait</string>
 	<string name="action_search">Recherche</string>
+    <string name="text_search_your_pano">Rechercher votre Panorama</string>
+    <string name="text_nothing_searched">Je n\'ai rien trouvé.</string>
+    <string name="text_you_can_search">Vous pouvez effectuer une recherche à partir de ces champs: nom du fichier, date de modification, taille du fichier</string>
+	<string name="text_video">Vidéo</string>
+	<string name="text_all">Tous</string>
+	<string name="text_image">Images</string>
+    <string name="settings_header_audio">Audio</string>
+	<string name="settings_key_use_native_decoder">Utiliser un décodeur natif (si disponible)</string>
+	<string name="settings_summary_use_native_decoder">Une fois activé, le décodage matériel sera tenté. S\'il n\'y a pas de décodeur correspondant ou si l\'appareil ne supporte pas le décodage matériel, le décodage logiciel sera utilisé.</string>
 
 </resources>

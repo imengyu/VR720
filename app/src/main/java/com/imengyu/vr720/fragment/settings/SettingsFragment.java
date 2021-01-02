@@ -40,6 +40,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         Preference app_about = findPreference("app_about");
         Preference settings_key_go_panorama = findPreference("settings_key_go_panorama");
         Preference settings_key_go_common = findPreference("settings_key_go_common");
+        Preference settings_key_go_video = findPreference("settings_key_go_video");
         Preference data_backup = findPreference("data_backup");
         Preference data_restore_backup = findPreference("data_restore_backup");
         Preference app_choose_language = findPreference("app_choose_language");
@@ -51,6 +52,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         assert app_about != null;
         assert settings_key_go_panorama != null;
         assert settings_key_go_common != null;
+        assert settings_key_go_video != null;
         assert data_backup != null;
         assert data_restore_backup != null;
         assert app_choose_language != null;
@@ -76,7 +78,10 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             activity.switchFragment(activity.getCommonSettingsFragment());
             return true;
         });
-
+        settings_key_go_video.setOnPreferenceClickListener((preference) -> {
+            activity.switchFragment(activity.getVideoSettingsFragment());
+            return true;
+        });
         data_backup.setOnPreferenceClickListener((preference) -> {
             new CommonDialog(activity)
                     .setTitle(getString(R.string.settings_key_data_backup))
@@ -112,6 +117,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         Log.i("Settings", "doExportSettings: " + path);
 
         Activity activity = getActivity();
+        assert activity != null;
         VR720Application application = (VR720Application)activity.getApplication();
 
         JSONObject jsonObject = new JSONObject();
@@ -127,6 +133,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     }
     private void doImportSettings(String path) {
         Activity activity = getActivity();
+        assert activity != null;
         VR720Application application = (VR720Application)activity.getApplication();
         ListDataService listDataService = application.getListDataService();
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(activity);
@@ -201,6 +208,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             } else if(requestCode == Codes.REQUEST_CODE_CHOOSE_LANGUAGE) {
                 if(data.getBooleanExtra("needRestart", false)) {
                     Activity activity = getActivity();
+                    assert activity != null;
                     activity.setResult(0, new Intent().putExtra("needRestart", true));
                     activity.finish();
                 }

@@ -1,0 +1,24 @@
+<PreferenceScreen
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    app:iconSpaceReserved="false">
+
+    <PreferenceCategory
+        app:title="@string/text_video">
+
+        <CheckBoxPreference
+            app:key="use_native_decoder"
+            app:defaultValue="true"
+            app:title="@string/settings_key_use_native_decoder"
+            app:summary="@string/settings_summary_use_native_decoder" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:title="@string/settings_header_audio">
+
+
+
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

@@ -6,14 +6,17 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
 import com.imengyu.vr720.R;
 import com.imengyu.vr720.list.MainList;
+import com.imengyu.vr720.model.OnListCheckableChangedListener;
 import com.imengyu.vr720.model.holder.MainListViewHolder;
 import com.imengyu.vr720.model.list.MainListItem;
 import com.imengyu.vr720.utils.DateUtils;
+import com.imengyu.vr720.utils.PixelTool;
 
 import java.util.Date;
 import java.util.List;
@@ -21,83 +24,117 @@ import java.util.List;
 /**
  * 主列表适配器
  */
-public class MainListAdapter extends CheckableListAdapter<MainListItem> {
+public class MainListAdapter extends RecyclerView.Adapter<MainListViewHolder> implements CheckableListAdapter<MainListItem> {
 
     private final MainList mainList;
     private final int layoutId;
+    private final Context context;
+    private final List<MainListItem> list;
 
     public MainListAdapter(MainList mainList, Context context, int layoutId, List<MainListItem> list) {
-        super(context, layoutId, list);
         this.mainList = mainList;
+        this.list = list;
         this.layoutId = layoutId;
+        this.context = context;
     }
 
     @NonNull
     @Override
-    public View getView(int position, View convertView, @NonNull ViewGroup parent) {
-        final MainListItem item = getItem(position);
+    public MainListViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View v = LayoutInflater.from(parent.getContext()).inflate(layoutId, parent, false);
+        return new MainListViewHolder(v);
+    }
+    @Override
+    public void onBindViewHolder(@NonNull MainListViewHolder viewHolder, int position) {
+        final MainListItem item = list.get(position);
 
-        MainListViewHolder viewHolder;
+        viewHolder.imageView.setOnLongClickListener(mainList.getMainListBaseOnLongClickListener());
+        viewHolder.imageView.setOnClickListener(mainList.getMainListBaseOnClickListener());
+        viewHolder.item.setVisibility(item.isSearchHidden() ? View.GONE : View.VISIBLE);
 
-        if (convertView == null) {
-            convertView = LayoutInflater.from(getContext()).inflate(layoutId, parent, false);
-            viewHolder = new MainListViewHolder();
-            viewHolder.textView = convertView.findViewById(R.id.text_item);
-            viewHolder.imageView = convertView.findViewById(R.id.img_item);
-            viewHolder.videoMark = convertView.findViewById(R.id.video_mark);
-            viewHolder.checkMark = convertView.findViewById(R.id.check_item);
+        int height = 0;
 
-            viewHolder.imageView.setOnLongClickListener(mainList.getMainListBaseOnLongClickListener());
-            viewHolder.imageView.setOnClickListener(mainList.getMainListBaseOnClickListener());
+        if (item.getForceItemType() == MainListItem.ITEM_TYPE_NORMAL) {
 
-            convertView.setTag(viewHolder);
-        } else {
-            viewHolder = (MainListViewHolder) convertView.getTag();
-        }
-        if(item != null) {
-            if (item.getForceItemType() == MainListItem.ITEM_TYPE_NORMAL) {
+            viewHolder.imageView.setTag(position);
+            viewHolder.imageView.setVisibility(View.VISIBLE);
+            viewHolder.imageView.setImageText(item.getFileName());
+            viewHolder.imageView.setLeftTextReserveSpace(item.isVideo());
 
-                viewHolder.imageView.setTag(position);
-                viewHolder.imageView.setVisibility(View.VISIBLE);
-                viewHolder.imageView.setImageText(item.getFileName());
-                viewHolder.imageView.setLeftTextReserveSpace(item.isVideo());
+            if(mainList.getMainSortType() == MainList.MAIN_SORT_DATE)
+                viewHolder.imageView.setImageSize(item.getFileModifyDate());
+            else
+                viewHolder.imageView.setImageSize(item.getFileSize());
 
-                if(mainList.getMainSortType() == MainList.MAIN_SORT_DATE)
-                    viewHolder.imageView.setImageSize(DateUtils.format(new Date(item.getFileModifyDate()), DateUtils.FORMAT_SHORT));
-                else
-                    viewHolder.imageView.setImageSize(item.getFileSize());
+            if (item.isThumbnailFail())
+                viewHolder.imageView.setImageResource(R.drawable.ic_noprob);
+            else if (item.isThumbnailLoading())
+                viewHolder.imageView.setImageResource(R.drawable.ic_tumb);
+            else if(item.getThumbnail() != viewHolder.imageView.getDrawable())
+                Glide.with(context)
+                        .load(item.getThumbnail())
+                        .placeholder(R.drawable.ic_tumb)
+                        .error(R.drawable.ic_noprob)
+                        .transition(DrawableTransitionOptions.withCrossFade())
+                        .into(viewHolder.imageView);
 
-                if (item.isThumbnailFail())
-                    viewHolder.imageView.setImageResource(R.drawable.ic_noprob);
-                else if (item.isThumbnailLoading())
-                    viewHolder.imageView.setImageResource(R.drawable.ic_tumb);
-                else if(item.getThumbnail() != viewHolder.imageView.getDrawable())
-                    Glide.with(getContext())
-                            .load(item.getThumbnail())
-                            .placeholder(R.drawable.ic_tumb)
-                            .error(R.drawable.ic_noprob)
-                            .transition(DrawableTransitionOptions.withCrossFade())
-                            .into(viewHolder.imageView);
-
-                if (!item.isThumbnailLoadingStarted()) {
-                    item.setThumbnailLoadingStarted(true);
-                    mainList.loadThumbnail(item);
-                }
-
-                viewHolder.textView.setVisibility(View.GONE);
-
-                viewHolder.videoMark.setVisibility(item.isVideo() ? View.VISIBLE : View.GONE);
-                viewHolder.checkMark.setChecked(item.isChecked());
-                viewHolder.checkMark.setVisibility(isCheckable() ? View.VISIBLE : View.GONE);
+            if (!item.isThumbnailLoadingStarted()) {
+                item.setThumbnailLoadingStarted(true);
+                mainList.loadThumbnail(item);
             }
-            else if (item.getForceItemType() == MainListItem.ITEM_TYPE_TEXT) {
-                viewHolder.imageView.setVisibility(View.GONE);
-                viewHolder.textView.setVisibility(View.VISIBLE);
-                viewHolder.checkMark.setVisibility(View.GONE);
-                viewHolder.videoMark.setVisibility(View.GONE);
-                viewHolder.textView.setText(item.getFileName());
-            }
+
+            viewHolder.textView.setVisibility(View.GONE);
+
+            viewHolder.videoMark.setVisibility(item.isVideo() ? View.VISIBLE : View.GONE);
+            viewHolder.checkMark.setChecked(item.isChecked());
+            viewHolder.checkMark.setVisibility(isCheckable() ? View.VISIBLE : View.GONE);
+
+            height = PixelTool.dp2px(context, 160);
         }
-        return convertView;
+        else if (item.getForceItemType() == MainListItem.ITEM_TYPE_TEXT) {
+            viewHolder.imageView.setVisibility(View.GONE);
+            viewHolder.textView.setVisibility(View.VISIBLE);
+            viewHolder.checkMark.setVisibility(View.GONE);
+            viewHolder.videoMark.setVisibility(View.GONE);
+            viewHolder.textView.setText(item.getFileName());
+
+            height = PixelTool.dp2px(context, 30);
+        }
+
+        RecyclerView.LayoutParams param = (RecyclerView.LayoutParams)viewHolder.item.getLayoutParams();
+        if (!item.isSearchHidden()) {
+            param.height = height;
+            param.width = ViewGroup.LayoutParams.MATCH_PARENT;
+        }else{
+            param.height = 0;
+            param.width = 0;
+        }
+        viewHolder.item.setLayoutParams(param);
+    }
+    @Override
+    public int getItemCount() {
+        return list.size();
+    }
+    @Override
+    public MainListItem getItem(int index) {
+        return list.get(index);
+    }
+
+    private boolean mCheckable;
+    private OnListCheckableChangedListener mainListCheckableChangedListener;
+
+    @Override
+    public void setCheckable(boolean mCheckable) {
+        this.mCheckable = mCheckable;
+        if (this.mainListCheckableChangedListener != null)
+            this.mainListCheckableChangedListener.onListCheckableChangedListener(mCheckable);
+    }
+
+    @Override
+    public boolean isCheckable() { return mCheckable; }
+
+    @Override
+    public void setMainListCheckableChangedListener(OnListCheckableChangedListener mainListCheckableChangedListener) {
+        this.mainListCheckableChangedListener = mainListCheckableChangedListener;
     }
 }

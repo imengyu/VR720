@@ -20,7 +20,7 @@ window.onload = function() {
     list.forEach(function(v) { 
       v.setAttribute('style', 'display:block');
     });
-    var div = document.querySelector('.content-translate[data-language="en"]');
+    var div = document.querySelector('.content-translate[data-language="zh"]');
     if(div != null)
       document.title = div.getAttribute('data-title');
   } else {

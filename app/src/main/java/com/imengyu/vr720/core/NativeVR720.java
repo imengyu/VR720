@@ -18,7 +18,6 @@ public class NativeVR720 {
     }
 
     public static native boolean initNative(AssetManager assetManager, Context context);
-    public static native void updateAssetManagerPtr(AssetManager assetManager);
     public static native void releaseNative();
     public static native void lowMemory();
     public static native String getNativeVersion();

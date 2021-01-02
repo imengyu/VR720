@@ -6,14 +6,17 @@ import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 
 import com.imengyu.vr720.R;
 import com.imengyu.vr720.list.GalleryList;
+import com.imengyu.vr720.model.OnListCheckableChangedListener;
 import com.imengyu.vr720.model.holder.GalleryListViewHolder;
 import com.imengyu.vr720.model.list.GalleryListItem;
+import com.imengyu.vr720.model.list.MainListItem;
 import com.imengyu.vr720.service.ListDataService;
 
 import java.util.List;
@@ -21,7 +24,7 @@ import java.util.List;
 /**
  * 主列表适配器
  */
-public class GalleryListAdapter extends CheckableListAdapter<GalleryListItem> {
+public class GalleryListAdapter extends ArrayAdapter<GalleryListItem> implements CheckableListAdapter<GalleryListItem> {
 
     private final GalleryList galleryList;
     private final Context context;
@@ -84,10 +87,14 @@ public class GalleryListAdapter extends CheckableListAdapter<GalleryListItem> {
             if (item.id == ListDataService.GALLERY_LIST_ID_I_LIKE) {
                 viewHolder.image.setBackgroundColor(ContextCompat.getColor(context, R.color.colorImageLike));
                 viewHolder.image.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_image_ilike));
+                viewHolder.text_title.setText(context.getString(R.string.text_i_like));
             }
             else if (item.id == ListDataService.GALLERY_LIST_ID_VIDEOS) {
                 viewHolder.image.setBackgroundColor(ContextCompat.getColor(context, R.color.colorVideo));
                 viewHolder.image.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_video));
+                viewHolder.text_title.setText(context.getString(R.string.text_videos));
+            } else {
+                viewHolder.text_title.setText(item.getName());
             }
 
             if (thumbnail == null) {
@@ -106,17 +113,33 @@ public class GalleryListAdapter extends CheckableListAdapter<GalleryListItem> {
                 viewHolder.image_thumbnail.setImageDrawable(thumbnail);
             }
 
-
-
             viewHolder.view_item.setTag(position);
             viewHolder.image.setTag(position);
             viewHolder.image.setVisibility(View.VISIBLE);
             viewHolder.text_subtitle.setText(item.getSubTitle(context));
-            viewHolder.text_title.setText(item.getName());
             viewHolder.check.setChecked(item.isChecked());
             viewHolder.check.setVisibility(isCheckable() ? View.VISIBLE : View.GONE);
             viewHolder.check.setEnabled(item.id > 0);
         }
         return convertView;
     }
+
+    private boolean mCheckable;
+    private OnListCheckableChangedListener mainListCheckableChangedListener;
+
+    @Override
+    public void setCheckable(boolean mCheckable) {
+        this.mCheckable = mCheckable;
+        if (this.mainListCheckableChangedListener != null)
+            this.mainListCheckableChangedListener.onListCheckableChangedListener(mCheckable);
+    }
+
+    @Override
+    public boolean isCheckable() { return mCheckable; }
+
+    @Override
+    public void setMainListCheckableChangedListener(OnListCheckableChangedListener mainListCheckableChangedListener) {
+        this.mainListCheckableChangedListener = mainListCheckableChangedListener;
+    }
+
 }

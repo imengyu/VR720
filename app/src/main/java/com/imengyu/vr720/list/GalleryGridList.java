@@ -139,8 +139,8 @@ public class GalleryGridList extends SelectableListSolver<MainListItem> {
         public int compare(MainListItem m1, MainListItem m2) {
             int result = 0;
             if(sortType == SORT_DATE){
-                long old1 = m1.getFileModifyDate();
-                long old2 = m2.getFileModifyDate();
+                long old1 = m1.getFileModifyDateValue();
+                long old2 = m2.getFileModifyDateValue();
                 if (old1 > old2) result = 1;
                 if (old1 < old2) result = -1;
             } else if(sortType == SORT_NAME){

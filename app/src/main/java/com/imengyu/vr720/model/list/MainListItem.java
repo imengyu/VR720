@@ -11,22 +11,24 @@ import com.imengyu.vr720.utils.FileUtils;
  */
 public class MainListItem extends CheckableListItem {
 
-    public static final int ITEM_TYPE_NORMAL = 827;
-    public static final int ITEM_TYPE_TEXT = 828;
+    public static final int ITEM_TYPE_NORMAL = 0;
+    public static final int ITEM_TYPE_TEXT = 1;
 
     private ImageItem imageItem;
 
     private String filePath;
     private String fileName;
     private String fileSize;
+    private String fileModifyDate;
     private Drawable thumbnail;
     private boolean thumbnailLoading;
     private boolean thumbnailLoadingStarted;
     private boolean thumbnailFail;
     private boolean isVideo;
     private long fileSizeValue;
-    private long fileModifyDate;
+    private long fileModifyDateValue;
     private int forceItemType;
+    private boolean isSearchHidden = false;
 
     public MainListItem(String itemText){
         this.forceItemType = ITEM_TYPE_TEXT;
@@ -83,11 +85,17 @@ public class MainListItem extends CheckableListItem {
     public void setFileSizeValue(long fileSizeValue) {
         this.fileSizeValue = fileSizeValue;
     }
-    public long getFileModifyDate() {
+    public String getFileModifyDate() {
         return fileModifyDate;
     }
-    public void setFileModifyDate(long fileModifyDate) {
+    public void setFileModifyDate(String fileModifyDate) {
         this.fileModifyDate = fileModifyDate;
+    }
+    public long getFileModifyDateValue() {
+        return fileModifyDateValue;
+    }
+    public void setFileModifyDateValue(long fileModifyDateValue) {
+        this.fileModifyDateValue = fileModifyDateValue;
     }
     public boolean isThumbnailLoadingStarted() {
         return thumbnailLoadingStarted;
@@ -109,5 +117,11 @@ public class MainListItem extends CheckableListItem {
     }
     public void setVideo(boolean video) {
         isVideo = video;
+    }
+    public boolean isSearchHidden() {
+        return isSearchHidden;
+    }
+    public void setSearchHidden(boolean searchHidden) {
+        isSearchHidden = searchHidden;
     }
 }

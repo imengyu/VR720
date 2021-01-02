@@ -30,15 +30,6 @@ public class VR720Application extends Application {
         return cacheServices;
     }
 
-    private boolean nativeDestroyed = true;
-
-    public void checkAndInit() {
-        if(nativeDestroyed) {
-            NativeVR720.initNative(getAssets(), getApplicationContext());
-            nativeDestroyed = false;
-        }
-    }
-
     @Override
     public void onCreate() {
         super.onCreate();
@@ -55,7 +46,7 @@ public class VR720Application extends Application {
         //ToastUtils
         ToastUtils.init(this);
         //初始化内核
-        checkAndInit();
+        NativeVR720.initNative(getAssets(), getApplicationContext());
 
 
     }
@@ -67,19 +58,13 @@ public class VR720Application extends Application {
             listImageCacheService.releaseImageCache();
             listImageCacheService = null;
         }
-        if(!nativeDestroyed) {
-            NativeVR720.releaseNative();
-            nativeDestroyed = true;
-        }
+        NativeVR720.releaseNative();
         super.onTerminate();
     }
 
     public void onQuit() {
         Log.i(TAG, "onQuit");
-        if(!nativeDestroyed) {
-            NativeVR720.releaseNative();
-            nativeDestroyed = true;
-        }
+        NativeVR720.releaseNative();
     }
 
     @Override
@@ -87,8 +72,7 @@ public class VR720Application extends Application {
         Log.i(TAG, "onLowMemory");
         if(listImageCacheService != null)
             listImageCacheService.releaseAllMemoryCache();
-        if(!nativeDestroyed)
-            NativeVR720.lowMemory();
+        NativeVR720.lowMemory();
         super.onLowMemory();
     }
 }

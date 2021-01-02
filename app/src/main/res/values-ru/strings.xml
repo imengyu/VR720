@@ -223,5 +223,14 @@
 	<string name="text_agreement_allow">соглашаться и продолжать</string>
 	<string name="text_agreement_not_allow">несогласие и выход</string>
 	<string name="action_search"> поиск </string>
+    <string name="text_search_your_pano"> искать панораму </string>
+    <string name="text_nothing_searched"> ничего не нашли </string>
+    <string name="text_you_can_search">поиск по этим полям: имя файла, дата изменения, размер файла </string>
+	<string name="text_video">видео</string>
+	<string name="text_all">все</string>
+	<string name="text_image">изображение</string>
+    <string name="settings_header_audio"> звук </string>
+	<string name="settings_key_use_native_decoder">использовать этот декодер (если он доступен)</string>
+	<string name="settings_summary_use_native_decoder"> после открытия попытается использовать аппаратное декодирование, если не найдено соответствующее декодирующее устройство или устройство не поддерживает его декодирование. </string>
 
 </resources>

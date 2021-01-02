@@ -1,31 +1,119 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    android:layout_height="match_parent">
 
-    <com.scwang.smart.refresh.layout.SmartRefreshLayout
-        android:id="@+id/refreshLayout"
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginStart="1dp"
-        android:layout_marginTop="1dp"
-        android:layout_marginEnd="1dp"
-        android:layout_marginBottom="1dp">
+        android:layout_height="match_parent">
 
-        <com.scwang.smart.refresh.header.ClassicsHeader
+        <com.google.android.material.appbar.AppBarLayout
+            android:id="@+id/appBarLayout"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            app:elevation="0dp">
 
-        <GridView
-            android:id="@+id/grid_main"
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="10dp"
+                android:layout_marginTop="5dp"
+                android:layout_marginBottom="5dp"
+                app:layout_scrollFlags="scroll">
+
+                <com.imengyu.vr720.widget.ClearEditText
+                    android:id="@+id/edit_search"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:layout_alignParentStart="true"
+                    android:layout_alignParentTop="true"
+                    android:layout_alignParentEnd="true"
+                    android:autofillHints=""
+                    android:background="@drawable/btn_round"
+                    android:drawableStart="@drawable/ic_search"
+                    android:drawablePadding="5dp"
+                    android:drawableTint="@android:color/black"
+                    android:ems="10"
+                    android:hint="@string/text_search_your_pano"
+                    android:imeOptions="actionSearch"
+                    android:inputType="text"
+                    android:maxLength="100"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="10dp"/>
+
+                <Button
+                    android:id="@+id/button_search_all"
+                    android:layout_width="50dp"
+                    android:layout_height="26dp"
+                    android:layout_centerVertical="true"
+                    android:layout_marginStart="0dp"
+                    android:layout_marginEnd="6dp"
+                    android:layout_toStartOf="@id/button_search_image"
+                    android:background="@drawable/btn_round_primary"
+                    android:text="@string/text_all"
+                    android:textColor="@android:color/white" />
+
+                <Button
+                    android:id="@+id/button_search_image"
+                    android:layout_width="45dp"
+                    android:layout_height="26dp"
+                    android:layout_marginStart="0dp"
+                    android:layout_marginEnd="6dp"
+                    android:layout_centerVertical="true"
+                    android:layout_toStartOf="@id/button_search_video"
+                    android:background="@drawable/btn_round_n_light"
+                    android:text="@string/text_image" />
+
+                <Button
+                    android:id="@+id/button_search_video"
+                    android:layout_width="45dp"
+                    android:layout_height="26dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginStart="0dp"
+                    android:layout_marginEnd="45dp"
+                    android:background="@drawable/btn_round_n_light"
+                    android:text="@string/text_video" />
+
+            </RelativeLayout>
+
+        </com.google.android.material.appbar.AppBarLayout>
+
+        <com.scwang.smart.refresh.layout.SmartRefreshLayout
+            android:id="@+id/refreshLayout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:listSelector="@android:color/transparent">
+            app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        </GridView>
+            <com.scwang.smart.refresh.header.ClassicsHeader
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
 
-    </com.scwang.smart.refresh.layout.SmartRefreshLayout>
+            <com.imengyu.vr720.widget.RecyclerViewEmptySupport
+                android:id="@+id/recycler_main"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:listSelector="@android:color/transparent">
+            </com.imengyu.vr720.widget.RecyclerViewEmptySupport>
+
+            <com.scwang.smart.refresh.footer.ClassicsFooter
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+
+        </com.scwang.smart.refresh.layout.SmartRefreshLayout>
+
+
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+    <include
+        android:id="@+id/empty_main"
+        layout="@layout/content_main_empty"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
 
     <include
         android:id="@+id/footer_select_main"
@@ -36,8 +124,8 @@
         android:visibility="visible" />
 
     <include
-        android:id="@+id/empty_main"
-        layout="@layout/content_main_empty"
+        android:id="@+id/empty_search_main"
+        layout="@layout/content_search_main_empty"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone" />
@@ -52,24 +140,8 @@
         android:layout_marginEnd="20dp"
         android:layout_marginBottom="20dp"
         android:clickable="true"
+        android:contentDescription="@string/action_import_pano"
         android:focusable="true"
-        app:srcCompat="@drawable/ic_button_add"
-        android:contentDescription="@string/action_import_pano" />
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_search"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentBottom="true"
-        android:layout_marginStart="0dp"
-        android:layout_marginEnd="30dp"
-        android:layout_marginBottom="90dp"
-        android:backgroundTint="@color/colorPrimaryDark"
-        android:clickable="true"
-        android:contentDescription="@string/action_search"
-        android:focusable="true"
-        app:fabSize="mini"
-        app:srcCompat="@drawable/ic_search" />
+        app:srcCompat="@drawable/ic_button_add" />
 
 </RelativeLayout>

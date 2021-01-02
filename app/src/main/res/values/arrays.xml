@@ -1,10 +1,10 @@
 <resources>
     <string-array name="custom_fps_entries">
-        <item>20帧/秒</item>
-        <item>25帧/秒</item>
-        <item>30帧/秒</item>
-        <item>45帧/秒</item>
-        <item>60帧/秒</item>
+        <item>20 FPS</item>
+        <item>25 FPS</item>
+        <item>30 FPS</item>
+        <item>45 FPS</item>
+        <item>60 FPS</item>
     </string-array>
     <string-array name="custom_fps_values">
         <item>20</item>

@@ -1072,7 +1072,8 @@ void CMobileGameRenderer::SetBoolProp(int id, bool value) {
         case PROP_GYRO_ENABLED: SetGyroEnabled(value); break;
         case PROP_FULL_CHUNK_LOAD_ENABLED: fullChunkLoadEnabled = value; break;
         case PROP_VIEW_CACHE_ENABLED: enableViewCache = value; break;
-        case PROP_ENABLE_LOG: return LOG->SetEnabled(value);
+        case PROP_ENABLE_LOG: LOG->SetEnabled(value);
+        case PROP_ENABLE_NATIVE_DECODER: playerInitParams.UseMediaCodec = value; break;
         default: break;
     }
 }
@@ -1088,6 +1089,7 @@ bool CMobileGameRenderer::GetBoolProp(int id) {
         case PROP_FULL_CHUNK_LOAD_ENABLED: return fullChunkLoadEnabled;
         case PROP_VIEW_CACHE_ENABLED: return enableViewCache;
         case PROP_ENABLE_LOG: return LOG->GetEnabled();
+        case PROP_ENABLE_NATIVE_DECODER: return playerInitParams.UseMediaCodec;
         default: break;
     }
     return false;

@@ -284,9 +284,13 @@ int registerRendererNativeMethods(JNIEnv* env) {
     jclass clazz;
 
     clazz = env->FindClass("com/imengyu/vr720/core/NativeVR720Renderer");
-    if (clazz == nullptr)
+    if (clazz == nullptr) {
+        ALOGE("Native", "NativeVR720Renderer class not found!");
         return JNI_FALSE;
-    if (env->RegisterNatives(clazz, rendererNativeMethods, 31) < 0)
+    }
+    if (env->RegisterNatives(clazz, rendererNativeMethods, 31) < 0) {
+        ALOGE("Native", "Register Renderer Natives failed!");
         return JNI_FALSE;
+    }
     return JNI_TRUE;
 }

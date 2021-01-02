@@ -223,5 +223,14 @@
 	<string name="text_agreement_allow">同意して継続する</string>
 	<string name="text_agreement_not_allow">同意せずに退出する</string>
     <string name="action_search">検索</string>
+    <string name="text_search_your_pano">あなたのパノラマを検索します。</string>
+    <string name="text_nothing_searched">何も見つけられませんでした</string>
+    <string name="text_you_can_search">これらのフィールドから検索できます。ファイル名、変更日付、ファイルサイズ</string>
+	<string name="text_video">ビデオ</string>
+	<string name="text_all">すべて</string>
+	<string name="text_image">イメージ</string>
+    <string name="settings_header_audio">オーディオ</string>
+	<string name="settings_key_use_native_decoder">ネイティブデコーダ(利用可能な場合)を使用します。</string>
+	<string name="settings_summary_use_native_decoder">オープン後はハードウェア復号を試みます。対応するデコーダがない場合やデバイスがハードウェア復号をサポートしていない場合は、ソフトウェア復号を使用します。</string>
 
 </resources>

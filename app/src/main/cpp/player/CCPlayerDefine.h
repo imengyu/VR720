@@ -62,6 +62,8 @@ public:
     size_t FramePoolSize = 100;
     size_t FramePoolGrowStep = 10;
 
+    bool UseMediaCodec = true;
+
     /**
      * 限制FPS
      */

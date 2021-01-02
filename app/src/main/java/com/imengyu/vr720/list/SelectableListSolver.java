@@ -126,7 +126,7 @@ public class SelectableListSolver<T extends CheckableListItem> {
         this.onNotifyChangeListener = onNotifyChangeListener;
     }
 
-    private void notifyCheckItemCountChanged() {
+    protected void notifyCheckItemCountChanged() {
         if(listCheckItemCountChangedListener!=null)
             listCheckItemCountChangedListener.onListCheckItemCountChangedListener(selectedItems.size());
     }

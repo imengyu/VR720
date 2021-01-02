@@ -318,8 +318,8 @@ bool CCVideoPlayer::InitDecoder() {
         return false;
     }
 
-    if(strcmp(videoCodec->name, "h264") == 0 || strcmp(videoCodec->name, "hevc") == 0 || strcmp(videoCodec->name, "mpeg4") == 0
-       || strcmp(videoCodec->name, "vp8") == 0 || strcmp(videoCodec->name, "vp9") == 0) {
+    if(InitParams.UseMediaCodec && (strcmp(videoCodec->name, "h264") == 0 || strcmp(videoCodec->name, "hevc") == 0 || strcmp(videoCodec->name, "mpeg4") == 0
+       || strcmp(videoCodec->name, "vp8") == 0 || strcmp(videoCodec->name, "vp9") == 0)) {
         char newName[32];
         strcpy(newName, videoCodec->name);
         strcat(newName, "_mediacodec");
