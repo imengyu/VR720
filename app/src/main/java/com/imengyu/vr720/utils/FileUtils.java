@@ -10,7 +10,9 @@ import android.os.Build;
 import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
+import android.text.TextUtils;
 import android.util.Log;
+import android.webkit.MimeTypeMap;
 import android.widget.Toast;
 import androidx.core.content.FileProvider;
 
@@ -118,6 +120,22 @@ public class FileUtils {
     }
 
     /**
+     * 获取指定路径的 MimeType
+     * @param url 路径
+     * @return 返回 MimeType
+     */
+    public static String getMimeTypeFromUrl(String url) {
+        String type = null;
+        //使用系统API，获取URL路径中文件的后缀名（扩展名）
+        String extension = MimeTypeMap.getFileExtensionFromUrl(url);
+        if (!TextUtils.isEmpty(extension)) {
+            //使用系统API，获取MimeTypeMap的单例实例，然后调用其内部方法获取文件后缀名（扩展名）所对应的MIME类型
+            type = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension.toLowerCase());
+        }
+        return type;
+    }
+
+    /**
      * 使用系统选择文件打开方式
      * @param context 上下文
      * @param file 文件路径
@@ -139,27 +157,6 @@ public class FileUtils {
         } catch (ActivityNotFoundException e) {
             Toast.makeText(context, context.getString(R.string.text_image_cannot_open), Toast.LENGTH_SHORT).show();
         }
-    }
-
-    /**
-     * 分享文件
-     * @param context 上下文
-     * @param file 文件路径
-     */
-    public static void shareFile(Context context, String file) {
-
-        Intent shareIntent = new Intent();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            shareIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            Uri contentUri = FileProvider.getUriForFile(context, BuildConfig.APPLICATION_ID + ".fileProvider", new File(file));
-            shareIntent.setDataAndType(contentUri, MapTable.getMIMEType(file));
-        } else {
-            shareIntent.setDataAndType(Uri.fromFile(new File(file)), MapTable.getMIMEType(file));
-        }
-        shareIntent.setAction(Intent.ACTION_SEND);
-        shareIntent.setType("image/*");
-        shareIntent = Intent.createChooser(shareIntent, context.getString(R.string.text_share_image_title));
-        context.startActivity(shareIntent);
     }
 
     private static final String[] videoExtensions = new String[] {
@@ -314,7 +311,6 @@ public class FileUtils {
         // MediaStore (and general)
         else if ("content".equalsIgnoreCase(uri.getScheme())) {
             return getDataColumn(context, uri, null, null);
-
         }
         // File
         else if ("file".equalsIgnoreCase(uri.getScheme())) {

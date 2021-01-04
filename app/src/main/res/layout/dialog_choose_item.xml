@@ -5,19 +5,22 @@
     android:layout_height="match_parent">
 
     <LinearLayout
+        android:id="@+id/layout_dialog"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
         android:background="@drawable/dialog_white_bg"
+        android:maxWidth="500dp"
         android:orientation="vertical"
         android:paddingTop="25dp"
-        android:paddingBottom="25dp"
-        android:maxWidth="500dp">
+        android:paddingBottom="25dp">
 
         <TextView
             android:id="@+id/text_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
             android:text="@string/text_choose_gallery"
             android:textAlignment="center"
             android:textSize="20sp" />
@@ -25,9 +28,7 @@
         <ListView
             android:id="@+id/list_simple"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:layout_marginBottom="20dp" />
+            android:layout_height="500dp" />
 
         <Button
             android:id="@+id/btn_cancel"
@@ -35,8 +36,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="20dp"
+            android:layout_marginTop="20dp"
             android:layout_marginEnd="20dp"
-            android:layout_weight="1"
             android:text="@string/action_cancel"
             android:textColor="@android:color/black" />
 

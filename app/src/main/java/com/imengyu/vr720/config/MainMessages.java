@@ -18,4 +18,5 @@ public class MainMessages {
     public static final int MSG_RENDER_TICK = 348;
     public static final int MSG_FORCE_LOAD_LIST = 349;
     public static final int MSG_CLOSE_LOADING = 350;
+    public static final int MSG_DO_LATE_IMPORT = 351;
 }

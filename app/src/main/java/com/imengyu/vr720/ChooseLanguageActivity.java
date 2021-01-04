@@ -1,37 +1,31 @@
 package com.imengyu.vr720;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.preference.Preference;
-import androidx.preference.PreferenceManager;
-
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.Configuration;
 import android.content.res.Resources;
-import android.os.Build;
+import android.net.Uri;
 import android.os.Bundle;
-import android.provider.MediaStore;
-import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.RadioButton;
 import android.widget.TextView;
 
-import com.imengyu.vr720.adapter.SimpleListAdapter;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.preference.PreferenceManager;
+
+import com.imengyu.vr720.config.Constants;
 import com.imengyu.vr720.utils.AppUtils;
 import com.imengyu.vr720.utils.StatusBarUtils;
 import com.imengyu.vr720.widget.MyTitleBar;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 public class ChooseLanguageActivity extends AppCompatActivity {
 
@@ -76,6 +70,19 @@ public class ChooseLanguageActivity extends AppCompatActivity {
         toolbar = findViewById(R.id.toolbar);
         toolbar.setLeftIconOnClickListener((v) -> finish());
         toolbar.setRightTextOnClickListener((v) -> changeLanguage(listAdapter.getCurrentSel()));
+
+        final View view_help_us_translate = findViewById(R.id.view_help_us_translate);
+        final View button_close_help_us_translate = findViewById(R.id.button_close_help_us_translate);
+        final View button_help_us_translate = findViewById(R.id.button_help_us_translate);
+
+        String lastSetLanguageType = sharedPreferences.getString("last_set_language_type", "");
+        if(!lastSetLanguageType.isEmpty() && !lastSetLanguageType.equals("zh"))
+            view_help_us_translate.setVisibility(View.VISIBLE);
+        else
+            view_help_us_translate.setVisibility(View.GONE);
+
+        button_close_help_us_translate.setOnClickListener((v) -> view_help_us_translate.setVisibility(View.GONE));
+        button_help_us_translate.setOnClickListener((v) -> startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(Constants.HELP_TRANSLATE_URL))));
     }
 
     private final List<LanguageItem> list = new ArrayList<>();
@@ -90,7 +97,7 @@ public class ChooseLanguageActivity extends AppCompatActivity {
     }
     private void changeLanguage(String val) {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        sharedPreferences.edit().putString("language", val).apply();
+        sharedPreferences.edit().putString("language", val).putString("last_set_language_type", val).apply();
         setResult( Activity.RESULT_OK, new Intent().putExtra("needRestart", true));
         finish();
     }

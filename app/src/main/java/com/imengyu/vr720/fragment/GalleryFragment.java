@@ -95,7 +95,8 @@ public class GalleryFragment extends Fragment implements IMainFragment {
         button_rename.setOnClickListener(v -> onRenameGalleryClick());
         button_delete.setOnClickListener(v -> onDeleteGalleryClick());
 
-        galleryList = new GalleryList(getContext(), ((VR720Application)getActivity().getApplication()).getListImageCacheService());
+        galleryList = new GalleryList(getActivity(),
+                requireContext(), ((VR720Application)requireActivity().getApplication()).getListImageCacheService());
         galleryList.init(handler, listView);
         galleryList.setListCheckableChangedListener(checkable -> {
             if (checkable) {
@@ -139,7 +140,7 @@ public class GalleryFragment extends Fragment implements IMainFragment {
         listView.setEmptyView(view.findViewById(R.id.empty_main));
 
         refreshLayout = view.findViewById(R.id.refreshLayout);
-        refreshLayout.setRefreshHeader(new ClassicsHeader(getContext()));
+        refreshLayout.setRefreshHeader(new ClassicsHeader(requireContext()));
         refreshLayout.setOnRefreshListener(refreshlayout -> loadList());
     }
 
@@ -257,51 +258,45 @@ public class GalleryFragment extends Fragment implements IMainFragment {
     //====================================================
 
     private void onAddGalleryClick() {
-        new CommonDialog(getContext())
-                .setEditTextVisible(true)
-                .setEditHint(getString(R.string.text_enter_gallery_name))
-                .setTitle(getString(R.string.action_new_gallery))
-                .setPositiveEnabled(false)
-                .setCanCancelable(true)
-                .setEditTextOnTextChangedListener((newText, dialog) -> dialog.setPositiveEnabled(newText.length() > 0))
-                .setOnClickBottomListener(new CommonDialog.OnClickBottomListener() {
-                    @Override
-                    public void onPositiveClick(CommonDialog dialog) {
-                        dialog.dismiss();
-
+        new CommonDialog(requireActivity())
+                .setEditTextHint(R.string.text_enter_gallery_name)
+                .setTitle(R.string.action_new_gallery)
+                .setPositiveEnable(false)
+                .setCancelable(true)
+                .setOnEditTextChangedListener((newText, dialog) -> dialog.setPositiveEnable(newText.length() > 0))
+                .setPositive(R.string.action_ok)
+                .setNegative(R.string.action_cancel)
+                .setOnResult((b, dialog) -> {
+                    if(b == CommonDialog.BUTTON_POSITIVE) {
                         GalleryListItem listItem = new GalleryListItem();
                         listItem.setId(listDataService.getGalleryListMinId());
                         listItem.setName(dialog.getEditText().getText().toString());
 
                         galleryList.addItem(listItem, true);
                         listDataService.addGalleryItem(listItem.toGalleryItem());
-                    }
-                    @Override
-                    public void onNegativeClick(CommonDialog dialog) { dialog.dismiss(); }
+                        return true;
+                    } else return b == CommonDialog.BUTTON_NEGATIVE;
                 })
                 .show();
     }
     private void onDeleteGalleryClick() {
         final List<GalleryListItem> sel = galleryList.getSelectedItems();
         if(sel.size() > 0) {
-            new CommonDialog(getContext())
-                    .setTitle(getString(R.string.text_sure_delete_gallery))
-                    .setMessage(getText(R.string.text_gallery_list_will_be_clear))
-                    .setNegative(getText(R.string.action_sure_delete))
-                    .setPositive(getText(R.string.action_cancel))
-                    .setCanCancelable(true)
-                    .setOnClickBottomListener(new CommonDialog.OnClickBottomListener() {
-                        @Override
-                        public void onNegativeClick(CommonDialog dialog) {
+            new CommonDialog(requireActivity())
+                    .setTitle(R.string.text_sure_delete_gallery)
+                    .setMessage(R.string.text_gallery_list_will_be_clear)
+                    .setPositive(R.string.action_sure_delete)
+                    .setNegative(R.string.action_cancel)
+                    .setCancelable(true)
+                    .setOnResult((b, dialog) -> {
+                        if(b == CommonDialog.BUTTON_POSITIVE) {
                             //delete in listDataService
                             for(GalleryListItem item : sel)
                                 listDataService.removeGalleryItem(item.getId());
                             //del
                             galleryList.deleteItems(sel);
-                            dialog.dismiss();
-                        }
-                        @Override
-                        public void onPositiveClick(CommonDialog dialog) { dialog.dismiss(); }
+                            return true;
+                        } else return b == CommonDialog.BUTTON_NEGATIVE;
                     })
                     .show();
         }
@@ -311,27 +306,23 @@ public class GalleryFragment extends Fragment implements IMainFragment {
         final List<GalleryListItem> sel = galleryList.getSelectedItems();
         if(sel.size() > 0) {
             final GalleryListItem item = sel.get(0);
-            new CommonDialog(getContext())
-                    .setEditTextVisible(true)
-                    .setEditHint(getString(R.string.text_enter_gallery_name))
-                    .setEditText(item.getName())
-                    .setCanCancelable(true)
-                    .setEditTextOnTextChangedListener((newText, dialog) -> dialog.setPositiveEnabled(newText.length() > 0))
-                    .setTitle(getString(R.string.text_rename_gallery))
-                    .setOnClickBottomListener(new CommonDialog.OnClickBottomListener() {
-                        @Override
-                        public void onPositiveClick(CommonDialog dialog) {
-                            dialog.dismiss();
-
-                            String newName = dialog.getEditText().getText().toString();
+            new CommonDialog(requireActivity())
+                    .setEditTextHint(R.string.text_enter_gallery_name)
+                    .setEditTextValue(item.getName())
+                    .setTitle(R.string.text_rename_gallery)
+                    .setCancelable(true)
+                    .setOnEditTextChangedListener((newText, dialog) -> dialog.setPositiveEnable(newText.length() > 0))
+                    .setPositive(R.string.action_ok)
+                    .setNegative(R.string.action_cancel)
+                    .setOnResult((b, dialog) -> {
+                        if(b == CommonDialog.BUTTON_POSITIVE) {
+                            String newName = dialog.getEditTextValue().toString();
 
                             item.setName(newName);
                             galleryList.notifyChange();
                             listDataService.renameGalleryItem(item.id, newName);
-                        }
-
-                        @Override
-                        public void onNegativeClick(CommonDialog dialog) { dialog.dismiss(); }
+                            return true;
+                        } else return b == CommonDialog.BUTTON_NEGATIVE;
                     })
                     .show();
         }

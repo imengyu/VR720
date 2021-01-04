@@ -123,7 +123,7 @@ std::string CStringHlp::UnicodeToAnsi(const std::wstring& szStr)
 
 	pResult.resize(len);
 
-	/*这里的第三个长度参数，应为字节长度，即宽字符长度 * 4 */
+	/*杩欓噷鐨勭涓変釜闀垮害鍙傛暟锛屽簲涓哄瓧鑺傞暱搴︼紝鍗冲瀛楃闀垮害 * 4 */
 	wcstombs((char*)pResult.data(), szStr.c_str(), len * sizeof(wchar_t));
 	return pResult;
 }
@@ -162,6 +162,8 @@ jstring CStringHlp::charTojstring(JNIEnv* env, const char* pStr) {
 }
 char* CStringHlp::jstringToChar(JNIEnv* env, jstring jstr) {
 	char* rtn = nullptr;
+	if(jstr == nullptr)
+		return rtn;
 	jclass clsstring = env->FindClass("java/lang/String");
 	jstring strencode = env->NewStringUTF("utf-8");
 	jmethodID mid = env->GetMethodID(clsstring, "getBytes", "(Ljava/lang/String;)[B");

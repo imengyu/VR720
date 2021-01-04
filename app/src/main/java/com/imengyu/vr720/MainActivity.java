@@ -1,8 +1,6 @@
 package com.imengyu.vr720;
 
-import android.content.Context;
 import android.content.Intent;
-import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -15,8 +13,6 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.inputmethod.InputMethodManager;
-import android.widget.EditText;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -31,13 +27,13 @@ import com.hjq.toast.ToastUtils;
 import com.imengyu.vr720.adapter.MyFragmentAdapter;
 import com.imengyu.vr720.config.Codes;
 import com.imengyu.vr720.config.MainMessages;
-import com.imengyu.vr720.dialog.AppDialogs;
+import com.imengyu.vr720.utils.AppPages;
+import com.imengyu.vr720.dialog.LoadingDialog;
 import com.imengyu.vr720.fragment.GalleryFragment;
 import com.imengyu.vr720.fragment.HomeFragment;
 import com.imengyu.vr720.fragment.IMainFragment;
 import com.imengyu.vr720.model.TitleSelectionChangedCallback;
 import com.imengyu.vr720.service.ListDataService;
-import com.imengyu.vr720.utils.AlertDialogTool;
 import com.imengyu.vr720.utils.KeyBoardUtil;
 import com.imengyu.vr720.utils.StatusBarUtils;
 import com.imengyu.vr720.widget.MyTitleBar;
@@ -62,6 +58,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         initDrawer();
         initList();
         initView();
+
+        readParameters(getIntent());
     }
     @Override
     protected void onDestroy() {
@@ -72,6 +70,41 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     protected void onPause() {
         listDataService.saveList();
         super.onPause();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        readParameters(intent);
+        super.onNewIntent(intent);
+    }
+
+    private void readParameters(Intent intent) {
+        if (intent.hasExtra("openFilePath") && intent.hasExtra("openFileArgPath")
+                && intent.hasExtra("openFileIsInCache")) {
+            //打开文件传来的参数
+            Intent newIntent = new Intent(this, PanoActivity.class);
+            newIntent.putExtra("openFilePath", intent.getStringExtra("openFilePath"));
+            newIntent.putExtra("openFileArgPath", intent.getStringExtra("openFileArgPath"));
+            newIntent.putExtra("openFileIsInCache", intent.getBooleanExtra("openFileIsInCache", false));
+            startActivityForResult(newIntent, Codes.REQUEST_CODE_PANO);
+        }
+        else if(intent.hasExtra("importCount") && intent.hasExtra("importList")) {
+            importLoadingDialog = new LoadingDialog(this);
+            importLoadingDialog.show();
+
+            Message message = new Message();
+            message.what = MainMessages.MSG_DO_LATE_IMPORT;
+            message.obj = intent;
+            handler.sendMessageDelayed(message, 1000);
+        }
+    }
+
+    private LoadingDialog importLoadingDialog = null;
+
+    private void doImport(Intent intent) {
+        ArrayList<CharSequence> importList = intent.getCharSequenceArrayListExtra("importList");
+        homeFragment.importFiles(importList, intent.getIntExtra("importCount", 0));
+        importLoadingDialog.dismiss();
     }
 
     //====================================================
@@ -91,6 +124,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private IMainFragment currentFragment;
     private final List<Fragment> fragments = new ArrayList<>();
     private boolean currentTitleIsSelectMode = false;
+    private HomeFragment homeFragment = null;
 
     private ListDataService listDataService = null;
     public ListDataService getListDataService() {
@@ -141,7 +175,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         buttonTabGallery.setOnClickListener((v) -> mViewPager.setCurrentItem(1));
 
         //两个Fragment
-        HomeFragment homeFragment = new HomeFragment(handler, toolbar, listDataService);
+        homeFragment = new HomeFragment(handler, toolbar, listDataService);
         GalleryFragment galleryFragment = new GalleryFragment(handler, toolbar, listDataService);
 
         //两个Fragment的选择模式标题栏回调
@@ -293,13 +327,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (id == R.id.nav_import) {
             handler.sendEmptyMessage(MainMessages.MSG_ADD_IMAGE);
         } else if (id == R.id.nav_manage) {
-            AppDialogs.showSettings(this);
+            AppPages.showSettings(this);
         } else if (id == R.id.nav_help) {
-            AppDialogs.showHelp(this);
+            AppPages.showHelp(this);
         } else if (id == R.id.nav_send) {
-            AppDialogs.showFeedBack(this);
+            AppPages.showFeedBack(this);
         } else if (id == R.id.nav_about) {
-            AppDialogs.showAbout(this);
+            AppPages.showAbout(this);
         } else if (id == R.id.nav_quit) {
             quit();
         }
@@ -324,8 +358,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         @Override
         public void handleMessage(@NonNull Message msg) {
-            for(Fragment fragment : mTarget.get().fragments)
-                ((IMainFragment)fragment).handleMessage(msg);
+            if(msg.what == MainMessages.MSG_DO_LATE_IMPORT) {
+                mTarget.get().doImport((Intent)msg.obj);
+            } else {
+                for (Fragment fragment : mTarget.get().fragments)
+                    ((IMainFragment) fragment).handleMessage(msg);
+            }
         }
     }
     private final MainHandler handler = new MainHandler(this);
@@ -356,12 +394,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     @Override
     public void onActionModeStarted(ActionMode mode) {
         super.onActionModeStarted(mode);
-    }
-
-    @Override
-    public void onConfigurationChanged(@NonNull Configuration newConfig) {
-        AlertDialogTool.notifyConfigurationChangedForDialog(this);
-        super.onConfigurationChanged(newConfig);
     }
 
     @Override

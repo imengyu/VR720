@@ -1,15 +1,11 @@
 package com.imengyu.vr720.adapter;
 
 import android.content.Context;
-import android.content.res.Configuration;
-import android.graphics.Point;
-import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.util.Size;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.widget.ArrayAdapter;
 
 import androidx.annotation.NonNull;

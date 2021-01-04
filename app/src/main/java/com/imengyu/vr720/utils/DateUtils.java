@@ -35,11 +35,11 @@ public final class DateUtils {
   /**
    * 英文简写（默认）如：2010-12-01
    */
-  public static String FORMAT_SHORT = "yyyy-MM-dd";
+  public static String FORMAT_SHORT = "yyyy/MM/dd";
   /**
    * 英文全称 如：2010-12-01 23:15:06
    */
-  public static String FORMAT_LONG = "yyyy-MM-dd HH:mm:ss";
+  public static String FORMAT_LONG = "yyyy/MM/dd HH:mm:ss";
   /**
    * 精确到毫秒的完整时间 如：yyyy-MM-dd HH:mm:ss.S
    */

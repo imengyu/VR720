@@ -7,14 +7,12 @@ import android.util.Log;
 import androidx.preference.ListPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
-import androidx.preference.SwitchPreferenceCompat;
 
 import com.hjq.toast.ToastUtils;
 import com.imengyu.vr720.BuildConfig;
 import com.imengyu.vr720.R;
 import com.imengyu.vr720.SettingsActivity;
 import com.imengyu.vr720.VR720Application;
-import com.imengyu.vr720.dialog.AppDialogs;
 import com.imengyu.vr720.dialog.CommonDialog;
 import com.imengyu.vr720.dialog.LoadingDialog;
 import com.imengyu.vr720.service.CacheServices;
@@ -44,7 +42,7 @@ public class CommonSettingsFragment extends PreferenceFragmentCompat {
             Log.i("Settings", "Do update");
             return true;
         });
-        app_check_update.setSummary(String.format("%s%s", getString(R.string.text_soft_version), getString(R.string.version_name)));
+        app_check_update.setSummary(String.format("%s%s", getString(R.string.text_soft_version), BuildConfig.VERSION_NAME));
         app_go_app_store_check_update.setOnPreferenceClickListener(preference -> {
             AppUtils.goToAppStore(activity, BuildConfig.APPLICATION_ID);
             return true;
@@ -57,10 +55,10 @@ public class CommonSettingsFragment extends PreferenceFragmentCompat {
             new CommonDialog(activity)
                     .setTitle(getString(R.string.text_warning))
                     .setMessage(getString(R.string.text_sure_to_clear_the_cache))
-                    .setOnClickBottomListener(new CommonDialog.OnClickBottomListener() {
-                        @Override
-                        public void onPositiveClick(CommonDialog dialog) {
-
+                    .setPositive(R.string.action_ok)
+                    .setNegative(R.string.action_cancel)
+                    .setOnResult((b, dialog) -> {
+                        if(b == CommonDialog.BUTTON_POSITIVE) {
                             LoadingDialog loadingDialog = new LoadingDialog(activity);
                             loadingDialog.show();
 
@@ -76,11 +74,8 @@ public class CommonSettingsFragment extends PreferenceFragmentCompat {
                                     ToastUtils.show(getString(R.string.text_cache_clear_finish));
                                 });
                             }).start();
-
-                            dialog.dismiss();
-                        }
-                        @Override
-                        public void onNegativeClick(CommonDialog dialog) { dialog.dismiss(); }
+                            return true;
+                        } else return b == CommonDialog.BUTTON_NEGATIVE;
                     })
                     .show();
             return true;

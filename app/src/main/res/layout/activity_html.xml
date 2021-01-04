@@ -18,6 +18,12 @@
         app:title="@string/app_name"
         app:title_bar_type="OneButton" />
 
+    <ProgressBar
+        android:id="@+id/progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="2dp" />
+
     <WebView
         android:id="@+id/webview"
         android:layout_width="match_parent"

@@ -1,5 +1,6 @@
 package com.imengyu.vr720.list;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
@@ -9,6 +10,7 @@ import android.widget.ListView;
 
 import com.imengyu.vr720.R;
 import com.imengyu.vr720.adapter.GalleryListAdapter;
+import com.imengyu.vr720.annotation.UnUsed;
 import com.imengyu.vr720.config.MainMessages;
 import com.imengyu.vr720.model.list.GalleryListItem;
 import com.imengyu.vr720.service.ListImageCacheService;
@@ -29,19 +31,21 @@ public class GalleryList extends SelectableListSolver<GalleryListItem> {
         return resources;
     }
 
-    public GalleryList(Context context, ListImageCacheService listImageCacheService) {
+    public GalleryList(Activity activity, Context context, ListImageCacheService listImageCacheService) {
         this.context = context;
+        this.activity = activity;
         this.listImageCacheService = listImageCacheService;
         resources = context.getResources();
     }
 
+    private final Activity activity;
     private final ArrayList<GalleryListItem> listItems = new ArrayList<>();
     private GalleryListAdapter listAdapter = null;
 
     public void init(Handler handler, ListView listView) {
         this.handler = handler;
 
-        listAdapter = new GalleryListAdapter(this, context, R.layout.item_gallery, listItems);
+        listAdapter = new GalleryListAdapter(activity, this, false, context, R.layout.item_gallery, listItems);
 
         super.init(listAdapter, listItems);
         super.setListOnNotifyChangeListener(this::notifyChange);
@@ -54,12 +58,14 @@ public class GalleryList extends SelectableListSolver<GalleryListItem> {
     //条目操作
     //====================================================
 
+    @UnUsed
     public List<GalleryListItem> getListItems() {
         return listItems;
     }
     public GalleryListAdapter getListAdapter() {
         return listAdapter;
     }
+    @UnUsed
     public int getListItemCount() { return listItems.size(); }
     public GalleryListItem findItem(int id) {
         for (GalleryListItem item : listItems)
@@ -71,6 +77,7 @@ public class GalleryList extends SelectableListSolver<GalleryListItem> {
         listItems.add(item);
         if (notify) refresh();
     }
+    @UnUsed
     public void addItem(String name, int id, boolean notify) {
         
         final GalleryListItem newItem = new GalleryListItem();
@@ -84,6 +91,7 @@ public class GalleryList extends SelectableListSolver<GalleryListItem> {
         listItems.clear();
         refresh();
     }
+    @UnUsed
     public void deleteItem(GalleryListItem item) {
         listItems.remove(item);
         refresh();
@@ -102,12 +110,11 @@ public class GalleryList extends SelectableListSolver<GalleryListItem> {
             if(drawable != null) {
                 item.setThumbnail(drawable);
                 item.setThumbnailLoading(false);
-                notifyChange();
             } else {
                 item.setThumbnailLoading(false);
                 item.setThumbnailFail(true);
-                notifyChange();
             }
+            notifyChange();
         }).start();
     }
 
@@ -158,15 +165,19 @@ public class GalleryList extends SelectableListSolver<GalleryListItem> {
         refresh();
     }
 
+    @UnUsed
     public int getSortType() {
         return sortType;
     }
+    @UnUsed
     public boolean isSortReverse() {
         return sortReverse;
     }
+    @UnUsed
     public void setSortType(int sortType) {
         this.sortType = sortType;
     }
+    @UnUsed
     public void setSortReverse(boolean sortReverse) {
         this.sortReverse = sortReverse;
     }

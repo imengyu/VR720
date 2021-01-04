@@ -47,6 +47,12 @@ public class SelectableListSolver<T extends CheckableListItem> {
     }
     public void setListCheckMode(boolean checkMod) {
         if(checkMod != listAdapter.isCheckable()) {
+            if(!checkMod) {
+                selectedItems.clear();
+                for (T item : listItems)
+                    item.setChecked(false);
+            }
+
             listAdapter.setCheckable(checkMod);
             listAdapter.notifyDataSetChanged();
         }

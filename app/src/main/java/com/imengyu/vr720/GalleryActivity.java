@@ -29,20 +29,22 @@ import com.huantansheng.easyphotos.models.album.entity.Photo;
 import com.imengyu.vr720.config.Codes;
 import com.imengyu.vr720.config.Constants;
 import com.imengyu.vr720.config.MainMessages;
-import com.imengyu.vr720.dialog.AppDialogs;
 import com.imengyu.vr720.dialog.CommonDialog;
+import com.imengyu.vr720.dialog.fragment.ChooseGalleryDialogFragment;
+import com.imengyu.vr720.dialog.fragment.ChooseItemDialogFragment;
 import com.imengyu.vr720.list.GalleryGridList;
 import com.imengyu.vr720.model.GalleryItem;
 import com.imengyu.vr720.model.ImageItem;
 import com.imengyu.vr720.model.list.MainListItem;
 import com.imengyu.vr720.plugin.GlideEngine;
 import com.imengyu.vr720.service.ListDataService;
-import com.imengyu.vr720.utils.AlertDialogTool;
 import com.imengyu.vr720.utils.FileUtils;
 import com.imengyu.vr720.utils.ScreenUtils;
+import com.imengyu.vr720.utils.ShareUtils;
 import com.imengyu.vr720.utils.StatusBarUtils;
 import com.imengyu.vr720.widget.MyTitleBar;
 
+import java.io.File;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
@@ -164,7 +166,7 @@ public class GalleryActivity extends AppCompatActivity {
         galleryGridList.setListCheckItemCountChangedListener((count) -> {
 
             button_mainsel_openwith.setEnabled(count == 1);
-            button_mainsel_share.setEnabled(count == 1);
+            button_mainsel_share.setEnabled(count > 1);
             button_mainsel_delete.setEnabled(count > 0);
             button_mainsel_add_to.setEnabled(count > 0);
 
@@ -201,14 +203,23 @@ public class GalleryActivity extends AppCompatActivity {
 
     private void onOpenImageClick(String path) {
         Intent intent = new Intent(this, PanoActivity.class);
-        intent.putExtra("filePath", path);
+        intent.putExtra("openFilePath", path);
+        intent.putExtra("openFileArgPath", path);
         intent.putCharSequenceArrayListExtra("fileList", galleryGridList.getListPathItems());
         startActivityForResult(intent, Codes.REQUEST_CODE_PANO);
     }
     private void onShareImageClick() {
         final List<MainListItem> sel = galleryGridList.getSelectedItems();
-        if(sel.size() > 0)
-            FileUtils.shareFile(this, sel.get(0).getFilePath());
+        if(sel.size() == 1)
+            ShareUtils.shareFile(this, sel.get(0).getFilePath());
+        else if(sel.size() > 1) {
+            List<File> list = new ArrayList<>();
+            for(MainListItem item : sel)
+                list.add(new File(item.getFilePath()));
+            ShareUtils.shareStreamMultiple(this, list);
+        }
+
+        galleryGridList.setListCheckMode(false);
     }
     private void onDeleteImageClick() {
         final List<MainListItem> sel = galleryGridList.getSelectedItems();
@@ -216,12 +227,11 @@ public class GalleryActivity extends AppCompatActivity {
             new CommonDialog(this)
                     .setTitle(resources.getString(R.string.text_sure_delete_pano))
                     .setMessage(String.format(resources.getString(R.string.text_you_can_remove_choose_images_from_gallery), sel.size()))
-                    .setNegative(resources.getText(R.string.action_sure_delete))
-                    .setPositive(resources.getText(R.string.action_cancel))
-                    .setCheckText(resources.getText(R.string.text_also_delete_from_main_list))
-                    .setOnClickBottomListener(new CommonDialog.OnClickBottomListener() {
-                        @Override
-                        public void onNegativeClick(CommonDialog dialog) {
+                    .setPositive(R.string.action_sure_delete)
+                    .setNegative(R.string.action_cancel)
+                    .setCheckBoxText(R.string.text_also_delete_from_main_list)
+                    .setOnResult((result, dialog) -> {
+                        if(result == CommonDialog.BUTTON_POSITIVE) {
                             //delete files
                             if(dialog.isCheckBoxChecked()) {
                                 //delete in listDataService
@@ -235,10 +245,8 @@ public class GalleryActivity extends AppCompatActivity {
                             galleryGridList.setListCheckMode(false);
                             //标记
                             currentGalleryChanged = true;
-                            dialog.dismiss();
-                        }
-                        @Override
-                        public void onPositiveClick(CommonDialog dialog) { dialog.dismiss(); }
+                            return true;
+                        } else return result == CommonDialog.BUTTON_NEGATIVE;
                     })
                     .show();
         }
@@ -251,53 +259,56 @@ public class GalleryActivity extends AppCompatActivity {
     private void onAddImageToClick() {
         final List<MainListItem> sel = galleryGridList.getSelectedItems();
         if(sel.size() > 0) {
-            AppDialogs.showChooseGalleryDialog(handler, this, listDataService, galleryId ->
-                AppDialogs.showChooseItemDialog(GalleryActivity.this, getString(R.string.text_choose_move_method),
-                    new String[] {
-                            getString(R.string.text_method_move),
-                            getString(R.string.text_method_copy)
-                    } , (choose, i, c) -> {
+            ChooseGalleryDialogFragment chooseGalleryDialogFragment = new ChooseGalleryDialogFragment(listDataService, handler);
+            chooseGalleryDialogFragment.setOnChooseGalleryListener((galleryId) -> {
+                ChooseItemDialogFragment chooseItemDialogFragment = new ChooseItemDialogFragment(
+                        getString(R.string.text_choose_move_method),
+                        new String[] {
+                                getString(R.string.text_method_move),
+                                getString(R.string.text_method_copy)
+                        });
+                chooseItemDialogFragment.setOnChooseItemListener((choose, i, c) -> {
+                    if(!choose)
+                        return;
 
-                if(!choose)
-                    return;
+                    boolean isMove = i == 0;
 
-                boolean isMove = i == 0;
+                    //添加到对应相册
+                    ImageItem imageItem;
+                    for(MainListItem item : sel) {
+                        imageItem = item.getImageItem();
+                        if(!imageItem.isInBelongGalleries(galleryId))
+                            imageItem.belongGalleries.add(galleryId);
+                        if(isMove)
+                            imageItem.belongGalleries.remove((Object)currentGalleryId);
+                    }
 
-                //添加到对应相册
-                ImageItem imageItem;
-                for(MainListItem item : sel) {
-                    imageItem = item.getImageItem();
-                    if(!imageItem.isInBelongGalleries(galleryId))
-                        imageItem.belongGalleries.add(galleryId);
-                    if(isMove)
-                        imageItem.belongGalleries.remove((Object)currentGalleryId);
-                }
+                    currentGalleryChanged = true;
+                    galleryGridList.setListCheckMode(false);
 
-                currentGalleryChanged = true;
-                galleryGridList.setListCheckMode(false);
-
-                ToastUtils.show(R.string.text_add_success);
-            }));
+                    ToastUtils.show(R.string.text_add_success);
+                });
+                chooseItemDialogFragment.show(getSupportFragmentManager(), "ChooseItem");
+            });
+            chooseGalleryDialogFragment.show(getSupportFragmentManager(), "ChooseGallery");
         }
     }
     private void onRenameGalleryClick() {
         new CommonDialog(this)
-                .setEditTextVisible(true)
-                .setEditHint(getString(R.string.text_enter_gallery_name))
-                .setEditText(currentGallery.name)
-                .setEditTextOnTextChangedListener((newText, dialog) -> dialog.setPositiveEnabled(newText.length() > 0))
-                .setTitle(getString(R.string.text_rename_gallery))
-                .setOnClickBottomListener(new CommonDialog.OnClickBottomListener() {
-                    @Override
-                    public void onPositiveClick(CommonDialog dialog) {
-                        dialog.dismiss();
-                        String newName = dialog.getEditText().getText().toString();
+                .setEditTextHint(getString(R.string.text_enter_gallery_name))
+                .setEditTextValue(currentGallery.name)
+                .setOnEditTextChangedListener((newText, dialog) -> dialog.setPositiveEnable(newText.length() > 0))
+                .setTitle(R.string.text_rename_gallery)
+                .setNegative(R.string.action_cancel)
+                .setPositive(R.string.action_ok)
+                .setOnResult((button, dialog) -> {
+                    if(button == CommonDialog.BUTTON_POSITIVE) {
+                        String newName = dialog.getEditTextValue().toString();
                         titleBar.setTitle(newName);
                         currentGalleryChanged = true;
                         listDataService.renameGalleryItem(currentGallery.id, newName);
-                    }
-                    @Override
-                    public void onNegativeClick(CommonDialog dialog) { dialog.dismiss(); }
+                        return true;
+                    } else return button == CommonDialog.BUTTON_NEGATIVE;
                 })
                 .show();
     }
@@ -355,7 +366,6 @@ public class GalleryActivity extends AppCompatActivity {
     @Override
     public void onConfigurationChanged(@NonNull Configuration newConfig) {
         onUpdateScreenOrientation(newConfig);
-        AlertDialogTool.notifyConfigurationChangedForDialog(this);
         super.onConfigurationChanged(newConfig);
     }
 

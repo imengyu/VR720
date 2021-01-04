@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/colorTransparent"
+    android:gravity="center"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/layout_dialog"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="30dp"
+        android:layout_marginEnd="30dp"
+        android:background="@drawable/dialog_white_bg"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingStart="20dp"
+        android:paddingTop="20dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="10dp">
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/app_name"
+            app:srcCompat="@drawable/ic_feedback" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="@string/text_do_you_like_app"
+            android:textSize="20sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="@string/text_give_a_start_if_you_like_app" />
+
+        <Button
+            android:id="@+id/button_good"
+            style="@style/ButtonRoundPrimary"
+            android:layout_width="200dp"
+            android:layout_height="35dp"
+            android:layout_marginTop="30dp"
+            android:text="@string/text_give_a_start" />
+
+        <Button
+            android:id="@+id/button_bad"
+            style="@style/ButtonRound"
+            android:layout_width="200dp"
+            android:layout_height="35dp"
+            android:layout_marginTop="8dp"
+            android:text="@string/text_bad_app" />
+
+        <Button
+            android:id="@+id/button_later"
+            style="@style/ButtonTransParent"
+            android:layout_width="wrap_content"
+            android:layout_height="35dp"
+            android:layout_marginTop="8dp"
+            android:text="@string/text_later" />
+    </LinearLayout>
+
+</LinearLayout>

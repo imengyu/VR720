@@ -7,10 +7,10 @@
 #include "CCTextureLoadQueue.h"
 #include "CCModel.h"
 #include "CCFileManager.h"
-#include "CCGUInfo.h"
 #include "CCErrors.h"
 #include "../player/CCVideoPlayer.h"
 #include "../player/CCOpenGLTexVideoDevice.h"
+#include "CMobileGameUIEventDistributor.h"
 #include <vector>
 
 //全景模式
@@ -38,9 +38,7 @@ public:
 	static void GlobalInit(JNIEnv *env, jobject context);
 
 	void DoOpenFile();
-	void MarkShouldOpenFile() {
-		shouldOpenFile = true;
-	}
+	void MarkShouldOpenFile();
 	void MarkCloseFile();
 	void MarkDestroy() override { shouldDestroy = true; }
 
@@ -53,7 +51,7 @@ public:
 	int GetIntProp(int id);
 	void SetBoolProp(int id, bool value);
 	bool GetBoolProp(int id);
-	void SetProp(int id, char* string);
+	void SetProp(int id, const char* string);
 	const char* GetProp(int id);
 
 	//视频播放器方法
@@ -65,6 +63,7 @@ public:
 	int64_t GetVideoPos();
 
 	void SetUiEventDistributor( CMobileGameUIEventDistributor*uv) { uiEventDistributor = uv; }
+    void SendUiEvent(CCMobileGameUIEvent event);
 
 	//鼠标移动速度与粘性计算
 
@@ -112,8 +111,9 @@ private:
 	void FinishLoadAndNotifyError();
 
     CMobileGameUIEventDistributor*uiEventDistributor = nullptr;
-    CCGUInfo* uiInfo = nullptr;
+
 	bool fileOpened = false;
+	bool fileIsLoading = false;
     bool enableViewCache = true;
 
 	std::string currentOpenFilePath;
@@ -128,9 +128,14 @@ private:
 	bool shouldOpenFile = false;
 	bool shouldCloseFile = false;
 	bool shouldDestroy = false;
+
 	bool destroying = false;
 	bool needTestImageAndSplit = false;
 	float lastX = 0, lastY = 0, xoffset = 0, yoffset = 0;
+
+	bool GetNeedInterruptLoading() const;
+	bool forceInterruptLoading = false;
+	int forceInterruptLoadingTick = 0;
 
 	void TestSplitImageAndLoadTexture();
 	void TestToLoadTextureImageCache();

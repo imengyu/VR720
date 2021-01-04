@@ -1,5 +1,6 @@
 package com.imengyu.vr720.adapter;
 
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
@@ -9,15 +10,18 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
 import com.imengyu.vr720.R;
+import com.imengyu.vr720.VR720Application;
 import com.imengyu.vr720.list.GalleryList;
 import com.imengyu.vr720.model.OnListCheckableChangedListener;
 import com.imengyu.vr720.model.holder.GalleryListViewHolder;
 import com.imengyu.vr720.model.list.GalleryListItem;
 import com.imengyu.vr720.model.list.MainListItem;
 import com.imengyu.vr720.service.ListDataService;
+import com.imengyu.vr720.service.ListImageCacheService;
 
 import java.util.List;
 
@@ -29,12 +33,39 @@ public class GalleryListAdapter extends ArrayAdapter<GalleryListItem> implements
     private final GalleryList galleryList;
     private final Context context;
     private final int layoutId;
+    private final ListImageCacheService listImageCacheService;
+    private final Activity activity;
+    private final boolean isSmall;
 
-    public GalleryListAdapter(GalleryList galleryList, Context context, int layoutId, List<GalleryListItem> list) {
+    public GalleryListAdapter(Activity activity,
+                              GalleryList galleryList,
+                              boolean isSmall,
+                              Context context, int layoutId, List<GalleryListItem> list) {
         super(context, layoutId, list);
         this.context = context;
+        this.activity = activity;
+        this.isSmall = isSmall;
         this.galleryList = galleryList;
         this.layoutId = layoutId;
+        this.listImageCacheService = ((VR720Application)activity.getApplication()).getListImageCacheService();
+    }
+
+    private void loadItemThumbnail(GalleryListItem item) {
+        //在背景线程进行缩略图加载
+        new Thread(() -> {
+            Drawable drawable = listImageCacheService.loadImageThumbnailCache(item.getThumbnailPath());
+            if(drawable != null) {
+                item.setThumbnail(drawable);
+                item.setThumbnailLoading(false);
+            } else {
+                item.setThumbnailLoading(false);
+                item.setThumbnailFail(true);
+            }
+            if(isSmall)
+                activity.runOnUiThread(this::notifyDataSetChanged);
+            else
+                galleryList.notifyChange();
+        }).start();
     }
 
     @NonNull
@@ -54,14 +85,27 @@ public class GalleryListAdapter extends ArrayAdapter<GalleryListItem> implements
             viewHolder.image_thumbnail = convertView.findViewById(R.id.image_thumbnail);
             viewHolder.check = convertView.findViewById(R.id.check);
 
-            viewHolder.view_item.setOnLongClickListener(galleryList.getMainListBaseOnLongClickListener());
-            viewHolder.view_item.setOnClickListener(galleryList.getMainListBaseOnClickListener());
+            if(!isSmall) {
+                viewHolder.view_item.setOnLongClickListener(galleryList.getMainListBaseOnLongClickListener());
+                viewHolder.view_item.setOnClickListener(galleryList.getMainListBaseOnClickListener());
+            }
 
             convertView.setTag(viewHolder);
         } else {
             viewHolder = (GalleryListViewHolder) convertView.getTag();
         }
+
         if(item != null) {
+
+            viewHolder.view_item.setTag(position);
+            viewHolder.image.setTag(position);
+            viewHolder.image.setVisibility(View.VISIBLE);
+            viewHolder.text_subtitle.setText(item.getSubTitle(context));
+            if(!isSmall) {
+                viewHolder.check.setChecked(item.isChecked());
+                viewHolder.check.setVisibility(isCheckable() ? View.VISIBLE : View.GONE);
+                viewHolder.check.setEnabled(item.id > 0);
+            }
 
             Drawable thumbnail = null;
 
@@ -78,13 +122,19 @@ public class GalleryListAdapter extends ArrayAdapter<GalleryListItem> implements
             else {
                 if (!item.isThumbnailLoadingStarted()) {
                     item.setThumbnailLoadingStarted(true);
-                    galleryList.loadItemThumbnail(item);
+                    if(isSmall) loadItemThumbnail(item);
+                    else galleryList.loadItemThumbnail(item);
                 }
                 else thumbnail = item.getThumbnail();
                 viewHolder.image.setBackgroundColor(ContextCompat.getColor(context, R.color.colorImageDefault));
             }
 
-            if (item.id == ListDataService.GALLERY_LIST_ID_I_LIKE) {
+            if (item.id == ListDataService.GALLERY_LIST_ID_ADD) {
+                viewHolder.image.setBackgroundColor(ContextCompat.getColor(context, R.color.colorAccent));
+                viewHolder.image.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_button_add));
+                viewHolder.text_title.setText(context.getString(R.string.action_new_gallery));
+                viewHolder.text_subtitle.setVisibility(View.GONE);
+            } else  if (item.id == ListDataService.GALLERY_LIST_ID_I_LIKE) {
                 viewHolder.image.setBackgroundColor(ContextCompat.getColor(context, R.color.colorImageLike));
                 viewHolder.image.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_image_ilike));
                 viewHolder.text_title.setText(context.getString(R.string.text_i_like));
@@ -94,6 +144,7 @@ public class GalleryListAdapter extends ArrayAdapter<GalleryListItem> implements
                 viewHolder.image.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_video));
                 viewHolder.text_title.setText(context.getString(R.string.text_videos));
             } else {
+                viewHolder.image.setBackgroundColor(ContextCompat.getColor(context, R.color.colorAccent));
                 viewHolder.text_title.setText(item.getName());
             }
 
@@ -112,14 +163,6 @@ public class GalleryListAdapter extends ArrayAdapter<GalleryListItem> implements
                 viewHolder.image_thumbnail.setVisibility(View.VISIBLE);
                 viewHolder.image_thumbnail.setImageDrawable(thumbnail);
             }
-
-            viewHolder.view_item.setTag(position);
-            viewHolder.image.setTag(position);
-            viewHolder.image.setVisibility(View.VISIBLE);
-            viewHolder.text_subtitle.setText(item.getSubTitle(context));
-            viewHolder.check.setChecked(item.isChecked());
-            viewHolder.check.setVisibility(isCheckable() ? View.VISIBLE : View.GONE);
-            viewHolder.check.setEnabled(item.id > 0);
         }
         return convertView;
     }

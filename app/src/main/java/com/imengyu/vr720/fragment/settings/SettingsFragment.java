@@ -14,6 +14,7 @@ import androidx.preference.PreferenceManager;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.hjq.toast.ToastUtils;
 import com.imengyu.vr720.BuildConfig;
 import com.imengyu.vr720.ChooseLanguageActivity;
@@ -21,14 +22,15 @@ import com.imengyu.vr720.R;
 import com.imengyu.vr720.SettingsActivity;
 import com.imengyu.vr720.VR720Application;
 import com.imengyu.vr720.config.Codes;
-import com.imengyu.vr720.dialog.AppDialogs;
+import com.imengyu.vr720.utils.AppPages;
 import com.imengyu.vr720.dialog.CommonDialog;
+import com.imengyu.vr720.dialog.fragment.AgreementDialogFragment;
 import com.imengyu.vr720.model.GalleryItem;
 import com.imengyu.vr720.model.ImageItem;
 import com.imengyu.vr720.service.ListDataService;
 import com.imengyu.vr720.utils.FileUtils;
-import com.alibaba.fastjson.JSONObject;
 import com.imengyu.vr720.utils.StringUtils;
+
 import java.util.Set;
 
 public class SettingsFragment extends PreferenceFragmentCompat {
@@ -44,6 +46,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         Preference data_backup = findPreference("data_backup");
         Preference data_restore_backup = findPreference("data_restore_backup");
         Preference app_choose_language = findPreference("app_choose_language");
+        Preference app_reset_all = findPreference("app_reset_all");
 
         SettingsActivity activity = (SettingsActivity)getActivity();
 
@@ -56,13 +59,32 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         assert data_backup != null;
         assert data_restore_backup != null;
         assert app_choose_language != null;
+        assert app_reset_all != null;
 
+        app_reset_all.setOnPreferenceClickListener(preference -> {
+            new CommonDialog(activity)
+                    .setTitle(R.string.text_tip)
+                    .setMessage(R.string.text_do_you_want_reset_settings)
+                    .setPositive(R.string.action_ok)
+                    .setNegative(R.string.action_cancel)
+                    .setOnResult((b, dialog) -> {
+                        if(b == CommonDialog.BUTTON_POSITIVE) {
+                            SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext());
+                            sharedPreferences.edit().clear().apply();
+                            ToastUtils.show(getString(R.string.text_success));
+                            return true;
+                        } else return b == CommonDialog.BUTTON_NEGATIVE;
+                    })
+                    .show();
+            return true;
+        });
         app_privacy_policy.setOnPreferenceClickListener(preference -> {
-            AppDialogs.showPrivacyPolicyAndAgreement(this.getActivity(), null);
+            AgreementDialogFragment agreementDialogFragment = new AgreementDialogFragment();
+            agreementDialogFragment.show(getParentFragmentManager(), "AgreementDialog");
             return true;
         });
         app_about.setOnPreferenceClickListener(preference -> {
-            AppDialogs.showAbout(activity);
+            AppPages.showAbout(activity);
             return true;
         });
         app_choose_language.setOnPreferenceClickListener((preference) -> {
@@ -84,20 +106,19 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         });
         data_backup.setOnPreferenceClickListener((preference) -> {
             new CommonDialog(activity)
-                    .setTitle(getString(R.string.settings_key_data_backup))
-                    .setMessage(getString(R.string.text_we_will_backup))
-                    .setOnClickBottomListener(new CommonDialog.OnClickBottomListener() {
-                        @Override
-                        public void onPositiveClick(CommonDialog dialog) {
-                            dialog.dismiss();
-
+                    .setImageResource(R.drawable.ic_per_storage)
+                    .setTitle(R.string.settings_key_data_backup)
+                    .setMessage(R.string.text_we_will_backup)
+                    .setPositive(R.string.action_ok)
+                    .setNegative(R.string.action_cancel)
+                    .setOnResult((b, dialog) -> {
+                        if(b == CommonDialog.BUTTON_POSITIVE) {
                             Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
                             intent.setType("application/json");
                             intent.addCategory(Intent.CATEGORY_OPENABLE);
                             startActivityForResult(intent, Codes.REQUEST_CODE_CHOOSE_EXPORT_FILE);
-                        }
-                        @Override
-                        public void onNegativeClick(CommonDialog dialog) { dialog.dismiss(); }
+                            return true;
+                        } else return b == CommonDialog.BUTTON_NEGATIVE;
                     })
                     .show();
             return true;
@@ -139,18 +160,18 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(activity);
 
         new CommonDialog(getActivity())
-                .setTitle(getString(R.string.settings_key_data_restore_backup))
-                .setMessage(getString(R.string.text_we_will_restore))
-                .setCheckText(getString(R.string.text_merge_import_data))
-                .setOnClickBottomListener(new CommonDialog.OnClickBottomListener() {
-                    @Override
-                    public void onPositiveClick(CommonDialog dialog) {
-                        dialog.dismiss();
-
+                .setTitle(R.string.settings_key_data_restore_backup)
+                .setMessage(R.string.text_we_will_restore)
+                .setCheckBoxText(R.string.text_merge_import_data)
+                .setImageResource(R.drawable.ic_warning)
+                .setPositive(R.string.action_ok)
+                .setNegative(R.string.action_cancel)
+                .setOnResult((b, dialog) -> {
+                    if(b == CommonDialog.BUTTON_POSITIVE) {
                         String json = FileUtils.readToTextFile(path);
                         if(StringUtils.isNullOrEmpty(json))  {
-                            ToastUtils.show(getString(R.string.text_failed));
-                            return;
+                            ToastUtils.show(R.string.text_failed);
+                            return true;
                         }
 
                         boolean merge = dialog.isCheckBoxChecked();
@@ -189,10 +210,8 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                             e.printStackTrace();
                             ToastUtils.show(getString(R.string.text_failed) + "\n" + e.toString());
                         }
-
-                    }
-                    @Override
-                    public void onNegativeClick(CommonDialog dialog) { dialog.dismiss(); }
+                        return true;
+                    } else return b == CommonDialog.BUTTON_NEGATIVE;
                 })
                 .show();
     }

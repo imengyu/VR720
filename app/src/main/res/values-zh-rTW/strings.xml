@@ -1,15 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-	<string name="app_name">720全景瀏覽器</string>
-	<string name="app_introduction">一款精簡的720度全景瀏覽軟件</string>
+    <string name="app_introduction">一款精簡的720度全景瀏覽軟件</string>
 	<string name="navigation_drawer_open">開啟側邊欄</string>
 	<string name="navigation_drawer_close">關閉側邊欄</string>
 	<string name="nav_header_title">一款精簡的720全景瀏覽軟件</string>
 	<string name="nav_header_desc">導航標題</string>
 	<string name="nav_header_soft">軟件</string>
-	<string name="title_activity_launcher">720全景瀏覽器</string>
-	<string name="title_activity_main">VR720</string>
 	<string name="title_activity_settings">設定</string>
 	<string name="title_activity_about">關於VR720</string>
 	<string name="title_activity_pano">查看720度全景</string>
@@ -211,16 +208,13 @@
 	<string name="settings_key_enable_native_log">啟用內核日誌</string>
 	<string name="settings_key_enable_exception_catch">啟用錯誤自動迴響</string>
 	<string name="settings_summary_enable_exception_catch">啟用後程式可以在發生錯誤時抓取錯誤异常資訊，在下次啟動時傳回服務器（不包含您的個人資訊），以幫助我們更好的改進軟件（建議開啟）</string>
-	<string name="text_agreement_base_welcome">歡迎使用720全景圖瀏覽器！\n我們非常重視您的隱私和個人資訊保護。\n在您使用720全景圖瀏覽器前，請認真閱讀《用戶協議》及《隱私政策》，您同意並接受全部條款後方可開始使用“720全景圖瀏覽器”。\n另外為了更好地使用產品功能，需徵求您的允許，獲得以下許可權：</string>
-	<string name="text_agreement_base">《用戶協議》\n《隱私政策》\n\n為了更好地使用產品功能，應用還徵求您的允許獲得以下許可權：</string>
 	<string name="text_agreement_devinfo">設備資訊</string>
 	<string name="text_agreement_devinfo_sub">包括設備ID/螢幕尺寸/作業系統/設備型號/網絡連接模式/移動國家代碼/螢幕解析度及系統語言；用於根據不同的設備及系統版本來提供不同的功能和體驗，獲取產品的使用情况及Bug資訊，幫助我們不斷改進產品功能和體驗。</string>
 	<string name="text_agreement_interenet">網絡</string>
 	<string name="text_agreement_interenet_sub">包括IP地址；我們需要聯網下載計算數據；以及幫助我們統計產品使用情况、迴響產品BUG，幫助我們不斷改進產品功能和體驗。</string>
 	<string name="text_agreement_write_storage">讀寫存儲</string>
 	<string name="text_agreement_write_storage_sub">我們需要臨時寫入程式數據、程式計算緩存等等。</string>
-	<string name="text_agreement_lost">如果您不同意或拒絕授予這些許可權，您將無法使用App的部分或全部功能。</string>
-	<string name="text_agreement_allow">同意並繼續</string>
+    <string name="text_agreement_allow">同意並繼續</string>
 	<string name="text_agreement_not_allow">不同意並退出</string>
 	<string name="action_search">蒐索</string>
     <string name="text_search_your_pano">蒐索你的全景圖</string>
@@ -232,5 +226,26 @@
     <string name="settings_header_audio">音訊</string>
 	<string name="settings_key_use_native_decoder">硬體解碼（如果可用）</string>
 	<string name="settings_summary_use_native_decoder">開啟後將嘗試使用硬體解碼，如果無對應解碼器或是設備不支持硬體解碼，則使用軟件解碼</string>
+	<string name="title_activity_import">導入至VR720</string>
+    <string name="text_import_success_count">成功導入了 %d 個檔案</string>
+    <string name="text_do_you_want_import_to_list">你想把這個檔導入到清單中嗎？</string>
+    <string name="settings_key_auto_import">打開文件時自動導入至清單</string>
+	<string name="text_share_files_title">分享 %d 個檔案</string>
+	<string name="text_import_to_list_and_do_not_remind_me_next">下次直接導入，不用提醒</string>
+    <string name="text_do_you_want_reset_settings">你真的要還原默認設置嗎？</string>
+	<string name="settings_key_app_reset_all">重置為默認設置</string>
+    <string name="text_agreement_base_welcome">歡迎使用VR720！您可以使用本應快速用瀏覽、管理您本地的全景圖。另外為了更好地使用產品功能，需徵求您的允許，獲得以下許可：</string>
+	<string name="text_agreement_base">為了更好地使用產品功能，應用還徵求您的允許獲得以下許可：</string>
+	<string name="text_i_agree_agreement">我已閱讀並同意</string>
+	<string name="text_agreement_notice">為了便於我們更好的為你提供服務，在使用本產品前，請務必仔細閱讀本產品相關的《用戶協議》與《隱私政策》，點擊同意即表明您接受並遵守本協議約定。</string>
+	<string name="settings_key_loop_play_video">迴圈播放視頻</string>
+	<string name="text_agreement">《用戶協議》</string>
+	<string name="text_privacy_policy">《隱私政策》</string>
+	<string name="text_and">與</string>
+	<string name="text_later">以後再說</string>
+	<string name="text_bad_app">我要吐槽</string>
+	<string name="text_give_a_start">軟件不錯，給個好評</string>
+	<string name="text_give_a_start_if_you_like_app">覺得不錯的話就給個好評吧^ ^~</string>
+	<string name="text_do_you_like_app">你喜歡VR720嗎？</string>
 
 </resources>

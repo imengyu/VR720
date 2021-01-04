@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">720全景查看器</string>
+    <string name="app_name" translatable="false">VR720</string>
     <string name="app_introduction">一款精简的720度全景浏览软件</string>
 
     <!-- titles -->
@@ -10,22 +10,17 @@
     <string name="nav_header_desc">导航标题</string>
     <string name="nav_header_soft">软件</string>
 
-    <string name="title_activity_launcher">720全景查看器</string>
-    <string name="title_activity_main">VR720</string>
     <string name="title_activity_settings">设置</string>
     <string name="title_activity_about">关于 VR720</string>
     <string name="title_activity_pano">查看720度全景</string>
     <string name="title_activity_feedback">提交软件反馈</string>
     <string name="title_activity_help">VR720 帮助文档</string>
     <string name="title_activity_gallery">相册</string>
+    <string name="title_activity_import">导入至 VR720</string>
     <string name="title_reminder">温馨提示</string>
     <string name="title_home">我的全景图</string>
     <string name="title_gallery">分类收藏夹</string>
     <string name="title_choose_language">选择语言</string>
-    <string name="title_activity_html" translatable="false">HtmlActivity</string>
-
-    <string name="version_code" translatable="false">3</string>
-    <string name="version_name" translatable="false">V1.3.0103-arm</string>
 
     <!-- actions -->
     <string name="action_new_gallery">新建分类收藏夹</string>
@@ -75,6 +70,9 @@
     <string name="text_placeholder">文字占位符</string>
     <string name="text_return">返回</string>
     <string name="text_choosed_items">已选择 %d 项</string>
+    <string name="text_import_success_count">成功导入了 %d 个文件</string>
+    <string name="text_do_you_want_import_to_list">你想把这个文件导入到列表中吗？</string>
+    <string name="text_import_to_list_and_do_not_remind_me_next">以后都直接导入，不需要再提醒我</string>
     <string name="text_please_choose_item">请选择项目</string>
     <string name="text_also_delete_files">同时删除文件</string>
     <string name="text_core_init_failed">抱歉，程序出现了故障</string>
@@ -146,6 +144,7 @@
     <string name="text_image_save_success">截图成功！图像已保存至相册</string>
     <string name="text_image_save_failed">图像保存失败！ %s</string>
     <string name="text_share_image_title">分享这张全景图</string>
+    <string name="text_share_files_title">分享 %d 个文件</string>
     <string name="text_choose_program_to_open">选择对应的软件打开该图像</string>
     <string name="text_image_cannot_open">抱歉，你的系统不能打开此图像</string>
     <string name="text_image_not_support">抱歉，我们暂时不支持打开此图像</string>
@@ -172,6 +171,8 @@
     <string name="text_sure_to_clear_the_cache">确定清空程序缓存？</string>
     <string name="text_cache_clear_finish">程序缓存已经清空！</string>
 
+    <string name="text_help_us_translate" translatable="false">If your language translation is not accurate, can you help us translate?</string>
+
     <string name="text_i_like">我的喜欢</string>
     <string name="text_videos">视频</string>
     <string name="text_count_video">个全景视频</string>
@@ -183,6 +184,12 @@
 
     <string name="text_method_move">移动到对应收藏夹</string>
     <string name="text_method_copy">复制到对应收藏夹</string>
+
+    <string name="text_do_you_like_app">你喜欢 VR720 吗？</string>
+    <string name="text_give_a_start_if_you_like_app">觉得不错的话就给个好评吧 ^ ^~ </string>
+    <string name="text_give_a_start">软件不错，给个好评</string>
+    <string name="text_bad_app">我要吐槽</string>
+    <string name="text_later">以后再说</string>
 
     <string name="text_add_success_to_gallery_with_count">成功添加 %d 项目至分类收藏夹</string>
     <string name="text_add_success">添加成功！</string>
@@ -202,6 +209,8 @@
     <string name="text_success">成功</string>
     <string name="text_error_image">错误图像</string>
     <string name="text_failed">操作失败！</string>
+    <string name="text_and">与</string>
+    <string name="text_do_you_want_reset_settings">你真的要还原默认设置吗？</string>
     <string name="text_we_will_backup">我们将会备份这些数据：\n- 软件配置设置\n- 已经导入的全景文件索引路径\n- 分类收藏夹数据</string>
     <string name="text_we_will_restore">导入数据后将会覆盖当前数据，并且不可恢复，是否继续？ </string>
     <string name="text_merge_import_data">不覆盖当前数据而是与新数据合并（如果数据重复则不会导入）</string>
@@ -237,9 +246,11 @@
     <string name="settings_key_do_not_check_pano_normal_size">不检查全景图的正常比例</string>
     <string name="settings_summary_do_not_check_pano_normal_size">如果全景图的比例不是正常的 720 度全景图，软件打开后渲染可能会出现图像变形的情况，因此软件会给出提示询问您要不要继续加载。您可以通过开启此选项禁用这个提示</string>
     <string name="settings_key_about">关于软件</string>
+    <string name="settings_key_app_reset_all">重置为默认设置</string>
     <string name="settings_key_check_update">检查更新</string>
     <string name="settings_key_auto_update">自动更新软件</string>
     <string name="settings_key_go_app_store_check_update">去应用商店查看更新</string>
+    <string name="settings_key_auto_import">打开文件时自动导入至列表</string>
     <string name="settings_key_privacy_policy">隐私政策以及许可协议</string>
     <string name="settings_key_enable_drag_velocity">开启惯性拖动</string>
     <string name="settings_key_show_debug_tool">开启全景调试界面</string>
@@ -261,17 +272,21 @@
     <string name="settings_summary_enable_exception_catch">启用后程序可以在发生错误时抓取错误异常信息，在下次启动时传回服务器（不包含您的个人信息），以帮助我们更好的改进软件（建议开启）</string>
     <string name="settings_key_use_native_decoder">硬件解码（如果可用）</string>
     <string name="settings_summary_use_native_decoder">开启后将尝试使用硬件解码，如果无对应解码器或是设备不支持硬件解码，则使用软件解码</string>
+    <string name="settings_key_loop_play_video">循环播放视频</string>
 
     <!-- agreement -->
-    <string name="text_agreement_base_welcome">欢迎使用 720全景图查看器 ！\n我们非常重视您的隐私和个人信息保护。 \n在您使用 720全景图查看器 前，请认真阅读 <a href="https://imengyu.top/linkJump?to=vr720_argeement">《用户协议》</a> 及 <a href="https://imengyu.top/linkJump?to=privacy_policy">《隐私政策》</a> ，您同意并接受全部条款后方可开始使用“720全景图查看器”。\n另外为了更好地使用产品功能，需征求您的允许，获得以下权限：</string>
-    <string name="text_agreement_base"><a href="https://imengyu.top/linkJump?to=vr720_argeement">《用户协议》</a>\n<a href="https://imengyu.top/linkJump?to=privacy_policy">《隐私政策》</a>\n\n为了更好地使用产品功能，应用还征求您的允许获得以下权限：</string>
+    <string name="text_i_agree_agreement">我已阅读并同意</string>
+    <string name="text_agreement_notice">为了便于我们更好的为你提供服务，在使用本产品前，请务必仔细阅读本产品相关的《用户协议》与《隐私政策》，点击同意即表明您接受并遵守本协议约定。</string>
+    <string name="text_agreement">《用户协议》</string>
+    <string name="text_privacy_policy">《隐私政策》</string>
+    <string name="text_agreement_base_welcome">欢迎使用 VR720 ！您可以使用本应快速用浏览、管理您本地的全景图。另外为了更好地使用产品功能，需征求您的允许，获得以下权限：</string>
+    <string name="text_agreement_base">为了更好地使用产品功能，应用还征求您的允许获得以下权限：</string>
     <string name="text_agreement_devinfo">设备信息</string>
     <string name="text_agreement_devinfo_sub">包括设备ID/屏幕尺寸/操作系统/设备型号/网络连接模式/移动国家代码/屏幕分辨率及系统语言；用于根据不同的设备及系统版本来提供不同的功能和体验，获取产品的使用情况及Bug信息，帮助我们不断改进产品功能和体验。</string>
     <string name="text_agreement_interenet">网络</string>
     <string name="text_agreement_interenet_sub">包括IP地址；我们需要联网下载计算数据；以及帮助我们统计产品使用情况、反馈产品BUG，帮助我们不断改进产品功能和体验。</string>
     <string name="text_agreement_write_storage">读写存储</string>
     <string name="text_agreement_write_storage_sub">我们需要临时写入程序数据、程序计算缓存等等。</string>
-    <string name="text_agreement_lost">如果您不同意或拒绝授予这些权限，您将无法使用 App 的部分或全部功能。</string>
     <string name="text_agreement_allow">同意并继续</string>
     <string name="text_agreement_not_allow">不同意并退出</string>
 

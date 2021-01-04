@@ -11,6 +11,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -40,9 +41,10 @@ import com.imengyu.vr720.VR720Application;
 import com.imengyu.vr720.config.Codes;
 import com.imengyu.vr720.config.Constants;
 import com.imengyu.vr720.config.MainMessages;
-import com.imengyu.vr720.dialog.AppDialogs;
 import com.imengyu.vr720.dialog.CommonDialog;
 import com.imengyu.vr720.dialog.LoadingDialog;
+import com.imengyu.vr720.dialog.fragment.AppraiseDialogFragment;
+import com.imengyu.vr720.dialog.fragment.ChooseGalleryDialogFragment;
 import com.imengyu.vr720.list.MainList;
 import com.imengyu.vr720.model.ImageItem;
 import com.imengyu.vr720.model.TitleSelectionChangedCallback;
@@ -51,6 +53,7 @@ import com.imengyu.vr720.plugin.GlideEngine;
 import com.imengyu.vr720.service.ListDataService;
 import com.imengyu.vr720.utils.FileUtils;
 import com.imengyu.vr720.utils.KeyBoardUtil;
+import com.imengyu.vr720.utils.ShareUtils;
 import com.imengyu.vr720.widget.MyTitleBar;
 import com.imengyu.vr720.widget.RecyclerViewEmptySupport;
 import com.scwang.smart.refresh.footer.ClassicsFooter;
@@ -59,6 +62,7 @@ import com.scwang.smart.refresh.layout.api.RefreshLayout;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -170,7 +174,7 @@ public class HomeFragment extends Fragment implements IMainFragment {
         mainList.setListCheckItemCountChangedListener((count) -> {
 
             button_mainsel_openwith.setEnabled(count == 1);
-            button_mainsel_share.setEnabled(count == 1);
+            button_mainsel_share.setEnabled(count > 0);
             button_mainsel_delete.setEnabled(count > 0);
             button_mainsel_add_to.setEnabled(count > 0);
 
@@ -354,19 +358,67 @@ public class HomeFragment extends Fragment implements IMainFragment {
             //获取选择器返回的数据
             ArrayList<Photo> resultPhotos = data.getParcelableArrayListExtra(EasyPhotos.RESULT_PHOTOS);
             if(resultPhotos != null) {
+
+                int addCount = 0;
                 for (Photo photo : resultPhotos)
-                    mainList.addImageToItem(listDataService.addImageItem(photo.path), false);
+                    if(listDataService.findImageItem(photo.path) == null) {
+                        mainList.addImageToItem(listDataService.addImageItem(photo.path), false);
+                        addCount++;
+                    }
                 mainList.sort();
                 mainList.notifyChange();
+
+                ToastUtils.show(String.format(getString(R.string.text_import_success_count), addCount));
             }
         }
         else if (requestCode == Codes.REQUEST_CODE_PANO && data != null) {
+            if(!appraiseDialogShowed)
+                testAndShowAppraiseDialog();
+            String filePath = data.getStringExtra("filePath");
             if(data.getBooleanExtra("isDeleteFile", false)) {
-                MainListItem item = mainList.findImageItem(data.getStringExtra("filePath"));
+                MainListItem item = mainList.findImageItem(filePath);
                 if(item != null) {
                     listDataService.removeImageItem(item.getImageItem());
                     mainList.deleteItem(item);
                     mainList.notifyChange();
+                }
+            }
+            else if (listDataService.findImageItem(filePath) == null) {
+
+                //打开文件之后添加到列表
+                SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext());
+                if(sharedPreferences.getBoolean("auto_import", false)) {
+
+                    mainList.addImageToItem(listDataService.addImageItem(filePath), false);
+                    mainList.sort();
+                    mainList.notifyChange();
+
+                }
+                else {
+                    //打开文件之后询问是否添加到列表
+                    new CommonDialog(requireActivity())
+                            .setTitle(R.string.text_tip)
+                            .setMessage(R.string.text_do_you_want_import_to_list)
+                            .setPositive(R.string.action_ok)
+                            .setNegative(R.string.action_cancel)
+                            .setCheckBoxText(R.string.text_import_to_list_and_do_not_remind_me_next)
+                            .setOnResult((b, dialog) -> {
+                                if(b == CommonDialog.BUTTON_POSITIVE) {
+                                    mainList.addImageToItem(listDataService.addImageItem(filePath), false);
+                                    mainList.sort();
+                                    mainList.notifyChange();
+
+                                    if (dialog.isCheckBoxChecked()) {
+                                        sharedPreferences.edit()
+                                                .putBoolean("auto_import", true)
+                                                .apply();
+                                    }
+
+                                    ToastUtils.show(String.format(getString(R.string.text_import_success_count), 1));
+                                    return true;
+                                } else return b == CommonDialog.BUTTON_NEGATIVE;
+                            })
+                            .show();
                 }
             }
         }
@@ -420,6 +472,22 @@ public class HomeFragment extends Fragment implements IMainFragment {
         }
     }
 
+    public void importFiles(ArrayList<CharSequence> list, int importCount) {
+
+        int addCount = 0;
+        for(CharSequence path : list)
+            if(listDataService.findImageItem(path.toString()) == null) {
+                mainList.addImageToItem(listDataService.addImageItem(path.toString()), false);
+                addCount++;
+            }
+        mainList.sort();
+        mainList.notifyChange();
+
+        Log.d("Import", "importFiles : importCount: " + importCount + " success: " + addCount);
+
+        ToastUtils.show(String.format(getString(R.string.text_import_success_count), addCount));
+    }
+
     //====================================================
     //列表操作
     //====================================================
@@ -444,17 +512,35 @@ public class HomeFragment extends Fragment implements IMainFragment {
     }
 
     //====================================================
+    //评价对话框
+    //====================================================
+
+    private boolean appraiseDialogShowed = false;
+    private void testAndShowAppraiseDialog() {
+        appraiseDialogShowed = sharedPreferences.getBoolean("last_show_appraise_dialog", false);
+        if(!appraiseDialogShowed) {
+            long lastShowTime = sharedPreferences.getLong("appraise_dialog_opened", 0);
+            if(new Date().getTime() - lastShowTime > 311040000) {
+                AppraiseDialogFragment appraiseDialogFragment = new AppraiseDialogFragment();
+                appraiseDialogFragment.show(getParentFragmentManager(), "AppraiseDialog");
+            }
+        }
+    }
+
+    //====================================================
     //设置保存与读取
     //====================================================
 
+    private  SharedPreferences sharedPreferences = null;
+
     private void loadSettings() {
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+        appraiseDialogShowed = sharedPreferences.getBoolean("appraise_dialog_opened", false);
         mainList.setMainSortReverse(sharedPreferences.getBoolean("main_list_sort_reverse", false));
         mainList.setMainSortType(sharedPreferences.getInt("main_list_sort_type", MainList.MAIN_SORT_DATE));
         mainList.sort();
     }
     private void saveSettings() {
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         SharedPreferences.Editor editor = sharedPreferences.edit();
 
         editor.putInt("main_list_sort_type", mainList.getMainSortType());
@@ -467,7 +553,7 @@ public class HomeFragment extends Fragment implements IMainFragment {
     //按钮事件
     //====================================================
 
-    private void onAddImageClick(){
+    private void onAddImageClick() {
         EasyPhotos.createAlbum(this, false, GlideEngine.getInstance())
                 .setPuzzleMenu(false)
                 .setCount(32)
@@ -476,53 +562,56 @@ public class HomeFragment extends Fragment implements IMainFragment {
                 .start(Codes.REQUEST_CODE_OPEN_IMAGE);
     }
     private void onClearClick() {
-        new CommonDialog(getContext())
-                .setTitle(resources.getString(R.string.text_would_you_want_clear_list))
-                .setMessage(resources.getText(R.string.text_all_list_will_be_clear))
-                .setNegative(resources.getText(R.string.action_sure_clear))
-                .setPositive(resources.getText(R.string.action_cancel))
-                .setOnClickBottomListener(new CommonDialog.OnClickBottomListener() {
-                    @Override
-                    public void onNegativeClick(CommonDialog dialog) {
+        new CommonDialog(requireActivity())
+                .setTitle(R.string.text_would_you_want_clear_list)
+                .setMessage(R.string.text_all_list_will_be_clear)
+                .setPositive(R.string.action_sure_clear)
+                .setNegative(R.string.action_cancel)
+                .setOnResult((b, dialog) -> {
+                    if(b == CommonDialog.BUTTON_POSITIVE) {
                         //clear in listDataService
                         listDataService.clearImageItems();
                         //clear
                         mainList.clear();
-                        dialog.dismiss();
-                    }
-                    @Override
-                    public void onPositiveClick(CommonDialog dialog) { dialog.dismiss(); }
+                        return true;
+                    } else return b == CommonDialog.BUTTON_NEGATIVE;
                 })
                 .show();
     }
     private void onSortClick(int sortType){ mainList.sort(sortType); }
     private void onOpenImageClick(String filePath) {
         Intent intent = new Intent(getActivity(), PanoActivity.class);
-        intent.putExtra("filePath", filePath);
+        intent.putExtra("openFilePath", filePath);
+        intent.putExtra("openFileArgPath", filePath);
         intent.putCharSequenceArrayListExtra("fileList", mainList.getMainListPathItems());
         startActivityForResult(intent, Codes.REQUEST_CODE_PANO);
     }
     private void onShareImageClick() {
         final List<MainListItem> sel = mainList.getSelectedItems();
-        if(sel.size() > 0)
-            FileUtils.shareFile(getContext(), sel.get(0).getFilePath());
+        if(sel.size() == 1)
+            ShareUtils.shareFile(getContext(), sel.get(0).getFilePath());
+        else if(sel.size() > 1) {
+            List<File> list = new ArrayList<>();
+            for(MainListItem item : sel)
+                list.add(new File(item.getFilePath()));
+            ShareUtils.shareStreamMultiple(getContext(), list);
+        }
 
         mainList.setListCheckMode(false);
     }
     private void onDeleteImageClick() {
         final List<MainListItem> sel = mainList.getSelectedItems();
         if(sel.size() > 0) {
-            new CommonDialog(getContext())
-                    .setTitle(resources.getString(R.string.text_sure_delete_pano))
+            new CommonDialog(requireActivity())
+                    .setTitle(R.string.text_sure_delete_pano)
                     .setMessage(String.format(resources.getString(R.string.text_you_can_remove_choosed_images), sel.size()))
-                    .setNegative(resources.getText(R.string.action_sure_delete))
-                    .setPositive(resources.getText(R.string.action_cancel))
-                    .setCheckText(resources.getText(R.string.text_also_delete_files))
-                    .setCanCancelable(true)
-                    .setOnClickBottomListener(new CommonDialog.OnClickBottomListener() {
-                        @Override
-                        public void onNegativeClick(CommonDialog dialog) {
-                            //delete files
+                    .setPositive(R.string.action_sure_delete)
+                    .setNegative(R.string.action_cancel)
+                    .setCheckBoxText(R.string.text_also_delete_files)
+                    .setCancelable(true)
+                    .setOnResult((b, dialog) -> {
+                        if(b == CommonDialog.BUTTON_POSITIVE) {
+//delete files
                             if(dialog.isCheckBoxChecked()) {
                                 int deleteFileCount = 0;
                                 for (MainListItem item : sel) {
@@ -538,10 +627,8 @@ public class HomeFragment extends Fragment implements IMainFragment {
                             //del
                             mainList.deleteItems(sel);
                             mainList.setListCheckMode(false);
-                            dialog.dismiss();
-                        }
-                        @Override
-                        public void onPositiveClick(CommonDialog dialog) { dialog.dismiss(); }
+                            return true;
+                        } else return b == CommonDialog.BUTTON_NEGATIVE;
                     })
                     .show();
         }
@@ -556,7 +643,8 @@ public class HomeFragment extends Fragment implements IMainFragment {
     private void onAddImageToClick() {
         final List<MainListItem> sel = mainList.getSelectedItems();
         if(sel.size() > 0) {
-            AppDialogs.showChooseGalleryDialog(handler, getActivity(), listDataService, galleryId -> {
+            ChooseGalleryDialogFragment chooseGalleryDialogFragment = new ChooseGalleryDialogFragment(listDataService, handler);
+            chooseGalleryDialogFragment.setOnChooseGalleryListener(galleryId -> {
 
                 //添加到对应相册
                 ImageItem imageItem;
@@ -577,6 +665,7 @@ public class HomeFragment extends Fragment implements IMainFragment {
                 //关闭选择模式
                 mainList.setListCheckMode(false);
             });
+            chooseGalleryDialogFragment.show(getParentFragmentManager(), "ChooseGallery");
         }
     }
 

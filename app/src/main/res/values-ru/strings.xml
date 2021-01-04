@@ -1,15 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-	<string name="app_name">720 панорама</string>
-	<string name="app_introduction">сокращенный 720 - градусный панорамный обзор</string>
+    <string name="app_introduction">сокращенный 720 - градусный панорамный обзор</string>
 	<string name="navigation_drawer_open">открыть боковую панель</string>
 	<string name="navigation_drawer_close">закрыть боковую панель</string>
 	<string name="nav_header_title">сокращенная программа 720 панорамного просмотра</string>
 	<string name="nav_header_desc">навигационный заголовок</string>
 	<string name="nav_header_soft">программное обеспечение</string>
-	<string name="title_activity_launcher">720 панорама</string>
-	<string name="title_activity_main">VR720</string>
 	<string name="title_activity_settings">Настройки</string>
 	<string name="title_activity_about">О программе VR720</string>
 	<string name="title_activity_pano">вид 720 панорама</string>
@@ -135,7 +132,7 @@
 	<string name="text_this_is_a_video">Это панорамное видео</string>
 	<string name="text_added_to_i_like">панорама была собрана в мой любимый</string>
 	<string name="text_removed_from_i_like">панорама удалена с моей любимой</string>
-	<string name="text_now_cache_size">Размер кэша текущей программы</string>
+	<string name="text_now_cache_size">Размер кэша текущей программы %s</string>
 	<string name="text_sure_to_clear_the_cache">Очистить кеш программы?</string>
 	<string name="text_cache_clear_finish">Кэш программы пуст!</string>
 	<string name="text_i_like">Моя любовь</string>
@@ -211,16 +208,13 @@
 	<string name="settings_key_enable_native_log">Включить журнал ядра</string>
 	<string name="settings_key_enable_exception_catch">Включить автоматическую обратную связь с ошибками</string>
 	<string name="settings_summary_enable_exception_catch">после включения этой опции программа может получить сообщение об ошибке при следующем запуске и отправить его на сервер (не содержит вашей личной информации), чтобы помочь нам улучшить программное обеспечение (рекомендуется открыть)</string>
-	<string name="text_agreement_base_welcome">Добро пожаловать в панорамный просмотр 720!N мы придаем большое значение вашей личной жизни и защите личной информации.\n перед тем, как вы используете 720 панорамный видоискатель, Внимательно прочитайте протокол пользователя и политику в области личной жизни, вы согласны со всеми условиями и можете начать использовать "720 панорамный видоискатель".также для более эффективного использования функции продукта, необходимо получить разрешение на:</string>
-	<string name="text_agreement_base">Соглашение пользователя \n политика в области личной жизни \n для более эффективного использования продуктовых функций, приложение также запрашивает ваше разрешение получить следующие права:</string>
 	<string name="text_agreement_devinfo">сведения о устройстве</string>
 	<string name="text_agreement_devinfo_sub">в том числе идентификатор устройства / размер экрана / операционная система / тип устройства / тип сетевого соединения / режим мобильного национального кода / разрешение экрана и системный язык; используется для обеспечения различных функций и опыта в соответствии с версиями различных устройств и систем, получения информации об использовании продукции и Bug, чтобы помочь нам постоянно совершенствовать функции и опыт продукта.</string>
 	<string name="text_agreement_interenet">сеть</string>
 	<string name="text_agreement_interenet_sub">включая IP - адрес; нам нужно загрузить данные вычисления через Интернет; и помочь нам в использовании статистических продуктов, обратной связи с продуктами BUG, чтобы помочь нам постоянно совершенствовать функции и опыт продукции.</string>
 	<string name="text_agreement_write_storage">накопление считывания и записи</string>
 	<string name="text_agreement_write_storage_sub">Нам нужны данные программы для записи, кэш для вычисления программы и так далее.</string>
-	<string name="text_agreement_lost">если вы не согласны или откажетесь предоставить эти права, вы не сможете использовать некоторые или все возможности App.</string>
-	<string name="text_agreement_allow">соглашаться и продолжать</string>
+    <string name="text_agreement_allow">соглашаться и продолжать</string>
 	<string name="text_agreement_not_allow">несогласие и выход</string>
 	<string name="action_search"> поиск </string>
     <string name="text_search_your_pano"> искать панораму </string>
@@ -232,5 +226,26 @@
     <string name="settings_header_audio"> звук </string>
 	<string name="settings_key_use_native_decoder">использовать этот декодер (если он доступен)</string>
 	<string name="settings_summary_use_native_decoder"> после открытия попытается использовать аппаратное декодирование, если не найдено соответствующее декодирующее устройство или устройство не поддерживает его декодирование. </string>
+	<string name="title_activity_import"> импорт в VR720 </string>
+    <string name="text_import_success_count"> успешно импортировано %d файла </string>
+    <string name="text_do_you_want_import_to_list"> Вы хотите импортировать этот файл в список? </string>
+    <string name="settings_key_auto_import"> Автоматически импортировать в список при открытии файла </string>
+    <string name="text_share_files_title"> готовы разделить %d сообщения </string>
+	<string name="text_import_to_list_and_do_not_remind_me_next">Следующий прямой импорт, не напоминать</string>
+    <string name="text_do_you_want_reset_settings">Сбросить все настройки по умолчанию?</string>
+	<string name="settings_key_app_reset_all">Сбросить все настройки в значения по умолчанию</string>
+    <string name="text_agreement_base_welcome">Добро пожаловать в VR720!Вы можете использовать это приложение для просмотра и управления панорамой.Кроме того, для того чтобы приложение могло нормально работать, необходимо иметь следующие права:</string>
+	<string name="text_agreement_base">для того чтобы приложение могло нормально работать, необходимо получить следующие права:</string>
+	<string name="text_i_agree_agreement">Я читал и согласился</string>
+	<string name="text_agreement_notice">для улучшения обслуживания, пожалуйста, прежде чем использовать этот продукт, Внимательно прочитайте пользовательские протоколы и политику в отношении личной жизни.Нажмите « согласие» для выражения вашего согласия с этим протоколом.</string>
+	<string name="settings_key_loop_play_video">циклическое воспроизведение видео</string>
+    <string name="text_agreement">Протокол пользователя</string>
+	<string name="text_privacy_policy">политика в области личной жизни </string>
+	<string name="text_and"> и </string>
+    <string name="text_later">Может быть позже</string>
+	<string name="text_do_you_like_app">Do you like vr720?</string>
+	<string name="text_give_a_start">Good softwar, give a start</string>
+	<string name="text_bad_app">I want to make complaints about it.</string>
+	<string name="text_give_a_start_if_you_like_app">If you think app is good, give us a good comment ^ ^~</string>
 
 </resources>

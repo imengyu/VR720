@@ -58,6 +58,10 @@
             app:key="data_restore_backup"
             app:title="@string/settings_key_data_restore_backup" />
 
+        <Preference
+            app:key="app_reset_all"
+            app:title="@string/settings_key_app_reset_all" />
+
     </PreferenceCategory>
 
     <PreferenceCategory

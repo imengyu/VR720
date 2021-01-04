@@ -11,6 +11,11 @@
             app:title="@string/settings_key_use_native_decoder"
             app:summary="@string/settings_summary_use_native_decoder" />
 
+        <CheckBoxPreference
+            app:key="loop_play_video"
+            app:defaultValue="false"
+            app:title="@string/settings_key_loop_play_video" />
+
     </PreferenceCategory>
 
     <PreferenceCategory

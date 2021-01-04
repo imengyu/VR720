@@ -156,6 +156,8 @@ a:active {
 
 .icon {
   display: inline-block;
+  background-position: center;
+  background-repeat: no-repeat;
   width: 14px;
   height: 14px;
   margin: 0 4px;

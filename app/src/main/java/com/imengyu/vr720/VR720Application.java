@@ -30,6 +30,11 @@ public class VR720Application extends Application {
         return cacheServices;
     }
 
+    private boolean initFinish = false;
+
+    public boolean isInitFinish() { return initFinish; }
+    public void setInitFinish() { initFinish = true; }
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -59,12 +64,14 @@ public class VR720Application extends Application {
             listImageCacheService = null;
         }
         NativeVR720.releaseNative();
+        initFinish = false;
         super.onTerminate();
     }
 
     public void onQuit() {
         Log.i(TAG, "onQuit");
         NativeVR720.releaseNative();
+        initFinish = false;
     }
 
     @Override

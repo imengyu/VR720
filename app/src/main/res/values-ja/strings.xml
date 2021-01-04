@@ -1,15 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-	<string name="app_name">720パノラマビューア</string>
-	<string name="app_introduction">簡単な720度のパノラマブラウズソフトです。</string>
+    <string name="app_introduction">簡単な720度のパノラマブラウズソフトです。</string>
 	<string name="navigation_drawer_open">サイドバーを開く</string>
 	<string name="navigation_drawer_close">サイドバーを閉じる</string>
 	<string name="nav_header_title">簡潔な720パノラマブラウズソフトウェア</string>
 	<string name="nav_header_desc">ナビゲータのタイトル</string>
 	<string name="nav_header_soft">ソフトウェア</string>
-	<string name="title_activity_launcher">720パノラマビューア</string>
-	<string name="title_activity_main">VR 720</string>
 	<string name="title_activity_settings">設定</string>
 	<string name="title_activity_about">VR 720について</string>
 	<string name="title_activity_pano">720度のパノラマを表示</string>
@@ -211,16 +208,13 @@
 	<string name="settings_key_enable_native_log">カーネルログを有効にする</string>
 	<string name="settings_key_enable_exception_catch">エラーの自動フィードバックを有効にする</string>
 	<string name="settings_summary_enable_exception_catch">有効にすると、エラーが発生した時にエラー異常情報をキャプチャーし、次の起動時にサーバに返信します。（個人情報は含まれていません。）</string>
-	<string name="text_agreement_base_welcome">720パノラマ画像ビューアをご利用ください。\nプライバシーと個人情報の保護を非常に重視します。720パノラマ図ビューアを使用する前に、「ユーザプロトコル」と「プライバシーポリシー」をよく読んでください。すべての条項を同意して受け入れてから「720パノラマビューア」を使用することができます。\nまた製品の機能をより良く使うために、あなたの許可を求めて、以下の権限を得る必要があります。</string>
-	<string name="text_agreement_base">「ユーザー協議」\n「プライバシーポリシー」\n\nは製品の機能をより良く使うために、アプリケーションは以下の権限を得るように求めています。</string>
 	<string name="text_agreement_devinfo">デバイス情報</string>
 	<string name="text_agreement_devinfo_sub">デバイスID/スクリーンサイズ/オペレーティングシステム/デバイス型番/ネットワーク接続モード/モバイル国家コード/画面解像度とシステム言語を含み、異なるデバイスとシステムバージョンによって異なる機能と体験を提供し、製品の使用状況とBug情報を取得し、製品の機能と体験を絶えず改善することを助けます。</string>
 	<string name="text_agreement_interenet">ネットワーク</string>
 	<string name="text_agreement_interenet_sub">IPアドレスを含みます。オンラインで計算データをダウンロードする必要があります。また、製品の使用状況、フィードバック製品のBUGを統計してくれます。製品の機能と体験を絶えず改善してくれます。</string>
 	<string name="text_agreement_write_storage">読み書きメモリ</string>
 	<string name="text_agreement_write_storage_sub">プログラムデータ、プログラム計算キャッシュなどを一時的に書き込む必要があります。</string>
-	<string name="text_agreement_lost">これらの権限の付与に同意しないか拒否した場合、Appの一部または全部の機能は使えません。</string>
-	<string name="text_agreement_allow">同意して継続する</string>
+    <string name="text_agreement_allow">同意して継続する</string>
 	<string name="text_agreement_not_allow">同意せずに退出する</string>
     <string name="action_search">検索</string>
     <string name="text_search_your_pano">あなたのパノラマを検索します。</string>
@@ -232,5 +226,26 @@
     <string name="settings_header_audio">オーディオ</string>
 	<string name="settings_key_use_native_decoder">ネイティブデコーダ(利用可能な場合)を使用します。</string>
 	<string name="settings_summary_use_native_decoder">オープン後はハードウェア復号を試みます。対応するデコーダがない場合やデバイスがハードウェア復号をサポートしていない場合は、ソフトウェア復号を使用します。</string>
+	<string name="title_activity_import">VR 720にインポート</string>
+    <string name="text_import_success_count">%d つのファイルをインポートしました</string>
+    <string name="text_do_you_want_import_to_list">このファイルをリストにインポートしますか？</string>
+    <string name="settings_key_auto_import">ファイルを開くと自動的にリストにインポートされます</string>
+    <string name="text_share_files_title">%d のファイルを共有するつもりです</string>
+	<string name="text_import_to_list_and_do_not_remind_me_next">次の時間をインポートするには、私を思い出させる必要はありません</string>
+    <string name="text_do_you_want_reset_settings">本当にすべての設定をデフォルトにリセットしますか？</string>
+	<string name="settings_key_app_reset_all">すべての設定をデフォルトにリセットする</string>
+    <string name="text_agreement_base_welcome">VR 720へようこそ！あなたが閲覧し、ローカルパノラマを管理するには、このアプリを使用することができます。また、アプリケーションが正常に動作するためには、次のアクセス許可が必要です</string>
+	<string name="text_agreement_base">アプリケーションが正常に動作するためには、次のアクセス許可が必要です</string>
+	<string name="text_i_agree_agreement">読んで同意する</string>
+	<string name="text_agreement_notice">あなたのためにより良いサービスを提供するために、この製品を使用する前に慎重にこの製品に関連した利用規約とプライバシーポリシーを読んでください。同意するためにクリックしてください。</string>
+	<string name="settings_key_loop_play_video">ループプレイ</string>
+    <string name="text_agreement">『利用規約』</string>
+	<string name="text_privacy_policy">『プライバシーポリシー』</string>
+	<string name="text_and">和</string>
+    <string name="text_later">後に</string>
+	<string name="text_do_you_like_app">Do you like vr720?</string>
+	<string name="text_give_a_start">Good softwar, give a start</string>
+	<string name="text_bad_app">I want to make complaints about it.</string>
+	<string name="text_give_a_start_if_you_like_app">If you think app is good, give us a good comment ^ ^~</string>
 
 </resources>

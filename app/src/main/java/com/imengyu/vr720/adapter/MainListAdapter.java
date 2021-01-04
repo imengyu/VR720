@@ -9,16 +9,15 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.RequestManager;
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
 import com.imengyu.vr720.R;
 import com.imengyu.vr720.list.MainList;
 import com.imengyu.vr720.model.OnListCheckableChangedListener;
 import com.imengyu.vr720.model.holder.MainListViewHolder;
 import com.imengyu.vr720.model.list.MainListItem;
-import com.imengyu.vr720.utils.DateUtils;
 import com.imengyu.vr720.utils.PixelTool;
 
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -30,12 +29,14 @@ public class MainListAdapter extends RecyclerView.Adapter<MainListViewHolder> im
     private final int layoutId;
     private final Context context;
     private final List<MainListItem> list;
+    private final RequestManager requestManager;
 
     public MainListAdapter(MainList mainList, Context context, int layoutId, List<MainListItem> list) {
         this.mainList = mainList;
         this.list = list;
         this.layoutId = layoutId;
         this.context = context;
+        this.requestManager =  Glide.with(context);
     }
 
     @NonNull
@@ -66,12 +67,12 @@ public class MainListAdapter extends RecyclerView.Adapter<MainListViewHolder> im
             else
                 viewHolder.imageView.setImageSize(item.getFileSize());
 
-            if (item.isThumbnailFail())
-                viewHolder.imageView.setImageResource(R.drawable.ic_noprob);
-            else if (item.isThumbnailLoading())
+            if (item.isThumbnailLoading())
                 viewHolder.imageView.setImageResource(R.drawable.ic_tumb);
+            else if (item.isThumbnailFail() || item.getThumbnail() == null)
+                viewHolder.imageView.setImageResource(R.drawable.ic_noprob);
             else if(item.getThumbnail() != viewHolder.imageView.getDrawable())
-                Glide.with(context)
+                requestManager
                         .load(item.getThumbnail())
                         .placeholder(R.drawable.ic_tumb)
                         .error(R.drawable.ic_noprob)
@@ -109,7 +110,14 @@ public class MainListAdapter extends RecyclerView.Adapter<MainListViewHolder> im
             param.height = 0;
             param.width = 0;
         }
+        if (getItemCount() > 3 && position == getItemCount() - 1)
+            param.setMargins(0, 0, 0, PixelTool.dip2px(context, 100));
+        else
+            param.setMargins(0, 0, 0,0);
+
         viewHolder.item.setLayoutParams(param);
+
+
     }
     @Override
     public int getItemCount() {

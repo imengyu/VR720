@@ -1,22 +1,19 @@
 package com.imengyu.vr720;
 
 import android.Manifest;
-import android.annotation.TargetApi;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
-import android.provider.Settings;
 import android.os.Bundle;
+import android.provider.Settings;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceManager;
 
 import com.imengyu.vr720.dialog.CommonDialog;
-import com.imengyu.vr720.dialog.AppDialogs;
-import com.imengyu.vr720.model.TestAgreementAllowedCallback;
 import com.imengyu.vr720.utils.AppUtils;
 import com.imengyu.vr720.utils.StorageDirUtils;
 
@@ -34,23 +31,33 @@ public class LunchActivity extends AppCompatActivity {
         String language = sharedPreferences.getString("language", "");
         AppUtils.setLanguage(this, language);
 
+        VR720Application application = (VR720Application)getApplication();
+
+        //获取参数
+        intent = getIntent();
+
         //
         setContentView(R.layout.activity_lunch);
         new Thread(() -> {
             try {
-                Thread.sleep(600);
+                Thread.sleep(400);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+
             //耗时任务，比如加载网络数据
             StorageDirUtils.testAndCreateStorageDirs(getApplicationContext());
+
             //转回UI线程
-            //检查是否同意许可以及请求权限
-            runOnUiThread(this::runPermissionAndAgreement);
+            runOnUiThread(() -> {
+                application.setInitFinish();
+                //检查是否同意许可以及请求权限
+                runPermissionAndAgreement();
+            });
         }).start();
     }
 
-
+    private Intent intent = null;
 
     private void runPermissionAndAgreement() {
         //检查是否同意许可以及请求权限
@@ -58,6 +65,24 @@ public class LunchActivity extends AppCompatActivity {
             if(checkPermission())
                 runMainActivity();
         });
+    }
+    // 跳转到主界面
+    private void runMainActivity() {
+
+        Intent newIntent = new Intent(LunchActivity.this, MainActivity.class);
+        if(intent.hasExtra("openFilePath"))
+            newIntent.putExtra("openFilePath", intent.getStringExtra("openFilePath"));
+        if(intent.hasExtra("openFileArgPath"))
+            newIntent.putExtra("openFileArgPath", intent.getStringExtra("openFileArgPath"));
+        if(intent.hasExtra("openFileIsInCache"))
+            newIntent.putExtra("openFileIsInCache", intent.getStringExtra("openFileIsInCache"));
+        if(intent.hasExtra("importCount"))
+            newIntent.putExtra("importCount", intent.getIntExtra("importCount", 0));
+        if(intent.hasExtra("importList"))
+            newIntent.putCharSequenceArrayListExtra("importList", intent.getCharSequenceArrayListExtra("importList"));
+        startActivity(newIntent);
+
+        LunchActivity.this.finish();
     }
 
     //权限申请
@@ -68,7 +93,7 @@ public class LunchActivity extends AppCompatActivity {
             Manifest.permission.WRITE_EXTERNAL_STORAGE
     };
 
-    private boolean checkPermission(){
+    private boolean checkPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             int i = checkSelfPermission(permissions[0]);
             // 权限是否已经 授权 GRANTED---授权  DINIED---拒绝
@@ -84,52 +109,47 @@ public class LunchActivity extends AppCompatActivity {
     // 提示用户该请求权限的弹出框
     private void showDialogTipUserRequestPermission() {
         new CommonDialog(this)
-                .setTitle(getString(R.string.text_no_storage_permission))
-                .setMessage(getString(R.string.text_storage_permission_usage))
-                .setPositive(getString(R.string.action_open_now))
-                .setNegative(getString(R.string.action_cancel_and_quit))
-                .setOnClickBottomListener(new CommonDialog.OnClickBottomListener() {
-                    @Override
-                    public void onPositiveClick(CommonDialog dialog) {
+                .setImageResource(R.drawable.ic_per_storage)
+                .setTitle(R.string.text_no_storage_permission)
+                .setMessage(R.string.text_storage_permission_usage)
+                .setPositive(R.string.action_open_now)
+                .setNegative(R.string.action_cancel_and_quit)
+                .setOnResult((b, dialog) -> {
+                    if(b == CommonDialog.BUTTON_POSITIVE) {
                         startRequestPermission();
-                        dialog.dismiss();
-                    }
-                    @Override
-                    public void onNegativeClick(CommonDialog dialog) {
+                        return true;
+                    } else if(b == CommonDialog.BUTTON_NEGATIVE) {
                         finish();
-                        dialog.dismiss();
+                        return true;
                     }
+                    return false;
                 })
-                .setDialogCancelable(false)
+                .setCancelable(false)
                 .show();
     }
     // 开始提交请求权限
-    @TargetApi(Build.VERSION_CODES.M)
-    private void startRequestPermission() {
-        requestPermissions(this.permissions, REQUEST_CODE);
-    }
+    private void startRequestPermission() { requestPermissions(this.permissions, REQUEST_CODE); }
     // 提示用户去应用设置界面手动开启权限
     private void showDialogTipUserGoToAppSettings() {
 
         // 跳转到应用设置界面
         new CommonDialog(this)
-                .setDialogCancelable(false)
-                .setTitle(getString(R.string.text_denied_storage_permission))
-                .setMessage(getString(R.string.text_storage_permission_open_intro))
-                .setPositive(getString(R.string.action_go_and_set))
-                .setNegative(getString(R.string.action_cancel_and_quit))
-                .setOnClickBottomListener(new CommonDialog.OnClickBottomListener() {
-                    @Override
-                    public void onPositiveClick(CommonDialog dialog) {
+                .setCancelable(false)
+                .setImageResource(R.drawable.ic_warning)
+                .setTitle(R.string.text_denied_storage_permission)
+                .setMessage(R.string.text_storage_permission_open_intro)
+                .setPositive(R.string.action_go_and_set)
+                .setNegative(R.string.action_cancel_and_quit)
+                .setOnResult((b, dialog) -> {
+                    if(b == CommonDialog.BUTTON_POSITIVE) {
                         // 跳转到应用设置界面
                         goToAppSetting();
-                        dialog.dismiss();
-                    }
-                    @Override
-                    public void onNegativeClick(CommonDialog dialog) {
+                        return true;
+                    } else if(b == CommonDialog.BUTTON_NEGATIVE) {
                         finish();
-                        dialog.dismiss();
+                        return true;
                     }
+                    return false;
                 })
                 .show();
     }
@@ -142,12 +162,6 @@ public class LunchActivity extends AppCompatActivity {
         intent.setData(uri);
 
         startActivityForResult(intent, REQUEST_CODE_SETTINGS);
-    }
-    // 跳转到主界面
-    private void runMainActivity() {
-        Intent intent = new Intent(LunchActivity.this, MainActivity.class);
-        startActivity(intent);
-        LunchActivity.this.finish();
     }
 
     @Override

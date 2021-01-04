@@ -1,6 +1,5 @@
 package com.imengyu.vr720.utils;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -8,9 +7,10 @@ import android.content.res.Configuration;
 import android.net.Uri;
 import android.util.DisplayMetrics;
 
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceManager;
 
-import com.imengyu.vr720.dialog.AppDialogs;
+import com.imengyu.vr720.dialog.fragment.AgreementDialogFragment;
 import com.imengyu.vr720.model.TestAgreementAllowedCallback;
 
 import java.util.Locale;
@@ -49,10 +49,11 @@ public class AppUtils {
      * @param activity 活动
      * @param callback 回调
      */
-    public static void testAgreementAllowed(Activity activity, TestAgreementAllowedCallback callback) {
+    public static void testAgreementAllowed(AppCompatActivity activity, TestAgreementAllowedCallback callback) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(activity);
         if(!prefs.getBoolean("app_agreement_allowed", false)) {
-            AppDialogs.showPrivacyPolicyAndAgreement(activity, (allowed) -> {
+            AgreementDialogFragment agreementDialogFragment = new AgreementDialogFragment();
+            agreementDialogFragment.setOnAgreementCloseListener((allowed) -> {
                 if(allowed) {
                     SharedPreferences.Editor editor = prefs.edit();
                     editor.putBoolean("app_agreement_allowed", true);
@@ -60,6 +61,7 @@ public class AppUtils {
                     callback.testAgreementAllowedCallback(false);
                 }else activity.finish();
             });
+            agreementDialogFragment.show(activity.getSupportFragmentManager(), "AgreementDialog");
         }else callback.testAgreementAllowedCallback(true);
     }
 }

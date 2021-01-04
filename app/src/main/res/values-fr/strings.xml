@@ -1,15 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-	<string name="app_name">720 visionneur panoramique</string>
-	<string name="app_introduction">Un logiciel compact de navigation panoramique de 720 degrés</string>
+    <string name="app_introduction">Un logiciel compact de navigation panoramique de 720 degrés</string>
 	<string name="navigation_drawer_open">Barre latérale ouverte</string>
 	<string name="navigation_drawer_close">Fermer la barre latérale</string>
 	<string name="nav_header_title">Un logiciel de navigation panoramique simplifié 720</string>
 	<string name="nav_header_desc">Titre de navigation</string>
 	<string name="nav_header_soft">Logiciels</string>
-	<string name="title_activity_launcher">720 visionneur panoramique</string>
-	<string name="title_activity_main">Vr720</string>
 	<string name="title_activity_settings">Paramètres</string>
 	<string name="title_activity_about">À propos de vr720</string>
 	<string name="title_activity_pano">Vue panoramique de 720 degrés</string>
@@ -211,16 +208,13 @@
 	<string name="settings_key_enable_native_log">Activer la journalisation du noyau</string>
 	<string name="settings_key_enable_exception_catch">Activer la rétroaction automatique des erreurs</string>
 	<string name="settings_summary_enable_exception_catch">Une fois activé, le programme peut récupérer les informations d\'exception d\'erreur lorsqu\'une erreur se produit et les renvoyer au serveur la prochaine fois qu\'il démarre (sans vos informations personnelles) pour nous aider à améliorer notre logiciel (recommandé)</string>
-	<string name="text_agreement_base_welcome">Bienvenue au 720 Panorama Viewer!Nous attachons une grande importance à votre vie privée et à la protection de vos renseignements personnels.N Veuillez lire attentivement l\'Accord d\'utilisateur et la politique de confidentialité avant d\'utiliser le visionneur de Panorama 720. Vous ne pouvez pas commencer à utiliser le visionneur de Panorama 720 tant que vous n\'avez pas accepté et accepté toutes les conditions.N en outre, pour une meilleure utilisation des fonctionnalités du produit, vous devez obtenir l\'autorisation suivante:</string>
-	<string name="text_agreement_base">Protocole d\'utilisateur \n politique de confidentialité \n pour une meilleure utilisation des fonctionnalités du produit, l\'application vous demande également l\'autorisation d\'obtenir les permissions suivantes:</string>
 	<string name="text_agreement_devinfo">Informations sur l\'équipement</string>
 	<string name="text_agreement_devinfo_sub">Comprend l\'id de l\'appareil / la taille de l\'écran / le système d\'exploitation / le modèle de l\'appareil / le mode de connexion au réseau / le Code de pays mobile / la résolution de l\'écran et le langage du système; il est utilisé pour fournir différentes fonctions et expériences en fonction des différentes versions de l\'appareil et du système, obtenir des informations sur l\'utilisation du produit et les bogues, et nous aider à améliorer continuellement les fonctions et l\'expérience du produit.</string>
 	<string name="text_agreement_interenet">Réseau</string>
 	<string name="text_agreement_interenet_sub">Inclure l\'adresse IP; nous avons besoin de télécharger des données informatiques en ligne; et nous aider à faire des statistiques sur l\'utilisation des produits, à fournir des commentaires sur le bug des produits et à améliorer continuellement la fonctionnalité et l\'expérience des produits.</string>
 	<string name="text_agreement_write_storage">Stockage en lecture - écriture</string>
 	<string name="text_agreement_write_storage_sub">Nous avons besoin d\'écrire temporairement les données du programme, le cache de calcul du programme, et ainsi de suite.</string>
-	<string name="text_agreement_lost">Si vous n\'acceptez pas ou refusez d\'accorder ces permissions, vous ne serez pas en mesure d\'utiliser une partie ou la totalité des fonctionnalités de l\'application.</string>
-	<string name="text_agreement_allow">Accord et suite</string>
+    <string name="text_agreement_allow">Accord et suite</string>
 	<string name="text_agreement_not_allow">Désaccord et retrait</string>
 	<string name="action_search">Recherche</string>
     <string name="text_search_your_pano">Rechercher votre Panorama</string>
@@ -232,5 +226,26 @@
     <string name="settings_header_audio">Audio</string>
 	<string name="settings_key_use_native_decoder">Utiliser un décodeur natif (si disponible)</string>
 	<string name="settings_summary_use_native_decoder">Une fois activé, le décodage matériel sera tenté. S\'il n\'y a pas de décodeur correspondant ou si l\'appareil ne supporte pas le décodage matériel, le décodage logiciel sera utilisé.</string>
+	<string name="title_activity_import">Importer vers vr720</string>
+    <string name="text_import_success_count">%d fichiers importés avec succès</string>
+    <string name="text_do_you_want_import_to_list">Voulez - vous importer ce fichier dans la liste?</string>
+    <string name="settings_key_auto_import">Importer automatiquement dans la liste lors de l\'ouverture d\'un fichier</string>
+    <string name="text_share_files_title">Partager %d fichiers</string>
+    <string name="text_import_to_list_and_do_not_remind_me_next">Importer directement la prochaine fois sans rappel</string>
+    <string name="text_do_you_want_reset_settings">Êtes - vous sûr de vouloir Réinitialiser tous les paramètres par défaut?</string>
+	<string name="settings_key_app_reset_all">Réinitialiser tous les paramètres par défaut</string>
+    <string name="text_agreement_base_welcome">Bienvenue au vr720!Vous pouvez utiliser cette application pour parcourir et gérer des panoramas locaux.De plus, pour que l\'application fonctionne correctement, elle a besoin des permissions suivantes:</string>
+	<string name="text_agreement_base">Pour que votre application fonctionne correctement, vous avez besoin des permissions suivantes:</string>
+	<string name="text_i_agree_agreement">J\'ai lu et accepté</string>
+	<string name="text_agreement_notice">Pour vous offrir un meilleur service, veuillez lire attentivement l\'Accord d\'utilisateur et la politique de confidentialité concernant ce produit avant de l\'utiliser.En cliquant sur « accepter », vous acceptez cet accord.</string>
+	<string name="settings_key_loop_play_video">Boucle la vidéo</string>
+    <string name="text_agreement">Protocole utilisateur</string>
+	<string name="text_privacy_policy">Politique de confidentialité</string>
+	<string name="text_and">et</string>
+    <string name="text_later">Peut - être plus tard.</string>
+	<string name="text_do_you_like_app">Do you like vr720?</string>
+	<string name="text_give_a_start">Good softwar, give a start</string>
+	<string name="text_bad_app">I want to make complaints about it.</string>
+	<string name="text_give_a_start_if_you_like_app">If you think app is good, give us a good comment ^ ^~</string>
 
 </resources>

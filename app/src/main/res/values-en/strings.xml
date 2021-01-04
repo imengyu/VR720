@@ -1,15 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-	<string name="app_name">720 panorama viewer</string>
-	<string name="app_introduction">A simplified 720 degree panorama browsing software</string>
+    <string name="app_introduction">A simplified 720 degree panorama browsing software</string>
 	<string name="navigation_drawer_open">Open sidebar</string>
 	<string name="navigation_drawer_close">Close sidebar</string>
 	<string name="nav_header_title">A most simple 720 panorama viewer</string>
 	<string name="nav_header_desc">Navigation title</string>
 	<string name="nav_header_soft">Software</string>
-	<string name="title_activity_launcher">720 panorama viewer</string>
-	<string name="title_activity_main">VR720</string>
 	<string name="title_activity_settings">Settings</string>
 	<string name="title_activity_about">About vr720</string>
 	<string name="title_activity_pano">View 720 degree panorama</string>
@@ -211,16 +208,13 @@
 	<string name="settings_key_enable_native_log">Enable native logging</string>
 	<string name="settings_key_enable_exception_catch">Enable automatic error feedback</string>
 	<string name="settings_summary_enable_exception_catch">If enabled, the program can catch the error exception information when an error occurs, and send it back to the server (excluding your personal information) at the next startup, so as to help us better improve the software (it is recommended to turn on)</string>
-	<string name="text_agreement_base_welcome">Welcome to 720 panorama viewer! \nWe attach great importance to your privacy and personal information protection. \n before you use 720 panorama viewer, please read the user agreement and privacy policy carefully. You need accept all the terms before you start using 720 panorama viewer. \nIn addition, in order to better use the product functions, we need to ask your permission to request the following permissions:</string>
-	<string name="text_agreement_base">In order to better use the product features, the app also asks for your permission to obtain the following permissions:</string>
 	<string name="text_agreement_devinfo">Device information</string>
 	<string name="text_agreement_devinfo_sub">It includes device ID / screen size / operating system / device model / network connection mode / mobile country code / screen resolution and system language; it is used to provide different functions and experiences according to different devices and system versions, obtain product usage and bug information, and help us improve product and experiences.</string>
 	<string name="text_agreement_interenet">network</string>
 	<string name="text_agreement_interenet_sub">Including the IP address; we need to download the calculation data online; and help us to count the product usage, feed back the product bug, and help us continuously improve the product function and experience.</string>
 	<string name="text_agreement_write_storage">Read write storage</string>
 	<string name="text_agreement_write_storage_sub">We need to temporarily write program data, program computation cache, and so on.</string>
-	<string name="text_agreement_lost">If you do not agree or refuse to grant these permissions, you will not be able to use app.</string>
-	<string name="text_agreement_allow">Agree and continue</string>
+    <string name="text_agreement_allow">Agree and continue</string>
 	<string name="text_agreement_not_allow">Disagree and exit</string>
     <string name="action_search">Search</string>
     <string name="text_search_your_pano">Search your panorama</string>
@@ -232,5 +226,26 @@
     <string name="settings_header_audio">Audio</string>
 	<string name="settings_key_use_native_decoder">Use native decoder (if available)</string>
 	<string name="settings_summary_use_native_decoder">If turning on, hardware decoding will be used. If there is no corresponding decoder or the device does not support hardware decoding, software decoding will be used</string>
+	<string name="title_activity_import">Import to VR720</string>
+    <string name="text_import_success_count">%d files were successfully imported</string>
+    <string name="text_do_you_want_import_to_list">Do you want to import this file into the list?</string>
+    <string name="settings_key_auto_import">Automatically import to list when opening file</string>
+    <string name="text_share_files_title">Share %d files</string>
+    <string name="text_import_to_list_and_do_not_remind_me_next">" Import directly next time, don't need to remind me"</string>
+    <string name="text_do_you_want_reset_settings">Do you really want to reset all the settings to default ?</string>
+	<string name="settings_key_app_reset_all">Reset all settings to default</string>
+    <string name="text_agreement_base_welcome">Welcome to VR720! You can use this APP to browse and manage your local panorama. In addition, in order for the application to run normally, the application requires the following permissions:</string>
+	<string name="text_agreement_base">In order for the application to run normally, the application requires the following permissions:</string>
+	<string name="text_i_agree_agreement">I have read and agree to</string>
+	<string name="text_agreement_notice">In order to provide better service for you, please read the user agreement and privacy policy related to this product carefully before using this product. Click \"agree\" to indicate that you accept this agreement.</string>
+	<string name="settings_key_loop_play_video">Loop play video</string>
+    <string name="text_agreement">User Agreement</string>
+	<string name="text_privacy_policy">Privacy policy</string>
+	<string name="text_and">and</string>
+    <string name="text_do_you_like_app">Do you like vr720?</string>
+	<string name="text_give_a_start_if_you_like_app">If you think app is good, give us a good comment ^ ^~</string>
+	<string name="text_give_a_start">Good softwar, give a start</string>
+	<string name="text_bad_app">I want to make complaints about it.</string>
+	<string name="text_later">Maybe later</string>
 
 </resources>

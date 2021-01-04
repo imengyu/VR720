@@ -28,6 +28,7 @@ public:
 private:
     jclass objNativeVR720RendererClass;
     jobject objNativeVR720RendererObject;
+    bool initSuccess = false;
 };
 
 

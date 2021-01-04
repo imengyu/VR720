@@ -7,11 +7,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.hardware.SensorManager;
 import android.media.MediaMetadataRetriever;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -46,8 +44,6 @@ import com.imengyu.vr720.model.ImageInfo;
 import com.imengyu.vr720.model.ImageItem;
 import com.imengyu.vr720.service.ListDataService;
 import com.imengyu.vr720.service.ListImageCacheService;
-import com.imengyu.vr720.utils.AlertDialogTool;
-import com.imengyu.vr720.utils.AppUtils;
 import com.imengyu.vr720.utils.DateUtils;
 import com.imengyu.vr720.utils.FileSizeUtil;
 import com.imengyu.vr720.utils.FileUtils;
@@ -55,14 +51,13 @@ import com.imengyu.vr720.utils.ImageUtils;
 import com.imengyu.vr720.utils.PixelTool;
 import com.imengyu.vr720.utils.RendererUtils;
 import com.imengyu.vr720.utils.ScreenUtils;
+import com.imengyu.vr720.utils.ShareUtils;
 import com.imengyu.vr720.utils.StatusBarUtils;
 import com.imengyu.vr720.utils.StorageDirUtils;
 import com.imengyu.vr720.utils.StringUtils;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Date;
@@ -71,8 +66,6 @@ public class PanoActivity extends AppCompatActivity {
 
     /** Tag for logging. */
     public static final String TAG = PanoActivity.class.getSimpleName();
-
-    private Resources resources;
 
     private String filePathReal;
     private String filePath;
@@ -114,10 +107,11 @@ public class PanoActivity extends AppCompatActivity {
         StatusBarUtils.setStatusBarColor(this, getColor(R.color.colorPrimary));
 
         VR720Application application = ((VR720Application)getApplication());
+        if(!application.isInitFinish())
+            finish();
 
         listImageCacheService = application.getListImageCacheService();
         listDataService = application.getListDataService();
-        resources = getResources();
         screenSize = ScreenUtils.getScreenSize(this);
 
         //初始化内核
@@ -146,55 +140,16 @@ public class PanoActivity extends AppCompatActivity {
     }
 
     private void readArgAndLoadImage() {
-        //读取输入路径
+        //读取参数
         Intent intent = getIntent();
-        if (Intent.ACTION_VIEW.equals(intent.getAction()))
-            AppUtils.testAgreementAllowed(this, (b) -> loadImageFromAction(intent));
-        else
-            loadImageFromArg(intent);
-    }
-    private void loadImageFromAction(Intent intent) {
-        Uri uri = intent.getData();
-        String uriScheme = uri.getScheme();
-        if (uriScheme.equalsIgnoreCase("file")) {
-            filePath = uri.getPath();
-            filePathReal = uri.toString();
-
-            loadFile(filePath, true);
-        }
-        else if (uriScheme.equalsIgnoreCase("content")) {
-            filePath = StorageDirUtils.getViewCachePath() +
-                    FileUtils.getFileNameWithExt(uri.getPath());
-            filePathReal = uri.toString();
-
-            new Thread(() -> {
-                try {
-                    InputStream inputStream = getContentResolver().openInputStream(uri);
-                    FileOutputStream fileOutputStream = new FileOutputStream(new File(filePath));
-                    int index;
-                    byte[] bytes = new byte[1024];
-                    while ((index = inputStream.read(bytes)) != -1) {
-                        fileOutputStream.write(bytes, 0, index);
-                        fileOutputStream.flush();
-                    }
-                    inputStream.close();
-                    fileOutputStream.close();
-
-                    runOnUiThread(() -> loadFile(filePath, true));
-                } catch (IOException e) {
-                    runOnUiThread(() -> showErr(e.toString()));
-                }
-            }).start();
-        }
-        else {
-            showErr("Bad uri scheme : " + uriScheme);
-        }
-    }
-    private void loadImageFromArg(Intent intent) {
-
-        filePath = intent.getStringExtra("filePath");
-        filePathReal = filePath;
-        fileList = intent.getCharSequenceArrayListExtra("fileList");
+        if (intent.hasExtra("fileList"))
+            fileList = intent.getCharSequenceArrayListExtra("fileList");
+        if (intent.hasExtra("openFilePath"))
+            filePath = intent.getStringExtra("openFilePath");
+        if (intent.hasExtra("openFileArgPath"))
+            filePathReal = intent.getStringExtra("openFileArgPath");
+        if (intent.hasExtra("openFileIsInCache"))
+            currentFileIsOpenInCache = intent.getBooleanExtra("openFileIsInCache", false);
 
         loadFile(filePath, true);
     }
@@ -327,6 +282,8 @@ public class PanoActivity extends AppCompatActivity {
 
         viewBinder.button_next.setOnClickListener((v) -> nextFile());
         viewBinder.button_prev.setOnClickListener((v) -> prevFile());
+        viewBinder.button_next.setVisibility(View.GONE);
+        viewBinder.button_prev.setVisibility(View.GONE);
 
         viewBinder.titlebar.setLeftIconOnClickListener(v -> onBackPressed());
 
@@ -444,6 +401,7 @@ public class PanoActivity extends AppCompatActivity {
         logLevel = sharedPreferences.getInt("native_log_level", 0);
         logEnabled = sharedPreferences.getBoolean("enable_native_log", true);
         useNativeDecoder = sharedPreferences.getBoolean("use_native_decoder", true);
+        loopPlay = sharedPreferences.getBoolean("loop_play", false);
 
         //no full screen
         if(sharedPreferences.getBoolean("enable_non_fullscreen", false))
@@ -493,6 +451,7 @@ public class PanoActivity extends AppCompatActivity {
 
     private boolean currentFileHasError = false;
     private boolean currentFileIsVideo = false;
+    private boolean currentFileIsOpenInCache = false;
     private int currentVideoLength = 0;
     private boolean currentVideoPlaying = false;
     private Size currentImageSize = new Size(0,0);
@@ -500,6 +459,7 @@ public class PanoActivity extends AppCompatActivity {
     private int currentPanoMode = 0;
     private int logLevel = 0;
     private boolean logEnabled = true;
+    private boolean loopPlay= false;
     private boolean panoEnableCache = true;
     private boolean panoEnableFull = false;
     private boolean vrEnabled = false;
@@ -524,13 +484,12 @@ public class PanoActivity extends AppCompatActivity {
     }
     private void deleteFile() {
         new CommonDialog(this)
-            .setTitle2(getString(R.string.text_sure_delete_this_image))
+            .setTitle(R.string.text_sure_delete_this_image)
             .setMessage(filePath)
-            .setNegative(resources.getString(R.string.action_cancel))
-            .setPositive(resources.getString(R.string.action_sure_delete))
-            .setOnClickBottomListener(new CommonDialog.OnClickBottomListener() {
-                @Override
-                public void onPositiveClick(CommonDialog dialog) {
+            .setNegative(R.string.action_cancel)
+            .setPositive(R.string.action_sure_delete)
+            .setOnResult((b, dialog) -> {
+                if(b == CommonDialog.BUTTON_POSITIVE) {
                     if(FileUtils.deleteFile(filePath)) {
                         ToastUtils.show(getString(R.string.text_delete_success));
                         Intent intent = new Intent();
@@ -540,18 +499,13 @@ public class PanoActivity extends AppCompatActivity {
                         finish();
                     }else
                         ToastUtils.show(getString(R.string.text_delete_failed));
-
-                    dialog.dismiss();
-                }
-                @Override
-                public void onNegativeClick(CommonDialog dialog) {
-                    dialog.dismiss();
-                }
+                    return true;
+                } else return b == CommonDialog.BUTTON_NEGATIVE;
             })
             .show();
     }
     private void openWithOtherApp() { FileUtils.openFileWithApp(this, filePath); }
-    private void shareThisImage() { FileUtils.shareFile(this, filePath); }
+    private void shareThisImage() { ShareUtils.shareFile(this, filePath); }
     private void showErr(String err) {
         viewBinder.pano_error.setVisibility(View.VISIBLE);
         viewBinder.pano_loading.setVisibility(View.GONE);
@@ -799,6 +753,17 @@ public class PanoActivity extends AppCompatActivity {
         switch (msg) {
             case NativeVR720Renderer.MobileGameUIEvent_FileClosed: {
                 fileLoaded = false;
+                //关闭后删除缓存文件
+                if (currentFileIsOpenInCache && filePath.startsWith(StorageDirUtils.getViewCachePath())) {
+                    try {
+                        File file = new File(filePath);
+                        if (file.exists())
+                            Log.i(TAG, String.format("Delete temp file : %s ,result: %b", filePath, file.delete()));
+                    }catch (Exception e) {
+                        Log.w(TAG, String.format("Try delete temp file : %s failed: %s", filePath, e.toString()), e.fillInStackTrace());
+                    }
+                }
+                //如果是退出则销毁
                 if (closeMarked) {
                     renderer.destroy();
                 }
@@ -844,6 +809,11 @@ public class PanoActivity extends AppCompatActivity {
             case NativeVR720Renderer.MobileGameUIEvent_VideoStateChanged: {
                 updateVideoControlState();
                 updateVideoControlPlayState();
+                int state = fileLoaded ? renderer.getVideoState() : NativeVR720Renderer.VideoState_NotOpen;
+                if(state == NativeVR720Renderer.VideoState_Ended && loopPlay) {
+                    renderer.setVideoPos(0);
+                    renderer.updateVideoState(NativeVR720Renderer.VideoState_Playing);
+                }
                 break;
             }
         }
@@ -901,7 +871,6 @@ public class PanoActivity extends AppCompatActivity {
     public void onConfigurationChanged(@NonNull Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         onUpdateScreenOrientation(newConfig);
-        AlertDialogTool.notifyConfigurationChangedForDialog(this);
     }
 
     private final ConstraintSet mConstraintSet = new ConstraintSet();
@@ -1008,7 +977,7 @@ public class PanoActivity extends AppCompatActivity {
                 imageInfo.imageTime = exifInterface.getAttribute(ExifInterface.TAG_DATETIME);
                 imageInfo.imageSize = exifInterface.getAttribute(ExifInterface.TAG_IMAGE_WIDTH) +
                         "x" + exifInterface.getAttribute(ExifInterface.TAG_IMAGE_LENGTH);
-                imageInfo.imageISOSensitivity = exifInterface.getAttribute(ExifInterface.TAG_RW2_ISO);
+                imageInfo.imageISOSensitivity = exifInterface.getAttribute(ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY);
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                     imageInfo.imageShutterTime = exifInterface.getAttribute(ExifInterface.TAG_EXPOSURE_TIME);
@@ -1034,8 +1003,7 @@ public class PanoActivity extends AppCompatActivity {
 
             //尝试首先加载最小的缩略图
             String cacheFilePath = listImageCacheService.tryGetImageThumbnailCacheFilePath(filePath);
-            if(!StringUtils.isNullOrEmpty(cacheFilePath))
-                renderer.setProp(NativeVR720Renderer.PROP_SMALL_PANORAMA_PATH, cacheFilePath);
+            renderer.setProp(NativeVR720Renderer.PROP_SMALL_PANORAMA_PATH, cacheFilePath);
 
             //完成通知
             loadImageInfoFinishedListener.onLoadImageInfoFinishedListener(imageSize, isFromInitialization);
@@ -1089,8 +1057,7 @@ public class PanoActivity extends AppCompatActivity {
 
             //尝试首先加载最小的缩略图
             String cacheFilePath = listImageCacheService.tryGetImageThumbnailCacheFilePath(filePath);
-            if(!StringUtils.isNullOrEmpty(cacheFilePath))
-                renderer.setProp(NativeVR720Renderer.PROP_SMALL_PANORAMA_PATH, cacheFilePath);
+            renderer.setProp(NativeVR720Renderer.PROP_SMALL_PANORAMA_PATH, cacheFilePath);
 
             loadImageInfoFinishedListener.onLoadImageInfoFinishedListener(imageSize, isFromInitialization);
 
@@ -1135,7 +1102,7 @@ public class PanoActivity extends AppCompatActivity {
             return;
         }
         else if(!new File(path).exists())  {
-            showErr(getString(R.string.text_error_file_not_exists));
+            showErr(getString(R.string.text_error_file_not_exists) + "\n" + path);
             return;
         }
 
@@ -1154,29 +1121,27 @@ public class PanoActivity extends AppCompatActivity {
                     } else {
                         //不是正常的全景图，询问用户是否加载
                         new CommonDialog(PanoActivity.this)
-                                .setTitle(getString(R.string.text_panorama_size_not_right))
-                                .setMessage(getString(R.string.text_panorama_size_not_right_warning_text))
-                                .setPositive(getString(R.string.action_cancel_load))
-                                .setNegative(getString(R.string.action_continue_load))
-                                .setCheckText(getString(R.string.text_do_not_ask_me_again))
-                                .setOnClickBottomListener(new CommonDialog.OnClickBottomListener() {
-                                    @Override
-                                    public void onPositiveClick(CommonDialog dialog) {
-                                        dialog.dismiss();
+                                .setTitle(R.string.text_panorama_size_not_right)
+                                .setMessage(R.string.text_panorama_size_not_right_warning_text)
+                                .setPositive(R.string.action_cancel_load)
+                                .setNegative(R.string.action_continue_load)
+                                .setCheckBoxText(R.string.text_do_not_ask_me_again)
+                                .setOnResult((button, dialog) -> {
+                                    if(button == CommonDialog.BUTTON_POSITIVE) {
                                         if (isFromInitialization)
                                             finish();
                                         else
                                             showErr(getString(R.string.text_panorama_size_not_right));
-                                    }
-
-                                    @Override
-                                    public void onNegativeClick(CommonDialog dialog) {
+                                        return true;
+                                    } else if(button == CommonDialog.BUTTON_NEGATIVE) {
                                         if (dialog.isCheckBoxChecked())
                                             dontCheckImageNormalSize = true;
                                         //继续加载
                                         renderer.openFile(path);
                                         dialog.dismiss();
+                                        return true;
                                     }
+                                    return false;
                                 })
                                 .show();
                     }
@@ -1197,28 +1162,26 @@ public class PanoActivity extends AppCompatActivity {
                     } else {
                         //不是正常的全景图，询问用户是否加载
                         new CommonDialog(PanoActivity.this)
-                                .setTitle(getString(R.string.text_panorama_video_size_not_right))
-                                .setMessage(getString(R.string.text_panorama_video_size_not_right_warning_text))
-                                .setPositive(getString(R.string.action_cancel_load))
-                                .setNegative(getString(R.string.action_continue_load))
-                                .setCheckText(getString(R.string.text_do_not_ask_me_again))
-                                .setOnClickBottomListener(new CommonDialog.OnClickBottomListener() {
-                                    @Override
-                                    public void onPositiveClick(CommonDialog dialog) {
-                                        dialog.dismiss();
+                                .setTitle(R.string.text_panorama_video_size_not_right)
+                                .setMessage(R.string.text_panorama_video_size_not_right_warning_text)
+                                .setPositive(R.string.action_cancel_load)
+                                .setNegative(R.string.action_continue_load)
+                                .setCheckBoxText(R.string.text_do_not_ask_me_again)
+                                .setOnResult((button, dialog) -> {
+                                    if(button == CommonDialog.BUTTON_POSITIVE) {
                                         if (isFromInitialization)
                                             finish();
                                         else
                                             showErr(getString(R.string.text_panorama_size_not_right));
-                                    }
-                                    @Override
-                                    public void onNegativeClick(CommonDialog dialog) {
+                                        return true;
+                                    } else if(button == CommonDialog.BUTTON_NEGATIVE) {
                                         if (dialog.isCheckBoxChecked())
                                             dontCheckImageNormalSize = true;
                                         //继续加载
                                         renderer.openFile(path);
-                                        dialog.dismiss();
+                                        return true;
                                     }
+                                    return false;
                                 })
                                 .show();
                     }
@@ -1229,8 +1192,12 @@ public class PanoActivity extends AppCompatActivity {
         else showErr(getString(R.string.text_image_not_support));
     }
     private void closeFile(boolean quit) {
-        if(quit && currentFileHasError)
+        if (quit && currentFileHasError) {
+            Intent intent = new Intent();
+            intent.putExtra("filePath", filePath);
+            setResult(0, intent);
             finish();
+        }
         closeMarked = quit;
         renderer.closeFile();
     }
