@@ -6,8 +6,13 @@ import android.text.Editable;
 import android.widget.EditText;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.DialogFragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 
 import com.imengyu.vr720.dialog.fragment.CommonDialogFragment;
+
+import java.lang.reflect.Field;
 
 /**
  * 通用对话框封装
@@ -245,6 +250,30 @@ public class CommonDialog {
         if(activity instanceof AppCompatActivity)
             commonDialogFragment.show(((AppCompatActivity)activity).getSupportFragmentManager(),
                     "CommonDialog_" + this.hashCode());
+    }
+
+    /**
+     * 显示对话框(允许状态丢失)
+     */
+    public void showAllowingStateLoss() {
+        try {
+            Field dismissed = DialogFragment.class.getDeclaredField("mDismissed");
+            dismissed.setAccessible(true);
+            dismissed.set(commonDialogFragment, false);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        try {
+            Field shown = DialogFragment.class.getDeclaredField("mShownByMe");
+            shown.setAccessible(true);
+            shown.set(commonDialogFragment, true);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        FragmentManager manager = ((AppCompatActivity)activity).getSupportFragmentManager();
+        FragmentTransaction ft = manager.beginTransaction();
+        ft.add(commonDialogFragment, "CommonDialog_" + this.hashCode());
+        ft.commitAllowingStateLoss();
     }
     /**
      * 关闭对话框

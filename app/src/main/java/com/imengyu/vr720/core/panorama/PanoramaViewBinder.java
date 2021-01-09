@@ -14,10 +14,10 @@ import android.widget.TextView;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.res.ResourcesCompat;
-import com.imengyu.vr720.PanoActivity;
+import com.imengyu.vr720.activity.PanoActivity;
 import com.imengyu.vr720.R;
-import com.imengyu.vr720.core.NativeVR720GLSurfaceView;
-import com.imengyu.vr720.core.NativeVR720Renderer;
+import com.imengyu.vr720.core.natives.NativeVR720GLSurfaceView;
+import com.imengyu.vr720.core.natives.NativeVR720Renderer;
 import com.imengyu.vr720.widget.MyTitleBar;
 import com.imengyu.vr720.widget.ToolbarButton;
 
@@ -70,6 +70,8 @@ public class PanoramaViewBinder {
         text_not_support_sensor = activity.findViewById(R.id.text_not_support_sensor);
         switch_enable_vr = activity.findViewById(R.id.switch_enable_vr);
         switch_enable_gyro = activity.findViewById(R.id.switch_enable_gyro);
+        view_top_bar_placeholder = activity.findViewById(R.id.view_top_bar_placeholder);
+        view_bottom_bar_placeholder = activity.findViewById(R.id.view_bottom_bar_placeholder);
     }
     private void initAnimations() {
         bottom_up = AnimationUtils.loadAnimation(activity, R.anim.bottom_up);
@@ -139,6 +141,8 @@ public class PanoramaViewBinder {
     public ToolbarButton button_mode;
     public ToolbarButton button_more;
     public ConstraintLayout activity_pano;
+    public View view_top_bar_placeholder;
+    public View view_bottom_bar_placeholder;
 
     public Drawable iconModeBall;
     public Drawable iconModeLittlePlanet;

@@ -3,9 +3,9 @@ package com.imengyu.vr720.utils;
 import android.app.Activity;
 import android.content.Intent;
 
-import com.imengyu.vr720.AboutActivity;
-import com.imengyu.vr720.HtmlActivity;
-import com.imengyu.vr720.SettingsActivity;
+import com.imengyu.vr720.activity.AboutActivity;
+import com.imengyu.vr720.activity.HtmlActivity;
+import com.imengyu.vr720.activity.SettingsActivity;
 import com.imengyu.vr720.config.Codes;
 import com.imengyu.vr720.config.Constants;
 

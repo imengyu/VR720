@@ -66,7 +66,7 @@ static JNINativeMethod nativeMethods[] = {
 static int registerNativeMethods(JNIEnv *env) {
     jclass clazz;
 
-    clazz = env->FindClass("com/imengyu/vr720/core/NativeVR720");
+    clazz = env->FindClass("com/imengyu/vr720/core/natives/NativeVR720");
     if (clazz == nullptr) {
         ALOGE("Native", "NativeVR720 class not found!");
         return JNI_FALSE;

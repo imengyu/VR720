@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:fab="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -128,10 +129,11 @@
         layout="@layout/content_search_main_empty"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_marginTop="50dp"
         android:visibility="gone" />
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab"
+    <com.getbase.floatingactionbutton.FloatingActionsMenu
+        android:id="@+id/fab_right"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
@@ -139,9 +141,33 @@
         android:layout_marginStart="0dp"
         android:layout_marginEnd="20dp"
         android:layout_marginBottom="20dp"
-        android:clickable="true"
-        android:contentDescription="@string/action_import_pano"
-        android:focusable="true"
-        app:srcCompat="@drawable/ic_button_add" />
+        app:fab_addButtonSize="normal"
+        fab:fab_addButtonColorNormal="@color/colorPrimary"
+        fab:fab_addButtonColorPressed="@color/colorPrimaryDark"
+        fab:fab_addButtonPlusIconColor="@android:color/white"
+        fab:fab_labelStyle="@style/MenuLabelsStyle"
+        fab:fab_labelsPosition="left">
+
+        <com.getbase.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fab_import_file"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            fab:fab_colorNormal="@android:color/white"
+            fab:fab_colorPressed="@android:color/darker_gray"
+            app:fab_icon="@drawable/ic_menu_import"
+            fab:fab_size="mini"
+            fab:fab_title="@string/text_import_files" />
+
+        <com.getbase.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fab_import_gallery"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            fab:fab_colorNormal="@android:color/white"
+            fab:fab_colorPressed="@android:color/darker_gray"
+            app:fab_icon="@drawable/ic_menu_gallery"
+            fab:fab_size="mini"
+            fab:fab_title="@string/text_choose_system_gallery_to_import" />
+
+    </com.getbase.floatingactionbutton.FloatingActionsMenu>
 
 </RelativeLayout>

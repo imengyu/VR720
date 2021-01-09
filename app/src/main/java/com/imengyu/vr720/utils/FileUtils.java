@@ -155,7 +155,7 @@ public class FileUtils {
             }
             context.startActivity(Intent.createChooser(intent, context.getString(R.string.text_choose_program_to_open)));
         } catch (ActivityNotFoundException e) {
-            Toast.makeText(context, context.getString(R.string.text_image_cannot_open), Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, context.getString(R.string.text_file_cannot_open), Toast.LENGTH_SHORT).show();
         }
     }
 

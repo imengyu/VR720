@@ -37,8 +37,8 @@ public class CommonDialogInternal extends Dialog {
     public String editTextValue;
     public String editTextHint;
     public String checkBoxText;
-    public int imageValue;
-    public Drawable imageValueDrawable;
+    public int imageValue = -1;
+    public Drawable imageValueDrawable = null;
     public boolean positiveEnable = true;
     public boolean neutralEnable = true;
     public boolean negativeEnable = true;

@@ -75,6 +75,8 @@ void CCPanoramaRenderer::Init()
     globalRenderInfo->glRenderer = (GLubyte*)glGetString(GL_RENDERER);    //返回一个渲染器标识符，通常是个硬件平台
     globalRenderInfo->glVersion = (GLubyte*)glGetString(GL_VERSION);    //返回当前OpenGL实现的版本号
     globalRenderInfo->glslVersion = (GLubyte*)glGetString(GL_SHADING_LANGUAGE_VERSION);//返回着色预压编译器版本号
+
+    camera = Renderer->GetCamera();
 }
 void CCPanoramaRenderer::Destroy()
 {
@@ -276,10 +278,8 @@ void CCPanoramaRenderer::RenderFullChunks(float deltaTime)
         fullModels[renderPanoramaFullTestIndex]->model->Render();
     }
     else {
-        for (auto m : fullModels) {
-            if (m->model->Visible)  //渲染区块
-                m->model->Render();
-        }
+        for (auto m : fullModels)
+            m->model->Render(); //渲染区块
     }
 }
 
@@ -578,7 +578,7 @@ void CCPanoramaRenderer::RotateModelForce(float x, float y)
 }
 void CCPanoramaRenderer::GyroscopeRotateModel(float x, float y, float z, float w) {
 
-    glm::quat quat(w,x,y,z); //= glm::angleAxis(2.0f * glm::acos(w), glm::vec3(x,y,z));
+    glm::quat quat(w,x,y,z);
 
     glm::vec3 localEulerAngles = mainModel->GetLocalEulerAngles();
     mainModel->SetLocalEulerAngles(glm::vec3(
@@ -588,6 +588,11 @@ void CCPanoramaRenderer::GyroscopeRotateModel(float x, float y, float z, float w
     ));
 
     mainModel->SetRotation(quat);
+
+    glm::vec3 eulerAngles = camera->GetLocalEulerAngles();
+    eulerAngles.z = Renderer->GetGyroRotateCorrectionValue();
+    camera->SetLocalEulerAngles(eulerAngles);
+
     UpdateFullChunksVisible();
 }
 void CCPanoramaRenderer::MoveModel(float xoffset, float yoffset) const
@@ -647,26 +652,30 @@ void CCPanoramaRenderer::UpdateMainModelTex() const
 }
 void CCPanoramaRenderer::UpdateFullChunksVisible() {
     if (renderPanoramaFull || renderPanoramaFullTest) {
-        float fov = Renderer->View->Camera->FiledOfView;
+        float fov = camera->FiledOfView;
         for (auto m : fullModels) {
-            if (fov > 50)
-                m->model->Visible = IsInView(m->pointCenter);
-            else
-                m->model->Visible = IsInView(m->pointA) || IsInView(m->pointB) || IsInView(m->pointC) || IsInView(m->pointD);
+            m->model->Visible = IsInView(m->pointCenter) || IsInView(m->pointA) ||
+                    IsInView(m->pointB) || IsInView(m->pointC) || IsInView(m->pointD);
             if (m->model->Visible) {
                 if (!m->loadMarked && !renderPanoramaFullTest) {//加载贴图
                     m->loadMarked = true;
 
                     logger->Log(LOG_TAG, "Star load chunk %d, %d", m->chunkX, m->chunkY);
 
-                    auto* tex = new CCTexture();
-                    tex->backupData = true;
-                    tex->wrapS = GL_MIRRORED_REPEAT;
-                    tex->wrapT = GL_MIRRORED_REPEAT;
-                    m->model->Material->diffuse = tex;
+                    m->tex = new CCTexture();
+                    m->tex->backupData = true;
+                    m->tex->wrapS = GL_MIRRORED_REPEAT;
+                    m->tex->wrapT = GL_MIRRORED_REPEAT;
+                    m->model->Material->diffuse = m->tex;
                     m->model->Material->tilling = glm::vec2(1.0f, 1.0f);
-                    panoramaTexPool.emplace_back(tex);
+
+                    Renderer->AddTextureToQueue(m->tex, m->chunkX, m->chunkY, m->chunkY * m->chunkX + m->chunkX);//MainTex
+                    panoramaTexPool.emplace_back(m->tex);
+
+                    m->tex->loaded = false;
                 }
+                if(m->tex != nullptr && !m->tex->loaded)
+                    m->model->Visible = false;
             }
         }
     }
@@ -683,14 +692,14 @@ void CCPanoramaRenderer::UpdateFlatModelMinMax(float orthoSize) {
 
 bool CCPanoramaRenderer::IsInView(glm::vec3 worldPos)
 {
-    CCamera* cam = Renderer->View->Camera;
-    glm::vec3 viewPos = cam->World2Screen(worldPos, model);
+    glm::vec3 viewPos = camera->World2Screen(worldPos, model);
 
     //glm::vec3 dir = glm::normalize(worldPos - cam->Position);
-    //float dot = glm::dot(cam->Front, dir);     //判断物体是否在相机前面  
+    //float dot = glm::dot(cam->Front, dir);     //判断物体是否在相机前面
 
-    return viewPos.x >= 0 && viewPos.x <= (float)Renderer->View->Width && viewPos.y >= 0 &&
-           viewPos.y <= (float)Renderer->View->Height;
+    return viewPos.x >= 0 && viewPos.y >= 0 &&
+            viewPos.x <= (float)Renderer->View->Width &&
+            viewPos.y <= (float)Renderer->View->Height;
 }
 glm::vec3 CCPanoramaRenderer::GetSpherePoint(float u, float v, float r)
 {

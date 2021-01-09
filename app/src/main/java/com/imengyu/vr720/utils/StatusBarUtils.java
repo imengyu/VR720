@@ -1,6 +1,8 @@
 package com.imengyu.vr720.utils;
 
 import android.app.Activity;
+import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.os.Build;
 import android.view.View;
@@ -62,5 +64,30 @@ public class StatusBarUtils {
     Window window = activity.getWindow();
     window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
     window.setStatusBarColor(color);
+  }
+
+  /**
+   * 设置状态栏为透明色
+   * @param activity Activity
+   */
+  public static void setTransparentStatusBar(Activity activity) {
+    Window window = activity.getWindow();
+    if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+      window.setStatusBarColor(Color.TRANSPARENT);
+    } else {
+      window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+      window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
+    }
+  }
+
+  /**
+   * 获取状态栏高度
+   * @param context 上下文
+   * @return 状态栏高度
+   */
+  public static int getStatusBarHeight(Context context) {
+    Resources resources = context.getResources();
+    int resourceId = resources.getIdentifier("status_bar_height", "dimen", "android");
+    return resources.getDimensionPixelSize(resourceId);
   }
 }

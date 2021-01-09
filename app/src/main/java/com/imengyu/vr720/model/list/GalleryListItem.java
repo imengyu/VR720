@@ -6,7 +6,6 @@ import android.graphics.drawable.Drawable;
 import com.imengyu.vr720.R;
 import com.imengyu.vr720.model.GalleryItem;
 import com.imengyu.vr720.service.ListDataService;
-import com.imengyu.vr720.service.ListImageCacheService;
 
 public class GalleryListItem extends CheckableListItem {
 
@@ -42,13 +41,23 @@ public class GalleryListItem extends CheckableListItem {
     private boolean thumbnailLoading;
     private boolean thumbnailLoadingStarted;
     private boolean thumbnailFail;
+    private Object data;
+    private boolean withSubTitleText = true;
 
+    public boolean isWithSubTitleText() {
+        return withSubTitleText;
+    }
+    public void setWithSubTitleText(boolean withSubTitleText) {
+        this.withSubTitleText = withSubTitleText;
+    }
     public String getSubTitle(Context context) {
         StringBuilder sb = new StringBuilder();
         if(imageCount > 0) {
             sb.append(imageCount);
-            sb.append(" ");
-            sb.append(context.getString(R.string.text_count_image));
+            if(withSubTitleText) {
+                sb.append(" ");
+                sb.append(context.getString(R.string.text_count_image));
+            }
         }
         if(videoCount > 0) {
             sb.append(videoCount);
@@ -82,6 +91,13 @@ public class GalleryListItem extends CheckableListItem {
     }
     public void setCreateDate(long createDate) {
         this.createDate = createDate;
+    }
+
+    public Object getData() {
+        return data;
+    }
+    public void setData(Object data) {
+        this.data = data;
     }
 
     public Drawable getThumbnail() {

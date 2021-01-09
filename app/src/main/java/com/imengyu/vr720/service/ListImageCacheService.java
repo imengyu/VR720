@@ -6,8 +6,6 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.ThumbnailUtils;
 import android.os.Build;
-import android.os.CancellationSignal;
-import android.provider.MediaStore;
 import android.util.Log;
 import android.util.Size;
 
@@ -35,7 +33,7 @@ public class ListImageCacheService {
         this.context = context;
     }
 
-    private int cacheThumbnailMaxSize = 64;
+    private int cacheThumbnailMaxSize = 128;
     private final Map<String, ImageCacheData> cacheThumbnailDataMap = new HashMap<>();
     private final List<ImageCacheData> cacheThumbnailDataLive = new ArrayList<>();
 
@@ -67,7 +65,7 @@ public class ListImageCacheService {
      * @param path 图片路径
      * @return 返回图片缩略图
      */
-    public Drawable loadImageThumbnailCache(String path) {
+    public synchronized Drawable loadImageThumbnailCache(String path) {
 
         if(path == null || path.isEmpty())
             return null;
@@ -211,9 +209,10 @@ public class ListImageCacheService {
     /**
      * 缓存大小超过了最大限制，开始清理
      */
-    private void cutThumbnailCache() {
-        for (ImageCacheData data : cacheThumbnailDataLive)
-            data.cacheUseCount--;
+    private synchronized void cutThumbnailCache() {
+        for (int i = cacheThumbnailDataLive.size() - 1; i >= 0; i--) {
+            cacheThumbnailDataLive.get(i).cacheUseCount--;
+        }
         int removeCount = cacheThumbnailDataLive.size() - cacheThumbnailMaxSize;
         if(removeCount > 0) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {

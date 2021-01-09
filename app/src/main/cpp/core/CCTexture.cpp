@@ -211,6 +211,8 @@ void CCTexture::LoadDataToGL(BYTE *data, int w, int h, GLenum format) {
 		LOGWF(LOG_TAG, "glTexImage2D() error : 0x%04x", error);
 
 	glBindTexture(textureType, 0);
+
+	loaded = true;
 }
 
 

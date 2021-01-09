@@ -1,5 +1,8 @@
 package com.imengyu.vr720.utils;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * 字符串工具类
  */
@@ -37,6 +40,36 @@ public class StringUtils {
             sb.append('0');
         sb.append(sec);
 
+        return sb.toString();
+    }
+
+    /***
+     * 是否包含指定字符串,不区分大小写
+     * @param input 原字符串
+     * @param regex 正则
+     */
+    public static boolean containsIgnoreCase(String input, String regex) {
+        if(StringUtils.isNullOrEmpty(input))
+            return false;
+        Pattern p = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+        Matcher m = p.matcher(input);
+        return m.find();
+    }
+
+    /**
+     * 替换正则表达式特殊字符
+     * @param input 源字符串
+     */
+    public static String replaceRegexSpecialChar(String input) {
+        StringBuilder sb = new StringBuilder();
+        for(int i = 0; i < input.length(); i++) {
+            char ch = input.charAt(i);
+            if(ch == '?' || ch == '!' || ch == '\\' || ch == '\'' || ch == '\"' || ch == '^' || ch == '$'|| ch == '[' || ch == ']')
+                sb.append('\\');
+            else if(ch == '(' || ch == '|' || ch == '*' || ch == '+' || ch == ')' || ch == '.'  || ch == '{' || ch == '}')
+                sb.append('\\');
+            sb.append(ch);
+        }
         return sb.toString();
     }
 }

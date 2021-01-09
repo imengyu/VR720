@@ -10,7 +10,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
-        android:background="@drawable/dialog_white_bg"
+        android:background="@drawable/dialog_white_bg_bottom"
         android:maxWidth="500dp"
         android:orientation="vertical"
         android:paddingTop="25dp"

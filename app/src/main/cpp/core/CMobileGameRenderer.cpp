@@ -158,12 +158,12 @@ void CMobileGameRenderer::TryLoadSmallThumbnail() {
 }
 void CMobileGameRenderer::TestSplitImageAndLoadTexture() {
     glm::vec2 size = fileManager->CurrentFileLoader->GetImageSize();
-    shouldSplitFullImage = size.x > 4096 || size.y > 2048;
+    shouldSplitFullImage = size.x > 6144 || size.y > 3072;
     if (shouldSplitFullImage) {
 
         //计算分块大小
-        float chunkW = size.x / 2048.0f;
-        float chunkH = size.y / 1024.0f;
+        float chunkW = size.x / 4000.0f;
+        float chunkH = size.y / 2000.0f;
         if (chunkW < 2) chunkW = 2;
         if (chunkH < 2) chunkH = 2;
         if (chunkW > 64 || chunkH > 32) {
@@ -764,13 +764,16 @@ TextureLoadQueueDataResult* CMobileGameRenderer::LoadChunkTexCallback(TextureLoa
     if (!fileOpened)
         return nullptr;
 
-    LOGIF(LOG_TAG, "Load block tex : x: %d y: %d id: %d", info->x, info->y, info->id);
 
     auto imgSize = fileManager->CurrentFileLoader->GetImageSize();
     int chunkW = (int)imgSize.x / renderer->panoramaFullSplitW;
     int chunkH = (int)imgSize.y / renderer->panoramaFullSplitH;
     int chunkX = info->x * chunkW;
     int chunkY = info->y * chunkH;
+
+
+    LOGIF(LOG_TAG, "Load block tex : x %d y %d id %d (%d,%d,%d,%d)", info->x, info->y, info->id,
+          chunkX, chunkY, chunkW, chunkH);
     
     //Load full main tex
     auto* result = new TextureLoadQueueDataResult();
@@ -780,6 +783,7 @@ TextureLoadQueueDataResult* CMobileGameRenderer::LoadChunkTexCallback(TextureLoa
     result->width = chunkW;
     result->height = chunkH;
     result->success = true;
+
 
     return result;
 }
@@ -932,7 +936,7 @@ void CMobileGameRenderer::SwitchMode(PanoramaMode panoramaMode)
     case PanoramaAsteroid:
         camera->Projection = CCameraProjection::Perspective;
         camera->SetMode(CCPanoramaCameraMode::CenterRoate);
-        camera->Position.z = 0.9f;
+        camera->Position.z = 0.95f;
         camera->FiledOfView = 135.0f;
         camera->FovMin = 56.0f;
         camera->ClippingNear = 0.001f;
@@ -947,9 +951,9 @@ void CMobileGameRenderer::SwitchMode(PanoramaMode panoramaMode)
         camera->Projection = CCameraProjection::Perspective;
         camera->SetMode(CCPanoramaCameraMode::CenterRoate);
         camera->Position.z = 0.0f;
-        camera->FiledOfView = 100.0f;
-        camera->FovMin = fullChunkLoadEnabled ? 5.0f : 25.0f;
-        camera->FovMax = 120.0f;
+        camera->FiledOfView = 120.0f;
+        camera->FovMin = fullChunkLoadEnabled && shouldSplitFullImage ? 8.0f : 35.0f;
+        camera->FovMax = 130.0f;
         camera->ForceUpdate();
         renderer->renderPanoramaFull = fullChunkLoadEnabled && shouldSplitFullImage && camera->FiledOfView < 30;
         renderer->renderNoPanoramaSmall = false;
@@ -961,9 +965,9 @@ void CMobileGameRenderer::SwitchMode(PanoramaMode panoramaMode)
         camera->Projection = CCameraProjection::Perspective;
         camera->SetMode(CCPanoramaCameraMode::CenterRoate);
         camera->Position.z = 0.5f;
-        camera->FiledOfView = 75.0f;
-        camera->FovMin = fullChunkLoadEnabled ? 5.0f : 25.0f;
-        camera->FovMax = 90.0f;
+        camera->FiledOfView = 95.0f;
+        camera->FovMin = fullChunkLoadEnabled && shouldSplitFullImage ? 10.0f : 35.0f;
+        camera->FovMax = 100.0f;
         renderer->ResetModel();
         renderer->renderPanoramaFull = fullChunkLoadEnabled && shouldSplitFullImage && camera->FiledOfView < 30;
         renderer->renderNoPanoramaSmall = false;
@@ -988,6 +992,10 @@ void CMobileGameRenderer::SwitchMode(PanoramaMode panoramaMode)
     default:
         break;
     }
+
+    //清空移动惯性
+    DragCurrentVelocity = glm::vec2(0.0f);
+    VelocityDragCurrentIsInSim = false;
 }
 void CMobileGameRenderer::UpdateDebugValue(float x, float y, float z, float w, float u, float v) {
 
@@ -1032,8 +1040,9 @@ void CMobileGameRenderer::SetVideoPos(int64_t pos) { player->SetVideoPos(pos); }
 void CMobileGameRenderer::SetIntProp(int id, int value) {
     switch(id) {
         case PROP_VIDEO_VOLUME: player->SetVideoVolume(value); break;
-        case PROP_PANORAMA_MODE: SwitchMode((PanoramaMode)value);
-        case PROP_LOG_LEVEL: LOG->SetLogLevel((LogLevel)value);
+        case PROP_PANORAMA_MODE: SwitchMode((PanoramaMode)value); break;
+        case PROP_LOG_LEVEL: LOG->SetLogLevel((LogLevel)value); break;
+        case PROP_GYRO_ROTATE_CORRECTION: gyroRotateCorrection = value; break;
         default:
             break;
     }
@@ -1044,6 +1053,7 @@ int CMobileGameRenderer::GetIntProp(int id) {
         case PROP_PANORAMA_MODE: return (int)mode;
         case PROP_LAST_ERROR: return lastError;
         case PROP_LOG_LEVEL: return (int)LOG->GetLogLevel();
+        case PROP_GYRO_ROTATE_CORRECTION: return gyroRotateCorrection;
         default: break;
     }
     return 0;
@@ -1055,7 +1065,7 @@ void CMobileGameRenderer::SetBoolProp(int id, bool value) {
         case PROP_GYRO_ENABLED: SetGyroEnabled(value); break;
         case PROP_FULL_CHUNK_LOAD_ENABLED: fullChunkLoadEnabled = value; break;
         case PROP_VIEW_CACHE_ENABLED: enableViewCache = value; break;
-        case PROP_ENABLE_LOG: LOG->SetEnabled(value);
+        case PROP_ENABLE_LOG: LOG->SetEnabled(value); break;
         case PROP_ENABLE_NATIVE_DECODER: playerInitParams.UseMediaCodec = value; break;
         default: break;
     }
@@ -1107,6 +1117,9 @@ void CMobileGameRenderer::SetGyroEnabled(bool enable) {
     if(renderer) {
         renderer->gyroEnabled = gyroEnabled;
         renderer->ResetModel();
+        //Reset camera
+        glm::vec3 eulerAngles = camera->GetLocalEulerAngles(); eulerAngles.z = 0;
+        camera->SetLocalEulerAngles(eulerAngles);
     }
 }
 void CMobileGameRenderer::SetVREnabled(bool enable) {
@@ -1121,6 +1134,17 @@ bool CMobileGameRenderer::GetNeedInterruptLoading() const {
 void CMobileGameRenderer::SendUiEvent(CCMobileGameUIEvent event) {
     if(uiEventDistributor != nullptr)
         uiEventDistributor->SendEvent(event);
+}
+
+float CMobileGameRenderer::GetGyroRotateCorrectionValue() const {
+
+    if(gyroRotateCorrection == ORIENTATION_NORMAL)
+        return -90;
+    if(gyroRotateCorrection == ORIENTATION_ROTATE_90)
+        return 0;
+    else if(gyroRotateCorrection == ORIENTATION_ROTATE_180)
+        return 90;
+    return 0;
 }
 
 

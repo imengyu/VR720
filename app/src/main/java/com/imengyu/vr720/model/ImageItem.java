@@ -17,12 +17,7 @@ public class ImageItem implements Serializable {
     public ImageItem(String path, String belongGalleriesStr) {
         this.path = path;
         this.isVideo = FileUtils.getFileIsVideo(path);
-
-        String[] str = belongGalleriesStr.split(";");
-        for(String s : str)
-            if(!s.isEmpty())
-                belongGalleries.add(Integer.parseInt(s));
-
+        setBelongGalleries(belongGalleriesStr);
     }
 
     public boolean isInBelongGalleries(int id) {
@@ -36,5 +31,11 @@ public class ImageItem implements Serializable {
             sb.append(i);
         }
         return sb.toString();
+    }
+    public void setBelongGalleries(String galleries) {
+        String[] str = galleries.split(";");
+        for(String s : str)
+            if(!s.isEmpty())
+                belongGalleries.add(Integer.parseInt(s));
     }
 }

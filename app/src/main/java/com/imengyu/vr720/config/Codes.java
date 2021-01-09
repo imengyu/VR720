@@ -8,4 +8,5 @@ public class Codes {
     public static final int REQUEST_CODE_CHOOSE_IMPORT_FILE = 736;
     public static final int REQUEST_CODE_CHOOSE_LANGUAGE = 737;
     public static final int REQUEST_CODE_SETTING = 738;
+
 }

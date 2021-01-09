@@ -13,6 +13,7 @@ public class MainListItem extends CheckableListItem {
 
     public static final int ITEM_TYPE_NORMAL = 0;
     public static final int ITEM_TYPE_TEXT = 1;
+    public static final int ITEM_TYPE_GROUP_HEADER = 2;
 
     private ImageItem imageItem;
 
@@ -24,15 +25,17 @@ public class MainListItem extends CheckableListItem {
     private boolean thumbnailLoading;
     private boolean thumbnailLoadingStarted;
     private boolean thumbnailFail;
+    private boolean thumbnailLoaded = false;
     private boolean isVideo;
     private long fileSizeValue;
     private long fileModifyDateValue;
     private int forceItemType;
     private boolean isSearchHidden = false;
 
-    public MainListItem(String itemText){
-        this.forceItemType = ITEM_TYPE_TEXT;
+    public MainListItem(String itemText, boolean isHeader){
+        this.forceItemType = isHeader ? ITEM_TYPE_GROUP_HEADER : ITEM_TYPE_TEXT;
         this.fileName = itemText;
+        this.setCheckable(false);
     }
     public MainListItem(ImageItem imageItem) {
         this.filePath = imageItem.path;
@@ -41,6 +44,13 @@ public class MainListItem extends CheckableListItem {
         this.imageItem = imageItem;
         this.forceItemType = ITEM_TYPE_NORMAL;
         this.isVideo = imageItem.isVideo;
+    }
+
+    public boolean isThumbnailLoaded() {
+        return thumbnailLoaded;
+    }
+    public void setThumbnailLoaded(boolean thumbnailLoaded) {
+        this.thumbnailLoaded = thumbnailLoaded;
     }
 
     public Drawable getThumbnail() {

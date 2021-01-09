@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/white"
-    tools:context=".ChooseLanguageActivity">
+    tools:context=".activity.ChooseLanguageActivity">
 
     <com.imengyu.vr720.widget.MyTitleBar
         android:id="@+id/toolbar"

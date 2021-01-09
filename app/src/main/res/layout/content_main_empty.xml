@@ -9,15 +9,15 @@
 
     <ImageView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="120dp"
         android:paddingBottom="10dp"
         app:srcCompat="@drawable/ic_empty" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingTop="30dp"
-        android:paddingBottom="60dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="30dp"
         android:text="@string/text_main_empty"
         android:textAlignment="center" />
 </LinearLayout>

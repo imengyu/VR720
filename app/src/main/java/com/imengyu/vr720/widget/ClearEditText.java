@@ -10,7 +10,10 @@ import android.graphics.PaintFlagsDrawFilter;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.text.Editable;
+import android.text.InputType;
 import android.util.AttributeSet;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.animation.Animation;
 import android.view.animation.CycleInterpolator;
@@ -187,6 +190,17 @@ public class ClearEditText extends AppCompatEditText {
         }
     }
 
+    @Override
+    public boolean onKeyPreIme(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_UP) {
+            Editable editable = getText();
+            if(editable != null && editable.length() == 0) {
+                if(isFocused()) clearFocus();
+            }
+        }
+        return false;
+    }
+
     /**
      * 触控执行的监听
      */
@@ -197,8 +211,17 @@ public class ClearEditText extends AppCompatEditText {
 
             boolean touchable = (getWidth() - Interval - mRight - mWidth_clear < event.getX()) && (event.getX() < getWidth() - Interval - mRight);
             if (touchable) {
+                int oldInputType = getInputType();
+                setInputType(InputType.TYPE_NULL);
+                boolean result = super.onTouchEvent(event);
+
                 setError(null);
-                this.setText("");
+                setText("");
+                if(isFocused())
+                    clearFocus();
+
+                setInputType(oldInputType);
+                return result;
             }
         }
         return super.onTouchEvent(event);

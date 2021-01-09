@@ -29,4 +29,17 @@
     <color name="colorImageDefault">#33555555</color>
     <color name="colorImageFailed">#FF9800</color>
 
+    <!--前景色-->
+    <color name="easy_photos_fg_primary">#787CC5</color>
+    <color name="easy_photos_fg_primary_dark">#9b9b9b</color>
+    <color name="easy_photos_fg_accent">#6F98FF</color>
+    <!--背景色-->
+    <color name="easy_photos_bg_primary">#f9f9f9</color>
+    <!--操作栏颜色-->
+    <color name="easy_photos_bar_primary">#ffffff</color>
+    <color name="easy_photos_bar_primary_dark">#f9f9f9</color>
+    <color name="easy_photos_bar_primary_translation">#b4ffffff</color>
+    <!--状态栏-->
+    <color name="easy_photos_status_bar">#393a3f</color>//#ffffff
+
 </resources>

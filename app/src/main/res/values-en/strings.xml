@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_introduction">A simplified 720 degree panorama browsing software</string>
+    <string name="app_introduction">VR720</string>
 	<string name="navigation_drawer_open">Open sidebar</string>
 	<string name="navigation_drawer_close">Close sidebar</string>
 	<string name="nav_header_title">A most simple 720 panorama viewer</string>
@@ -54,9 +54,23 @@
 	<string name="action_continue_load">Continue loading</string>
 	<string name="action_next_page">Next one</string>
 	<string name="action_prev_page">Last one</string>
-	<string name="text_tip">Tips</string>
+	<string name="text_tip">Some tips</string>
+	<string name="text_open_full_chunks_warn">Although it can have a clearer effect after it is turned on, it may increase the amount of computation and your device battery may run out earlier than usual.</string>
 	<string name="text_warning">System prompt</string>
 	<string name="text_please_wait">Please wait</string>
+	<string name="text_app_failure">Disastrous fault</string>
+	<string name="text_app_native_load_error">Failed to load the necessary libraries, which may indicate that app is not suitable for your system or device.</string>
+	<string name="text_network_not_connect">Network not connected</string>
+	<string name="text_cell_network_warn">You are using cellular transport connection. Updating may cause traffic cost. Do you want to continue?</string>
+	<string name="text_a_report">A report</string>
+	<string name="text_check_err">It is detected that there are some exceptions in the software last time. This may be due to the bug in the app. The software has generated a detailed report for the error (which does not contain your personal privacy information). Can you send this report to us? This helps us to solve software failures and bugs to prevent such errors from happening again. \nError report file: %s</string>
+	<string name="text_send_report">Send</string>
+	<string name="text_do_not_send_report">Don\'t send</string>
+	<string name="text_i_want_check_report_content">I want to see the content of this report</string>
+	<string name="text_feed_back_success">Feedback success, thank you!</string>
+	<string name="text_feed_back_failed">Feedback failed! Error: %s</string>
+	<string name="text_demo_panorama_name">Demo panorama</string>
+
 	<string name="text_placeholder">Text placeholder</string>
 	<string name="text_return">Return</string>
 	<string name="text_choosed_items">%d selected</string>
@@ -79,7 +93,7 @@
 	<string name="text_mode_little_planet">Asteroid</string>
 	<string name="text_mode_video_ball">Ball</string>
 	<string name="text_mode_rectilinear">Plane</string>
-	<string name="text_mode_360_pano">360 degrees</string>
+	<string name="text_mode_360_pano">360°</string>
 	<string name="text_mode_source">Original</string>
 	<string name="text_mode_mercator">Panorama</string>
 	<string name="text_loading_wait">Loading, please wait</string>
@@ -98,6 +112,8 @@
 	<string name="text_more_actions">More operations</string>
 	<string name="text_i_new">I got it!</string>
 	<string name="text_i_like_it">I like it</string>
+	<string name="text_update_failed">Update failed</string>
+	<string name="text_update_latest">Your software is up to date!</string>
 	<string name="text_delete_success">Successfully deleted</string>
 	<string name="text_delete_failed">File delete failed</string>
 	<string name="text_file_info">Content information</string>
@@ -113,9 +129,15 @@
 	<string name="text_save">Save</string>
 	<string name="text_image_save_success">Screenshot success! Image saved to album</string>
 	<string name="text_image_save_failed">Image saving failed! %s</string>
+	<string name="text_how_to_import_gallery">How do you want to import this gallery?</string>
+	<string name="text_import_all_images">Import all pictures in gallery</string>
+	<string name="text_grid_mode">Grid mode</string>
+	<string name="text_list_mode">List mode</string>
+	<string name="text_import_to_gallery">Import pictures from this gallery to favorites named %s </string>
+	<string name="text_choose_system_gallery_to_import">Select a system gallery to import</string>
 	<string name="text_share_image_title">Share this panorama</string>
 	<string name="text_choose_program_to_open">Select the app to open this file</string>
-	<string name="text_image_cannot_open">Sorry, your system can\'t open this image</string>
+	<string name="text_file_cannot_open">Sorry, your system can\'t open this file</string>
 	<string name="text_image_not_support">Sorry, we don\'t support opening this image right now</string>
 	<string name="text_not_provide_path">No image path was provided</string>
 	<string name="text_path_copied_to_clipboard">Image path copied to clipboard</string>
@@ -157,8 +179,12 @@
 	<string name="text_logo">Title logo</string>
 	<string name="text_soft_version">Current software version:</string>
 	<string name="text_success">success</string>
-	<string name="text_error_image">Wrong image</string>
-	<string name="text_failed">Operation failed!</string>
+	<string name="text_error_image">Bad image</string>
+	<string name="text_failed">Operation failed</string>
+	<string name="text_import_files">Select panorama files to import</string>
+	<string name="text_import_folder">Import panorama from system gallery</string>
+	<string name="text_show_date">Show date</string>
+	<string name="text_hide_date">Hide date</string>
 	<string name="text_we_will_backup">We will back up the data as follows: \n - software configuration settings; \n - index path of imported panorama files; \n - classified favorite data</string>
 	<string name="text_we_will_restore">After importing data, the current data will be overwritten and unrecoverable. Do you want to continue?</string>
 	<string name="text_merge_import_data">Instead of covering the current data, merge it with the new data (if the data is duplicate, it will not be imported)</string>
@@ -182,7 +208,7 @@
 	<string name="settings_header_debug">Debug</string>
 	<string name="settings_header_data_backup">Data backup</string>
 	<string name="settings_key_enable_full_chunks">Enable full panorama browsing</string>
-	<string name="settings_summary_enable_full_chunks">When browsing a large panorama (larger than 4096x2048), it will not be compressed, will be displayed in the highest definition of the file. Although it can have a better effect, it may increase the burden of hardware.</string>
+	<string name="settings_summary_enable_full_chunks">When browsing a large panorama (larger than 4096x2048), it will not be compressed, will be displayed in the highest definition of the file. Although it can have a better effect, it may increase the burden of hardware and cause excessive battery consumption.</string>
 	<string name="settings_key_do_not_check_pano_normal_size">Do not check the scale of the panorama</string>
 	<string name="settings_summary_do_not_check_pano_normal_size">If the scale of the panorama is not the normal 720 degree panorama, the rendering may appear image deformation after the software is opened, so the software will give a prompt to ask whether you want to continue loading. You can disable this prompt by turning on this option</string>
 	<string name="settings_key_about">About software</string>
@@ -222,7 +248,7 @@
     <string name="text_video">Video</string>
 	<string name="text_all">All</string>
 	<string name="text_image">Image</string>
-	<string name="text_you_can_search">You can search based on these fields: file name, modified date, and file size</string>
+	<string name="text_you_can_search">You can search based on these fields: file name, modified date, and file size\nTo search for multiple keywords, you can separate them with spaces</string>
     <string name="settings_header_audio">Audio</string>
 	<string name="settings_key_use_native_decoder">Use native decoder (if available)</string>
 	<string name="settings_summary_use_native_decoder">If turning on, hardware decoding will be used. If there is no corresponding decoder or the device does not support hardware decoding, software decoding will be used</string>
@@ -231,7 +257,7 @@
     <string name="text_do_you_want_import_to_list">Do you want to import this file into the list?</string>
     <string name="settings_key_auto_import">Automatically import to list when opening file</string>
     <string name="text_share_files_title">Share %d files</string>
-    <string name="text_import_to_list_and_do_not_remind_me_next">" Import directly next time, don't need to remind me"</string>
+    <string name="text_import_to_list_and_do_not_remind_me_next">Import next time, don\'t need to remind me</string>
     <string name="text_do_you_want_reset_settings">Do you really want to reset all the settings to default ?</string>
 	<string name="settings_key_app_reset_all">Reset all settings to default</string>
     <string name="text_agreement_base_welcome">Welcome to VR720! You can use this APP to browse and manage your local panorama. In addition, in order for the application to run normally, the application requires the following permissions:</string>
@@ -242,10 +268,18 @@
     <string name="text_agreement">User Agreement</string>
 	<string name="text_privacy_policy">Privacy policy</string>
 	<string name="text_and">and</string>
-    <string name="text_do_you_like_app">Do you like vr720?</string>
-	<string name="text_give_a_start_if_you_like_app">If you think app is good, give us a good comment ^ ^~</string>
-	<string name="text_give_a_start">Good softwar, give a start</string>
-	<string name="text_bad_app">I want to make complaints about it.</string>
-	<string name="text_later">Maybe later</string>
+    <string name="text_do_you_like_app">Do you like VR720?</string>
+	<string name="text_give_a_start_if_you_like_app">If you think app is good, could you give us a good comment ^ ^~</string>
+	<string name="text_give_a_start">Good software</string>
+	<string name="text_bad_app">A bad software</string>
+	<string name="text_later">Later</string>
+    <string name="action_yes">Yes</string>
+	<string name="action_no">No</string>
+	<string name="text_don_not_import_to_list_and_do_not_remind_me_next">No need to import, and don\'t remind me next time</string>
+	<string name="text_all_settings_reset_to_default">All settings have been restored to the default settings</string>
+	<string name="text_settings_backup_to_file">Configuration settings have been backed up to a file</string>
+	<string name="text_settings_import_success">Configuration settings imported successfully</string>
+	<string name="text_open_source_license">Open source software license</string>
+    <string name="nav_header_help">Help</string>
 
 </resources>

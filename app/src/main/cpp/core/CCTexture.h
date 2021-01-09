@@ -47,6 +47,8 @@ public:
 	 */
 	static void UnUse(GLenum type);
 
+	//设置是否加载完成
+	bool loaded = false;
 	//设置是否缓存
 	bool backupData = false;
 	//获取是否有透明通道

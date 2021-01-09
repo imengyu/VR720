@@ -1,11 +1,13 @@
 package com.imengyu.vr720.fragment;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,10 +20,11 @@ import android.widget.PopupMenu;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.preference.PreferenceManager;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.imengyu.vr720.GalleryActivity;
-import com.imengyu.vr720.MainActivity;
+import com.imengyu.vr720.activity.GalleryActivity;
+import com.imengyu.vr720.activity.MainActivity;
 import com.imengyu.vr720.R;
 import com.imengyu.vr720.VR720Application;
 import com.imengyu.vr720.config.Codes;
@@ -43,27 +46,11 @@ import java.util.TimerTask;
 
 public class GalleryFragment extends Fragment implements IMainFragment {
 
-    public GalleryFragment() {
-        MainActivity mainActivity = (MainActivity)getActivity();
-        if(mainActivity != null) {
-            listDataService = mainActivity.getListDataService();
-            handler = mainActivity.getHandler();
-            titleBar = mainActivity.getToolbar();
-        } else {
-            listDataService = null;
-            handler = null;
-            titleBar = null;
-        }
-    }
-    public GalleryFragment(Handler handler, MyTitleBar titleBar, ListDataService listDataService) {
-        this.handler = handler;
-        this.titleBar = titleBar;
-        this.listDataService = listDataService;
-    }
+    public GalleryFragment() {}
 
-    private final ListDataService listDataService;
-    private final Handler handler;
-    private final MyTitleBar titleBar;
+    private ListDataService listDataService;
+    private Handler handler;
+    private MyTitleBar titleBar;
 
     @Nullable
     @Override
@@ -73,8 +60,17 @@ public class GalleryFragment extends Fragment implements IMainFragment {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+
+        MainActivity mainActivity = (MainActivity)getActivity();
+        if(mainActivity != null) {
+            listDataService = mainActivity.getListDataService();
+            handler = mainActivity.getHandler();
+            titleBar = mainActivity.getToolbar();
+        }
+
         initMenu();
         initView(view);
+        loadSettings();
         loadList();
     }
 
@@ -148,17 +144,20 @@ public class GalleryFragment extends Fragment implements IMainFragment {
     //菜单
     //====================================================
     private PopupMenu mainMenu;
+    private MenuItem action_sort_date;
+    private MenuItem action_sort_name;
 
     private void initMenu() {
-        mainMenu = new PopupMenu(getActivity(), titleBar.getRightButton(), Gravity.TOP);
-        mainMenu.getMenuInflater().inflate(R.menu.menu_gallery_list, mainMenu.getMenu());
+        mainMenu = new PopupMenu(getActivity(), titleBar == null ? null : titleBar.getRightButton(), Gravity.TOP);
+        Menu menu = mainMenu.getMenu();
+        mainMenu.getMenuInflater().inflate(R.menu.menu_gallerys, menu);
         mainMenu.setOnMenuItemClickListener(this::onOptionsItemSelected);
+        action_sort_date = menu.findItem(R.id.action_sort_date);
+        action_sort_name = menu.findItem(R.id.action_sort_name);
     }
 
     @Override
-    public void showMore() {
-        mainMenu.show();
-    }
+    public void showMore() { mainMenu.show(); }
 
     //====================================================
     //列表事件
@@ -181,6 +180,25 @@ public class GalleryFragment extends Fragment implements IMainFragment {
                 handler.sendEmptyMessage(MainMessages.MSG_LIST_LOAD_FINISH);
             }
         }, 800);
+    }
+
+    SharedPreferences sharedPreferences;
+
+    private void loadSettings() {
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext());
+        galleryList.setSortReverse(sharedPreferences.getBoolean("gallery_list_sort_reverse", false));
+        galleryList.setSortType(sharedPreferences.getInt("gallery_list_sort_type", GalleryList.GALLERY_SORT_NAME));
+        galleryList.sort();
+
+        updateSortMenuActive();
+    }
+    private void saveSettings() {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+
+        editor.putInt("gallery_list_sort_type", galleryList.getSortType());
+        editor.putBoolean("gallery_list_sort_reverse", galleryList.isSortReverse());
+
+        editor.apply();
     }
 
     //====================================================
@@ -240,10 +258,14 @@ public class GalleryFragment extends Fragment implements IMainFragment {
             }
             case MainMessages.MSG_REFRESH_GALLERY_ITEM: {
                 int id = (int) msg.obj;
-                GalleryListItem item = galleryList.findItem(id);
-                if(item != null) {
-                    onGalleryRefresh(item);
-                    galleryList.refresh();
+                if(id == -6) {
+                    loadList();
+                } else {
+                    GalleryListItem item = galleryList.findItem(id);
+                    if (item != null) {
+                        onGalleryRefresh(item);
+                        galleryList.refresh();
+                    }
                 }
                 break;
             }
@@ -251,6 +273,12 @@ public class GalleryFragment extends Fragment implements IMainFragment {
                 loadList();
                 break;
         }
+    }
+
+    @Override
+    public void onPause() {
+        saveSettings();
+        super.onPause();
     }
 
     //====================================================
@@ -340,13 +368,33 @@ public class GalleryFragment extends Fragment implements IMainFragment {
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if(item.getItemId() == R.id.action_new_gallery) {
             onAddGalleryClick();
-        } else if(item.getItemId() == R.id.action_sort_date) {
+        }
+        else if(item.getItemId() == R.id.action_sort_date) {
             galleryList.sort(GalleryList.GALLERY_SORT_DATE);
-        } else if(item.getItemId() == R.id.action_sort_name) {
+            updateSortMenuActive();
+        }
+        else if(item.getItemId() == R.id.action_sort_name) {
             galleryList.sort(GalleryList.GALLERY_SORT_NAME);
-        } else if(item.getItemId() == R.id.action_sort_custom) {
-            galleryList.sort(GalleryList.GALLERY_SORT_CUSTOM);
+            updateSortMenuActive();
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void updateSortMenuActive() {
+
+        int sort = galleryList.getSortType();
+        int icon = galleryList.isSortReverse() ? R.drawable.ic_sort_up : R.drawable.ic_sort_down;
+
+        action_sort_date.setIcon(R.drawable.ic_sort_none);
+        action_sort_name.setIcon(R.drawable.ic_sort_none);
+
+        switch (sort) {
+            case GalleryList.GALLERY_SORT_DATE:
+                action_sort_date.setIcon(icon);
+                break;
+            case GalleryList.GALLERY_SORT_NAME:
+                action_sort_name.setIcon(icon);
+                break;
+        }
     }
 }

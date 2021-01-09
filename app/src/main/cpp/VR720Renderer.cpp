@@ -35,7 +35,7 @@ void JNICALL NativeVR720Renderer_onCreate(JNIEnv *env, jobject thiz) {
     auto newViewPtr = (jlong)newView;
 
     //nativeSetNativePtr
-    jclass clazz = env->FindClass("com/imengyu/vr720/core/NativeVR720Renderer");
+    jclass clazz = env->FindClass("com/imengyu/vr720/core/natives/NativeVR720Renderer");
     jmethodID nativeSetNativePtr = env->GetMethodID(clazz, "nativeSetNativePtr", "(J)V");
     env->CallVoidMethod(thiz, nativeSetNativePtr, newViewPtr);
     env->DeleteLocalRef(clazz);
@@ -283,7 +283,7 @@ static JNINativeMethod rendererNativeMethods[] = {
 int registerRendererNativeMethods(JNIEnv* env) {
     jclass clazz;
 
-    clazz = env->FindClass("com/imengyu/vr720/core/NativeVR720Renderer");
+    clazz = env->FindClass("com/imengyu/vr720/core/natives/NativeVR720Renderer");
     if (clazz == nullptr) {
         ALOGE("Native", "NativeVR720Renderer class not found!");
         return JNI_FALSE;

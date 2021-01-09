@@ -24,6 +24,7 @@ void CCVideoPlayer::DoOpenVideo() {
     videoState = CCVideoState::Loading;
 
     if(!InitDecoder()) {
+        videoState = CCVideoState::Failed;
         CallPlayerEventCallback(PLAYER_EVENT_OPEN_FAIED);
         return;
     }
@@ -33,6 +34,7 @@ void CCVideoPlayer::DoOpenVideo() {
     CallPlayerEventCallback(PLAYER_EVENT_INIT_DECODER_DONE);
 
     if(!render->Init(&externalData)) {
+        videoState = CCVideoState::Failed;
         CallPlayerEventCallback(PLAYER_EVENT_OPEN_FAIED);
         return;
     }
@@ -480,7 +482,7 @@ void* CCVideoPlayer::PlayerWorkerThread() {
 
     while (playerWorking) {
 
-        if(playerClose == 1) {
+        if(playerClose == 1 && videoState != CCVideoState::Loading) {
             playerClose = 2;
             DoCloseVideo();
             playerClose = 0;

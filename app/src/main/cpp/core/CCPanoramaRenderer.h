@@ -19,11 +19,13 @@ struct ChunkModel {
     glm::vec3 pointC;
     glm::vec3 pointD;
     bool loadMarked = false;
+    CCTexture* tex = nullptr;
 };
 
 /**
  * 基础全景渲染器
  */
+class CCPanoramaCamera;
 class CCRenderGlobal;
 class CMobileGameRenderer;
 class CCPanoramaRenderer
@@ -174,6 +176,8 @@ private:
     bool currentFrameVr = false;
     int currentFrameVrW = 0;
     int currentFrameVrH = 0;
+
+    CCPanoramaCamera * camera = nullptr;
 
     //视频贴图控制
 

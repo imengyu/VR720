@@ -1,7 +1,7 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context="com.imengyu.vr720.GalleryActivity">
+    tools:context="com.imengyu.vr720.activity.GalleryActivity">
 
     <item
         android:id="@+id/action_import_pano"

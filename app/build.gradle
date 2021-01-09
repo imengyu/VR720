@@ -1,14 +1,24 @@
 apply plugin: 'com.android.application'
 
 android {
+    signingConfigs {
+        debug {
+            storeFile file('D:\\Programming\\AndroidProjects\\key.jks')
+            storePassword 'yzc717021'
+            keyAlias 'key0'
+            keyPassword 'yzc717021'
+            v1SigningEnabled true
+            v2SigningEnabled true
+        }
+    }
     compileSdkVersion 30
     ndkVersion '21.3.6528147'
     defaultConfig {
         applicationId "com.imengyu.vr720"
         minSdkVersion 23
         targetSdkVersion 30
-        versionCode 3
-        versionName 'V1.3.0103-arm'
+        versionCode 6
+        versionName '1.36.16-arm'
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
         externalNativeBuild {
@@ -18,6 +28,7 @@ android {
                 cppFlags "-fvisibility=hidden"
             }
         }
+        signingConfig signingConfigs.debug
     }
     externalNativeBuild {
         cmake {
@@ -60,8 +71,10 @@ dependencies {
     implementation 'com.scwang.smart:refresh-layout-kernel:2.0.1'//https://github.com/scwang90/SmartRefreshLayout
     implementation 'com.scwang.smart:refresh-header-classics:2.0.1'
     implementation 'com.github.bumptech.glide:glide:4.11.0'//https://github.com/bumptech/glide
-    implementation 'com.alibaba:fastjson:1.2.70'
-    //https://github.com/alibaba/fastjson
+    implementation 'com.alibaba:fastjson:1.2.70'//https://github.com/alibaba/fastjson
+    implementation 'com.getbase:floatingactionbutton:1.10.1'//https://github.com/zendesk/android-floating-action-button
+    implementation 'com.azhon:appupdateX:3.0.3'//https://github.com/azhon/AppUpdate
+    implementation "com.squareup.okhttp3:okhttp:3.10.0"
     annotationProcessor 'com.github.bumptech.glide:compiler:4.11.0'
     testImplementation 'junit:junit:4.13.1'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'

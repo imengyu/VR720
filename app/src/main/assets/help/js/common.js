@@ -21,15 +21,19 @@ window.onload = function() {
       v.setAttribute('style', 'display:block');
     });
     var div = document.querySelector('.content-translate[data-language="zh"]');
-    if(div != null)
-      document.title = div.getAttribute('data-title');
+    if(div != null) {
+      var title = div.getAttribute('data-title');
+      if(title != null && title != '') document.title = title;
+    }
   } else {
     list = document.querySelectorAll('.content-translate[data-language="en"]');
     list.forEach(function(v) { 
       v.setAttribute('style', 'display:block');
     });
     var div = document.querySelector('.content-translate[data-language="en"]');
-    if(div != null)
-        document.title = div.getAttribute('data-title');
+    if(div != null) {
+      var title = div.getAttribute('data-title');
+      if(title != null && title != '') document.title = title;
+    }
   }
 };

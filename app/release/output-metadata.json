@@ -10,8 +10,8 @@
     {
       "type": "SINGLE",
       "filters": [],
-      "versionCode": 3,
-      "versionName": "V1.3.0103-arm",
+      "versionCode": 6,
+      "versionName": "1.36.16-arm",
       "outputFile": "app-release.apk"
     }
   ]

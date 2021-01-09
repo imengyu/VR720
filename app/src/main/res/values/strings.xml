@@ -9,6 +9,7 @@
     <string name="nav_header_subtitle" translatable="false">720 Panorama viewer on Android</string>
     <string name="nav_header_desc">导航标题</string>
     <string name="nav_header_soft">软件</string>
+    <string name="nav_header_help">帮助</string>
 
     <string name="title_activity_settings">设置</string>
     <string name="title_activity_about">关于 VR720</string>
@@ -33,6 +34,8 @@
 
     <string name="action_ok">确定</string>
     <string name="action_cancel">取消</string>
+    <string name="action_yes">是</string>
+    <string name="action_no">否</string>
     <string name="action_cancel_and_quit">取消并退出</string>
     <string name="action_delete">删除</string>
     <string name="action_sure_delete">确定删除</string>
@@ -71,8 +74,17 @@
     <string name="text_return">返回</string>
     <string name="text_choosed_items">已选择 %d 项</string>
     <string name="text_import_success_count">成功导入了 %d 个文件</string>
+    <string name="text_import_files">选择全景文件导入</string>
+    <string name="text_import_folder">从系统相册导入全景</string>
+    <string name="text_how_to_import_gallery">你想如何导入这个相册？</string>
+    <string name="text_import_all_images">导入相册中所有图片</string>
+    <string name="text_import_to_gallery">将相册中图片导入 %s 分类收藏夹</string>
+    <string name="text_show_date">显示日期</string>
+    <string name="text_hide_date">隐藏日期</string>
+
     <string name="text_do_you_want_import_to_list">你想把这个文件导入到列表中吗？</string>
     <string name="text_import_to_list_and_do_not_remind_me_next">以后都直接导入，不需要再提醒我</string>
+    <string name="text_don_not_import_to_list_and_do_not_remind_me_next">以后都不用导入</string>
     <string name="text_please_choose_item">请选择项目</string>
     <string name="text_also_delete_files">同时删除文件</string>
     <string name="text_core_init_failed">抱歉，程序出现了故障</string>
@@ -80,10 +92,12 @@
     <string name="text_title">标题</string>
     <string name="text_core_ver">内核版本：</string>
     <string name="text_flow_system">跟随系统</string>
-    <string name="text_copyright" translatable="false">© 2020 By 梦欤 All rights reserved. \n<a href="https://imengyu.top">imengyu.top</a></string>
-    <string name="text_copyright_small" translatable="false">© 2020 By 梦欤</string>
+    <string name="text_copyright" translatable="false">© 2021 By imengyu All rights reserved. \n<a href="https://imengyu.top">imengyu.top</a></string>
+    <string name="text_copyright_small" translatable="false">© 2021 By imengyu.top</string>
     <string name="text_enter_gallery_name">输入分类收藏夹名称</string>
     <string name="text_time_default" translatable="false">0:00</string>
+    <string name="text_update_failed">更新失败</string>
+    <string name="text_update_latest">已经是最新版本啦！</string>
 
     <string name="text_panorama_size_not_right_warning_text">您准备浏览的这张全景图看起来并不是正常比例的全景图像，继续浏览可能会导致图像变形等问题，是否继续加载？</string>
     <string name="text_panorama_size_not_right">图像不是正常比例的全景图</string>
@@ -115,7 +129,10 @@
     <string name="text_rename_gallery">重命名分类收藏夹</string>
     <string name="text_search_your_pano">搜索你的全景图</string>
     <string name="text_nothing_searched">什么都没搜到</string>
-    <string name="text_you_can_search">您可以根据这些字段进行搜索: 文件名、修改日期、文件大小</string>
+    <string name="text_you_can_search">您可以根据这些字段进行搜索: 文件名、修改日期、文件大小\n要根据多个关键词搜索，可以使用空格隔开</string>
+
+    <string name="text_grid_mode">宫格模式</string>
+    <string name="text_list_mode">列表模式</string>
 
     <string name="text_video">视频</string>
     <string name="text_all">全部</string>
@@ -145,8 +162,8 @@
     <string name="text_image_save_failed">图像保存失败！ %s</string>
     <string name="text_share_image_title">分享这张全景图</string>
     <string name="text_share_files_title">分享 %d 个文件</string>
-    <string name="text_choose_program_to_open">选择对应的软件打开该图像</string>
-    <string name="text_image_cannot_open">抱歉，你的系统不能打开此图像</string>
+    <string name="text_choose_program_to_open">选择对应的软件打开该文件</string>
+    <string name="text_file_cannot_open">抱歉，你的系统不能打开此文件</string>
     <string name="text_image_not_support">抱歉，我们暂时不支持打开此图像</string>
     <string name="text_not_provide_path">没有提供图像路径</string>
     <string name="text_path_copied_to_clipboard">图像路径已复制到剪贴板</string>
@@ -179,6 +196,7 @@
     <string name="text_count_image">个全景图</string>
     <string name="text_no_image">收藏夹内没有全景图</string>
     <string name="text_choose_gallery">选择分类收藏夹</string>
+    <string name="text_choose_system_gallery_to_import">选择系统相册导入</string>
     <string name="text_choose_move_method">选择添加方式</string>
     <string name="text_do_not_ask_me_again">下次不要再询问我</string>
 
@@ -208,12 +226,29 @@
     <string name="text_soft_version">当前软件版本：</string>
     <string name="text_success">成功</string>
     <string name="text_error_image">错误图像</string>
-    <string name="text_failed">操作失败！</string>
+    <string name="text_failed">操作失败</string>
+    <string name="text_all_settings_reset_to_default">所有设置已经恢复为默认设置</string>
+    <string name="text_settings_backup_to_file">配置设置已经备份至文件</string>
+    <string name="text_settings_import_success">配置设置导入成功</string>
     <string name="text_and">与</string>
     <string name="text_do_you_want_reset_settings">你真的要还原默认设置吗？</string>
     <string name="text_we_will_backup">我们将会备份这些数据：\n- 软件配置设置\n- 已经导入的全景文件索引路径\n- 分类收藏夹数据</string>
     <string name="text_we_will_restore">导入数据后将会覆盖当前数据，并且不可恢复，是否继续？ </string>
     <string name="text_merge_import_data">不覆盖当前数据而是与新数据合并（如果数据重复则不会导入）</string>
+    <string name="text_open_source_license">开源软件许可</string>
+    <string name="text_open_full_chunks_warn">开启后虽然能有更清晰的效果，但这可能会增加运算量，还可能会导致您的设备电池电量消耗速度加快。</string>
+    <string name="text_app_failure">灾难性故障</string>
+    <string name="text_app_native_load_error">加载必要的库失败，这可能表明APP不适用于您的系统或设备。</string>
+    <string name="text_network_not_connect">您没有连接到网络</string>
+    <string name="text_cell_network_warn">您正在使用数据连接，更新可能会造成流量消耗，是否继续？</string>
+    <string name="text_a_report">一个报告</string>
+    <string name="text_check_err">检测到软件上一次出现一些异常，这有可能是 APP 存在 BUG，软件生成了一份关于错误的详细报告（其中不包含您的个人隐私信息），您是否可以将此份报告发送给我们？这有助于我们解决软件故障和BUG，以防止此类错误再次发生。\n错误报告文件：%s</string>
+    <string name="text_send_report">发送报告</string>
+    <string name="text_do_not_send_report">不发送</string>
+    <string name="text_i_want_check_report_content">我想查看这份报告的内容</string>
+    <string name="text_feed_back_success">反馈成功，感谢您！</string>
+    <string name="text_feed_back_failed">反馈失败！错误：%s</string>
+    <string name="text_demo_panorama_name">示例全景图片</string>
 
     <!-- error -->
 
@@ -242,7 +277,7 @@
     <string name="settings_header_audio">音频</string>
 
     <string name="settings_key_enable_full_chunks">启用完整全景图浏览</string>
-    <string name="settings_summary_enable_full_chunks">在浏览较大全景图（大于4096x2048）时不会压缩而是以文件最高清晰度显示，虽然能有更好的效果，但这可能会增加硬件的负担。</string>
+    <string name="settings_summary_enable_full_chunks">在浏览较大全景图（大于4096x2048）时不会压缩而是以文件最高清晰度显示。虽然能有更清晰的效果，但这可能会增加运算量，还可能会导致您的设备电池电量消耗速度加快。</string>
     <string name="settings_key_do_not_check_pano_normal_size">不检查全景图的正常比例</string>
     <string name="settings_summary_do_not_check_pano_normal_size">如果全景图的比例不是正常的 720 度全景图，软件打开后渲染可能会出现图像变形的情况，因此软件会给出提示询问您要不要继续加载。您可以通过开启此选项禁用这个提示</string>
     <string name="settings_key_about">关于软件</string>

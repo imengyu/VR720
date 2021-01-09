@@ -17,11 +17,12 @@ public class MainListViewHolder extends RecyclerView.ViewHolder {
 
     public MainListViewHolder(View v) {
         super(v);
-        imageView = (MainThumbnailImageView) v.findViewById(R.id.img_item);
-        textView = (TextView) v.findViewById(R.id.text_item);
-        checkMark = (CheckBox) v.findViewById(R.id.check_item);
-        videoMark = (ImageView) v.findViewById(R.id.video_mark);
+        imageView = v.findViewById(R.id.img_item);
+        textView = v.findViewById(R.id.text_item);
+        checkMark = v.findViewById(R.id.check_item);
+        videoMark = v.findViewById(R.id.video_mark);
         item =  v.findViewById(R.id.item);
+        view = v;
     }
 
     public MainThumbnailImageView imageView;
@@ -29,4 +30,5 @@ public class MainListViewHolder extends RecyclerView.ViewHolder {
     public CheckBox checkMark;
     public ImageView videoMark;
     public View item;
+    public View view;
 }

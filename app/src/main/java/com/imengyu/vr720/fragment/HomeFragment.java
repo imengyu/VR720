@@ -14,9 +14,11 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
 import android.view.animation.AnimationSet;
 import android.view.animation.AnimationUtils;
 import android.view.inputmethod.EditorInfo;
@@ -24,20 +26,22 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.PopupMenu;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.preference.PreferenceManager;
 
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.getbase.floatingactionbutton.FloatingActionButton;
+import com.getbase.floatingactionbutton.FloatingActionsMenu;
 import com.hjq.toast.ToastUtils;
 import com.huantansheng.easyphotos.EasyPhotos;
 import com.huantansheng.easyphotos.models.album.entity.Photo;
-import com.imengyu.vr720.MainActivity;
-import com.imengyu.vr720.PanoActivity;
 import com.imengyu.vr720.R;
 import com.imengyu.vr720.VR720Application;
+import com.imengyu.vr720.activity.MainActivity;
+import com.imengyu.vr720.activity.PanoActivity;
 import com.imengyu.vr720.config.Codes;
 import com.imengyu.vr720.config.Constants;
 import com.imengyu.vr720.config.MainMessages;
@@ -45,7 +49,10 @@ import com.imengyu.vr720.dialog.CommonDialog;
 import com.imengyu.vr720.dialog.LoadingDialog;
 import com.imengyu.vr720.dialog.fragment.AppraiseDialogFragment;
 import com.imengyu.vr720.dialog.fragment.ChooseGalleryDialogFragment;
+import com.imengyu.vr720.dialog.fragment.ChooseItemDialogFragment;
+import com.imengyu.vr720.dialog.fragment.ChooseSystemGalleryDialogFragment;
 import com.imengyu.vr720.list.MainList;
+import com.imengyu.vr720.model.GalleryItem;
 import com.imengyu.vr720.model.ImageItem;
 import com.imengyu.vr720.model.TitleSelectionChangedCallback;
 import com.imengyu.vr720.model.list.MainListItem;
@@ -69,27 +76,11 @@ import java.util.TimerTask;
 
 public class HomeFragment extends Fragment implements IMainFragment {
 
-    public HomeFragment() {
-        MainActivity mainActivity = (MainActivity)getActivity();
-        if(mainActivity != null) {
-            listDataService = mainActivity.getListDataService();
-            handler = mainActivity.getHandler();
-            titleBar = mainActivity.getToolbar();
-        } else {
-            listDataService = null;
-            handler = null;
-            titleBar = null;
-        }
-    }
-    public HomeFragment(Handler handler, MyTitleBar titleBar, ListDataService listDataService) {
-        this.handler = handler;
-        this.titleBar = titleBar;
-        this.listDataService = listDataService;
-    }
+    public HomeFragment() {}
 
-    private final ListDataService listDataService;
-    private final Handler handler;
-    private final MyTitleBar titleBar;
+    private ListDataService listDataService;
+    private Handler handler;
+    private MyTitleBar titleBar;
     private Context context;
 
     @Nullable
@@ -102,6 +93,13 @@ public class HomeFragment extends Fragment implements IMainFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         resources = getResources();
         context = requireContext();
+
+        MainActivity mainActivity = (MainActivity)getActivity();
+        if(mainActivity != null) {
+            listDataService = mainActivity.getListDataService();
+            handler = mainActivity.getHandler();
+            titleBar = mainActivity.getToolbar();
+        }
 
         initView(view);
         initMenu();
@@ -124,15 +122,31 @@ public class HomeFragment extends Fragment implements IMainFragment {
     private RefreshLayout refreshLayout;
 
     private void initView(View view) {
-        final FloatingActionButton fab = view.findViewById(R.id.fab);
+
+        fab_right = view.findViewById(R.id.fab_right);
+        final FloatingActionButton fab_import_file = view.findViewById(R.id.fab_import_file);
+        final FloatingActionButton fab_import_gallery = view.findViewById(R.id.fab_import_gallery);
+        fab_import_file.setOnClickListener(v -> {
+            fab_right.collapse();
+            onAddImageFile();
+        });
+        fab_import_gallery.setOnClickListener(v -> {
+            fab_right.collapse();
+            onAddImageSystemGallery();
+        });
+
         edit_search = view.findViewById(R.id.edit_search);
         final LinearLayout footerSelection = view.findViewById(R.id.footer_select_main);
 
-        empty_main = view.findViewById(R.id.empty_main);
-        final View empty_search_main = view.findViewById(R.id.empty_search_main);
+        fade_hide = AnimationUtils.loadAnimation(context, R.anim.fade_hide);
+        fade_show = AnimationUtils.loadAnimation(context, R.anim.fade_show);
+
+        final View empty_main = view.findViewById(R.id.empty_main);
+        empty_search_main = view.findViewById(R.id.empty_search_main);
+        text_search_empty_title = view.findViewById(R.id.text_search_empty_title);
 
         footerSelection.setVisibility(View.GONE);
-        recycler_main = view.findViewById(R.id.recycler_main);
+        RecyclerViewEmptySupport recycler_main = view.findViewById(R.id.recycler_main);
         recycler_main.setEmptyView(empty_main);
 
         final View button_mainsel_openwith = view.findViewById(R.id.button_mainsel_openwith);
@@ -148,11 +162,12 @@ public class HomeFragment extends Fragment implements IMainFragment {
         VR720Application application = (VR720Application) requireActivity().getApplication();
 
         //List
-        mainList = new MainList(context, application.getListImageCacheService(), application.getListDataService());
+        mainList = new MainList(context, application.getListImageCacheService());
         mainList.init(handler, recycler_main);
         mainList.setListCheckableChangedListener(checkable -> {
             if (checkable) {
-                fab.hide();
+                fab_right.startAnimation(fade_hide);
+                fab_right.setVisibility(View.GONE);
                 AnimationSet animationSet = (AnimationSet) AnimationUtils.loadAnimation(getContext(), R.anim.bottom_up);
                 footerSelection.startAnimation(animationSet);
                 footerSelection.setVisibility(View.VISIBLE);
@@ -161,7 +176,8 @@ public class HomeFragment extends Fragment implements IMainFragment {
                     titleSelectionChangedCallback.onTitleSelectionChangedCallback(
                             true, 0, false);
             } else {
-                fab.show();
+                fab_right.startAnimation(fade_show);
+                fab_right.setVisibility(View.VISIBLE);
                 AnimationSet animationSet = (AnimationSet) AnimationUtils.loadAnimation(getContext(), R.anim.bottom_down);
                 footerSelection.startAnimation(animationSet);
                 footerSelection.setVisibility(View.GONE);
@@ -195,7 +211,6 @@ public class HomeFragment extends Fragment implements IMainFragment {
         refreshLayout.setEnableLoadMore(false);
         refreshLayout.setOnRefreshListener(refreshlayout -> loadList());
 
-        fab.setOnClickListener(v -> onAddImageClick());
 
         //搜索类型选择
 
@@ -240,18 +255,21 @@ public class HomeFragment extends Fragment implements IMainFragment {
                         button_search_all.setVisibility(View.VISIBLE);
                         button_search_image.setVisibility(View.VISIBLE);
                         button_search_video.setVisibility(View.VISIBLE);
-                    } else
-                        quitSearchMode();
+                        text_search_empty_title.setText(R.string.text_nothing_searched);
+                    } else {
+                        button_search_all.setVisibility(View.GONE);
+                        button_search_image.setVisibility(View.GONE);
+                        button_search_video.setVisibility(View.GONE);
+                        text_search_empty_title.setText(R.string.text_search_your_pano);
+                    }
                 }
             }
         });
         edit_search.setOnFocusChangeListener((v, hasFocus) -> {
             if(currentIsSearchMode != hasFocus) {
                 currentIsSearchMode = hasFocus;
-                if(currentIsSearchMode) {
-                    recycler_main.setEmptyView(empty_search_main);
-                } else
-                    quitSearchMode();
+                if(!currentIsSearchMode) quitSearchMode();
+                else enterSearchMode();
             }
         });
         edit_search.setOnEditorActionListener((v, actionId, event) -> {
@@ -271,8 +289,10 @@ public class HomeFragment extends Fragment implements IMainFragment {
         });
     }
 
-    private View empty_main = null;
-    private RecyclerViewEmptySupport recycler_main = null;
+    private FloatingActionsMenu fab_right = null;
+    private Animation fade_hide = null;
+    private Animation fade_show = null;
+    private View empty_search_main = null;
     private Button button_search_all = null;
     private Button button_search_image = null;
     private Button button_search_video = null;
@@ -282,12 +302,11 @@ public class HomeFragment extends Fragment implements IMainFragment {
     private Button[] searchChooseTypeButtonArr = null;
     private LoadingDialog rotateLoading = null;
     private EditText edit_search = null;
+    private TextView text_search_empty_title = null;
 
     private void startSearch() {
-        mainList.doSearch(currentSearchKeyword, currentSearchChooseType);
-        rotateLoading = new LoadingDialog(context);
-        rotateLoading.show();
-        handler.sendEmptyMessageDelayed(MainMessages.MSG_CLOSE_LOADING, 500);
+        boolean searched = mainList.doSearch(currentSearchKeyword, currentSearchChooseType) > 0;
+        empty_search_main.setVisibility(searched ? View.GONE : View.VISIBLE);
     }
     private void checkChooseTypeButton(Button target) {
         for(Button b : searchChooseTypeButtonArr) {
@@ -300,16 +319,26 @@ public class HomeFragment extends Fragment implements IMainFragment {
             }
         }
     }
+    private void enterSearchMode() {
+        empty_search_main.startAnimation(fade_show);
+        empty_search_main.setVisibility(View.VISIBLE);
+        text_search_empty_title.setText(R.string.text_search_your_pano);
+        fab_right.startAnimation(fade_hide);
+        fab_right.setVisibility(View.GONE);
+    }
     private void quitSearchMode() {
         if(edit_search.getText().length() > 0)
             edit_search.setText("");
         if(edit_search.hasFocus())
             edit_search.clearFocus();
-        recycler_main.setEmptyView(empty_main);
         mainList.resetSearch();
+        empty_search_main.startAnimation(fade_hide);
+        empty_search_main.setVisibility(View.GONE);
         button_search_all.setVisibility(View.GONE);
         button_search_image.setVisibility(View.GONE);
         button_search_video.setVisibility(View.GONE);
+        fab_right.startAnimation(fade_show);
+        fab_right.setVisibility(View.VISIBLE);
         KeyBoardUtil.closeKeyboard(edit_search);
     }
 
@@ -319,9 +348,9 @@ public class HomeFragment extends Fragment implements IMainFragment {
 
     private void onUpdateScreenOrientation(Configuration newConfig) {
         if(newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
-            mainList.setListIsGrid(false);
+            mainList.setListIsHorizontal(false);
         } else if(newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            mainList.setListIsGrid(true);
+            mainList.setListIsHorizontal(true);
         }
     }
 
@@ -330,11 +359,23 @@ public class HomeFragment extends Fragment implements IMainFragment {
     //====================================================
 
     private PopupMenu mainMenu;
+    private MenuItem action_sort_date;
+    private MenuItem action_sort_name;
+    private MenuItem action_sort_size;
+    private MenuItem action_list_mode;
+    private MenuItem action_show_hide_date;
 
     private void initMenu() {
-        mainMenu = new PopupMenu(getActivity(), titleBar.getRightButton(), Gravity.TOP);
-        mainMenu.getMenuInflater().inflate(R.menu.menu_main, mainMenu.getMenu());
+        mainMenu = new PopupMenu(getActivity(), titleBar == null ? null : titleBar.getRightButton(), Gravity.TOP);
+        Menu menu = mainMenu.getMenu();
+        mainMenu.getMenuInflater().inflate(R.menu.menu_main, menu);
         mainMenu.setOnMenuItemClickListener(this::onOptionsItemSelected);
+
+        action_sort_date = menu.findItem(R.id.action_sort_date);
+        action_sort_name = menu.findItem(R.id.action_sort_name);
+        action_sort_size = menu.findItem(R.id.action_sort_size);
+        action_list_mode = menu.findItem(R.id.action_list_mode);
+        action_show_hide_date = menu.findItem(R.id.action_show_hide_date);
     }
 
     @Override
@@ -357,23 +398,11 @@ public class HomeFragment extends Fragment implements IMainFragment {
         if (requestCode == Codes.REQUEST_CODE_OPEN_IMAGE && data != null) {
             //获取选择器返回的数据
             ArrayList<Photo> resultPhotos = data.getParcelableArrayListExtra(EasyPhotos.RESULT_PHOTOS);
-            if(resultPhotos != null) {
-
-                int addCount = 0;
-                for (Photo photo : resultPhotos)
-                    if(listDataService.findImageItem(photo.path) == null) {
-                        mainList.addImageToItem(listDataService.addImageItem(photo.path), false);
-                        addCount++;
-                    }
-                mainList.sort();
-                mainList.notifyChange();
-
-                ToastUtils.show(String.format(getString(R.string.text_import_success_count), addCount));
-            }
+            if(resultPhotos != null) importFiles(resultPhotos);
         }
         else if (requestCode == Codes.REQUEST_CODE_PANO && data != null) {
-            if(!appraiseDialogShowed)
-                testAndShowAppraiseDialog();
+            boolean needShowAddAskDialog = false;
+
             String filePath = data.getStringExtra("filePath");
             if(data.getBooleanExtra("isDeleteFile", false)) {
                 MainListItem item = mainList.findImageItem(filePath);
@@ -387,40 +416,53 @@ public class HomeFragment extends Fragment implements IMainFragment {
 
                 //打开文件之后添加到列表
                 SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext());
-                if(sharedPreferences.getBoolean("auto_import", false)) {
+                if(!sharedPreferences.getBoolean("force_no_auto_import", false)) {
+                    if (sharedPreferences.getBoolean("auto_import", false)) {
 
-                    mainList.addImageToItem(listDataService.addImageItem(filePath), false);
-                    mainList.sort();
-                    mainList.notifyChange();
+                        mainList.addImageToItem(listDataService.addImageItem(filePath));
+                        mainList.sort();
+                        mainList.notifyChange();
 
-                }
-                else {
-                    //打开文件之后询问是否添加到列表
-                    new CommonDialog(requireActivity())
-                            .setTitle(R.string.text_tip)
-                            .setMessage(R.string.text_do_you_want_import_to_list)
-                            .setPositive(R.string.action_ok)
-                            .setNegative(R.string.action_cancel)
-                            .setCheckBoxText(R.string.text_import_to_list_and_do_not_remind_me_next)
-                            .setOnResult((b, dialog) -> {
-                                if(b == CommonDialog.BUTTON_POSITIVE) {
-                                    mainList.addImageToItem(listDataService.addImageItem(filePath), false);
-                                    mainList.sort();
-                                    mainList.notifyChange();
+                    } else {
+                        needShowAddAskDialog = true;
 
-                                    if (dialog.isCheckBoxChecked()) {
+                        //打开文件之后询问是否添加到列表
+                        new CommonDialog(requireActivity())
+                                .setTitle(R.string.text_tip)
+                                .setMessage(R.string.text_do_you_want_import_to_list)
+                                .setPositive(R.string.action_yes)
+                                .setNegative(R.string.action_no)
+                                .setNeutral(R.string.text_don_not_import_to_list_and_do_not_remind_me_next)
+                                .setCheckBoxText(R.string.text_import_to_list_and_do_not_remind_me_next)
+                                .setOnResult((b, dialog) -> {
+                                    if (b == CommonDialog.BUTTON_POSITIVE) {
+                                        mainList.addImageToItem(listDataService.addImageItem(filePath));
+                                        mainList.sort();
+                                        mainList.notifyChange();
+
+                                        if (dialog.isCheckBoxChecked()) {
+                                            sharedPreferences.edit()
+                                                    .putBoolean("auto_import", true)
+                                                    .apply();
+                                        }
+
+                                        ToastUtils.show(String.format(getString(R.string.text_import_success_count), 1));
+                                        return true;
+                                    } else if (b == CommonDialog.BUTTON_NEGATIVE) {
                                         sharedPreferences.edit()
-                                                .putBoolean("auto_import", true)
+                                                .putBoolean("force_no_auto_import", true)
                                                 .apply();
+                                        return true;
                                     }
-
-                                    ToastUtils.show(String.format(getString(R.string.text_import_success_count), 1));
-                                    return true;
-                                } else return b == CommonDialog.BUTTON_NEGATIVE;
-                            })
-                            .show();
+                                    return false;
+                                })
+                                .showAllowingStateLoss();
+                    }
                 }
             }
+
+            if(!appraiseDialogShowed && !needShowAddAskDialog)
+                testAndShowAppraiseDialog();
         }
     }
 
@@ -451,14 +493,29 @@ public class HomeFragment extends Fragment implements IMainFragment {
     @Override
     public void handleMessage(Message msg) {
         switch (msg.what) {
+            case MainMessages.MSG_REFRESH_LIST_CHECK:
+                mainList.changeCheck();
+                break;
             case MainMessages.MSG_REFRESH_LIST:
                 mainList.refresh();
                 break;
+            case MainMessages.MSG_IMPORT_DEMO:{
+                String path = (String)msg.obj;
+                if(listDataService.findImageItem(path) == null) {
+                    mainList.addImageToItem(listDataService.addImageItem(path));
+                    mainList.sort();
+                    mainList.notifyChange();
+                }
+                break;
+            }
             case MainMessages.MSG_LIST_LOAD_FINISH:
                 refreshLayout.finishRefresh();
                 break;
             case MainMessages.MSG_ADD_IMAGE:
-                onAddImageClick();
+                onAddImageFile();
+                break;
+            case MainMessages.MSG_ADD_IMAGE_GALLERY:
+                onAddImageSystemGallery();
                 break;
             case MainMessages.MSG_FORCE_LOAD_LIST:
                 loadList();
@@ -469,6 +526,10 @@ public class HomeFragment extends Fragment implements IMainFragment {
                     rotateLoading = null;
                 }
                 break;
+            case MainMessages.MSG_LATE_SHOW_APPRAISE:
+                AppraiseDialogFragment appraiseDialogFragment = new AppraiseDialogFragment();
+                appraiseDialogFragment.show(getParentFragmentManager(), "AppraiseDialog");
+                break;
         }
     }
 
@@ -477,7 +538,7 @@ public class HomeFragment extends Fragment implements IMainFragment {
         int addCount = 0;
         for(CharSequence path : list)
             if(listDataService.findImageItem(path.toString()) == null) {
-                mainList.addImageToItem(listDataService.addImageItem(path.toString()), false);
+                mainList.addImageToItem(listDataService.addImageItem(path.toString()));
                 addCount++;
             }
         mainList.sort();
@@ -486,6 +547,24 @@ public class HomeFragment extends Fragment implements IMainFragment {
         Log.d("Import", "importFiles : importCount: " + importCount + " success: " + addCount);
 
         ToastUtils.show(String.format(getString(R.string.text_import_success_count), addCount));
+    }
+    private void importFiles(ArrayList<Photo> photos) {
+        int addCount = 0;
+        for (Photo photo : photos)
+            if(listDataService.findImageItem(photo.path) == null) {
+                mainList.addImageToItem(listDataService.addImageItem(photo.path));
+                addCount++;
+            }
+        mainList.sort();
+        mainList.notifyChange();
+
+        ToastUtils.show(String.format(getString(R.string.text_import_success_count), addCount));
+    }
+    private void notifyGalleriesUpdate(int galleryId) {
+        Message message = new Message();
+        message.what = MainMessages.MSG_REFRESH_GALLERY_ITEM;
+        message.obj = galleryId;
+        handler.sendMessage(message);
     }
 
     //====================================================
@@ -500,7 +579,7 @@ public class HomeFragment extends Fragment implements IMainFragment {
         mainList.clear();
         ArrayList<ImageItem> items = listDataService.getImageList();
         for(ImageItem imageItem : items)
-            mainList.addImageToItem(imageItem, false);
+            mainList.addImageToItem(imageItem);
         mainList.sort();
 
         new Timer().schedule(new TimerTask() {
@@ -517,12 +596,11 @@ public class HomeFragment extends Fragment implements IMainFragment {
 
     private boolean appraiseDialogShowed = false;
     private void testAndShowAppraiseDialog() {
-        appraiseDialogShowed = sharedPreferences.getBoolean("last_show_appraise_dialog", false);
+        appraiseDialogShowed = sharedPreferences.getBoolean("appraise_dialog_opened", false);
         if(!appraiseDialogShowed) {
-            long lastShowTime = sharedPreferences.getLong("appraise_dialog_opened", 0);
+            long lastShowTime = sharedPreferences.getLong("last_show_appraise_dialog", 0);
             if(new Date().getTime() - lastShowTime > 311040000) {
-                AppraiseDialogFragment appraiseDialogFragment = new AppraiseDialogFragment();
-                appraiseDialogFragment.show(getParentFragmentManager(), "AppraiseDialog");
+                handler.sendEmptyMessageDelayed(MainMessages.MSG_LATE_SHOW_APPRAISE, 1200);
             }
         }
     }
@@ -531,18 +609,26 @@ public class HomeFragment extends Fragment implements IMainFragment {
     //设置保存与读取
     //====================================================
 
-    private  SharedPreferences sharedPreferences = null;
+    private SharedPreferences sharedPreferences = null;
 
     private void loadSettings() {
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         appraiseDialogShowed = sharedPreferences.getBoolean("appraise_dialog_opened", false);
         mainList.setMainSortReverse(sharedPreferences.getBoolean("main_list_sort_reverse", false));
+        mainList.setGroupByDate(sharedPreferences.getBoolean("main_list_group_by_date", true));
+        mainList.setListIsGrid(sharedPreferences.getBoolean("main_list_is_grid", false));
         mainList.setMainSortType(sharedPreferences.getInt("main_list_sort_type", MainList.MAIN_SORT_DATE));
         mainList.sort();
+
+        updateSortMenuActive();
+        updateShowHideDateMenuActive();
+        updateListGridMode();
     }
     private void saveSettings() {
         SharedPreferences.Editor editor = sharedPreferences.edit();
 
+        editor.putBoolean("main_list_group_by_date", mainList.isGroupByDate());
+        editor.putBoolean("main_list_is_grid", mainList.isGrid());
         editor.putInt("main_list_sort_type", mainList.getMainSortType());
         editor.putBoolean("main_list_sort_reverse", mainList.isMainSortReverse());
 
@@ -553,13 +639,58 @@ public class HomeFragment extends Fragment implements IMainFragment {
     //按钮事件
     //====================================================
 
-    private void onAddImageClick() {
+    private void onAddImageFile() {
         EasyPhotos.createAlbum(this, false, GlideEngine.getInstance())
                 .setPuzzleMenu(false)
-                .setCount(32)
+                .setCount(500)
                 .setVideo(true)
                 .setFileProviderAuthority(Constants.FILE_PROVIDER_NAME)
                 .start(Codes.REQUEST_CODE_OPEN_IMAGE);
+    }
+    private void onAddImageSystemGallery() {
+        ChooseSystemGalleryDialogFragment chooseSystemGalleryDialog = new ChooseSystemGalleryDialogFragment();
+        chooseSystemGalleryDialog.setOnChooseGalleryListener((album) -> {
+
+            ChooseItemDialogFragment chooseImportMethod = new ChooseItemDialogFragment(
+                    getString(R.string.text_how_to_import_gallery),
+                    new String[] {
+                            getString(R.string.text_import_all_images),
+                            String.format(getString(R.string.text_import_to_gallery), album.name),
+                    }
+            );
+            chooseImportMethod.setOnChooseItemListener((c, i, str) -> {
+                if(i == 0) importFiles(album.photos);
+                else if(i == 1) {
+                    //新建相册
+                    GalleryItem galleryItem = GalleryItem.newInstance(listDataService, album.name);
+                    listDataService.addGalleryItem(galleryItem);
+
+                    //导入图片至相册
+                    int addCount = 0;
+                    for (Photo photo : album.photos) {
+                        ImageItem imageItem = listDataService.findImageItem(photo.path);
+                        if (imageItem == null) {
+                            imageItem = listDataService.addImageItem(photo.path);
+                            imageItem.belongGalleries.add(galleryItem.id);
+                            mainList.addImageToItem(imageItem);
+                            addCount++;
+                        } else {
+                            imageItem.belongGalleries.add(galleryItem.id);
+                            addCount++;
+                        }
+                    }
+                    mainList.sort();
+                    mainList.notifyChange();
+
+                    //相册界面更新
+                    notifyGalleriesUpdate(-6);
+
+                    ToastUtils.show(String.format(getString(R.string.text_import_success_count), addCount));
+                }
+            });
+            chooseImportMethod.show(getParentFragmentManager(), "ChooseGalleryImportMethod");
+        });
+        chooseSystemGalleryDialog.show(getParentFragmentManager(), "ChooseSystemGallery");
     }
     private void onClearClick() {
         new CommonDialog(requireActivity())
@@ -611,7 +742,7 @@ public class HomeFragment extends Fragment implements IMainFragment {
                     .setCancelable(true)
                     .setOnResult((b, dialog) -> {
                         if(b == CommonDialog.BUTTON_POSITIVE) {
-//delete files
+                            //delete files
                             if(dialog.isCheckBoxChecked()) {
                                 int deleteFileCount = 0;
                                 for (MainListItem item : sel) {
@@ -626,7 +757,7 @@ public class HomeFragment extends Fragment implements IMainFragment {
                                 listDataService.removeImageItem(item.getImageItem());
                             //del
                             mainList.deleteItems(sel);
-                            mainList.setListCheckMode(false);
+                            mainList.setListCheckMode(false, false);
                             return true;
                         } else return b == CommonDialog.BUTTON_NEGATIVE;
                     })
@@ -643,7 +774,8 @@ public class HomeFragment extends Fragment implements IMainFragment {
     private void onAddImageToClick() {
         final List<MainListItem> sel = mainList.getSelectedItems();
         if(sel.size() > 0) {
-            ChooseGalleryDialogFragment chooseGalleryDialogFragment = new ChooseGalleryDialogFragment(listDataService, handler);
+            ChooseGalleryDialogFragment chooseGalleryDialogFragment = new ChooseGalleryDialogFragment();
+            chooseGalleryDialogFragment.setHandler(handler);
             chooseGalleryDialogFragment.setOnChooseGalleryListener(galleryId -> {
 
                 //添加到对应相册
@@ -655,10 +787,7 @@ public class HomeFragment extends Fragment implements IMainFragment {
                 }
 
                 //发送消息到相册界面进行相册缩略图刷新
-                Message message = new Message();
-                message.what = MainMessages.MSG_REFRESH_GALLERY_ITEM;
-                message.obj = galleryId;
-                handler.sendMessage(message);
+                notifyGalleriesUpdate(galleryId);
 
                 ToastUtils.show(R.string.text_add_success);
 
@@ -682,16 +811,64 @@ public class HomeFragment extends Fragment implements IMainFragment {
         }
         if(id == R.id.action_sort_date) {
             onSortClick(MainList.MAIN_SORT_DATE);
+            updateSortMenuActive();
             return true;
         }
         if(id == R.id.action_sort_name) {
             onSortClick(MainList.MAIN_SORT_NAME);
+            updateSortMenuActive();
             return true;
         }
         if(id == R.id.action_sort_size) {
             onSortClick(MainList.MAIN_SORT_SIZE);
+            updateSortMenuActive();
             return true;
         }
+        if(id == R.id.action_list_mode) {
+            mainList.setListIsGrid(!mainList.isGrid());
+            updateListGridMode();
+        }
+        if(id == R.id.action_show_hide_date) {
+            mainList.setGroupByDate(!mainList.isGroupByDate());
+            mainList.notifyChange();
+            updateShowHideDateMenuActive();
+        }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void updateShowHideDateMenuActive() {
+        action_show_hide_date.setTitle(mainList.isGroupByDate() ?
+                R.string.text_hide_date : R.string.text_show_date);
+    }
+    private void updateSortMenuActive() {
+
+        int sort = mainList.getMainSortType();
+        int icon = mainList.isMainSortReverse() ? R.drawable.ic_sort_up : R.drawable.ic_sort_down;
+
+        action_sort_date.setIcon(R.drawable.ic_sort_none);
+        action_sort_name.setIcon(R.drawable.ic_sort_none);
+        action_sort_size.setIcon(R.drawable.ic_sort_none);
+
+        switch (sort) {
+            case MainList.MAIN_SORT_DATE:
+                action_sort_date.setIcon(icon);
+                break;
+            case MainList.MAIN_SORT_NAME:
+                action_sort_name.setIcon(icon);
+                break;
+            case MainList.MAIN_SORT_SIZE:
+                action_sort_size.setIcon(icon);
+                break;
+        }
+    }
+    private void updateListGridMode() {
+        if(mainList.isGrid()) {
+            action_list_mode.setTitle(getString(R.string.text_list_mode));
+            action_show_hide_date.setVisible(true);
+        }
+        else {
+            action_list_mode.setTitle(getString(R.string.text_grid_mode));
+            action_show_hide_date.setVisible(false);
+        }
     }
 }

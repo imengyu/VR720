@@ -3,56 +3,73 @@ package com.imengyu.vr720.dialog.fragment;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
 
 import com.imengyu.vr720.R;
-import com.imengyu.vr720.adapter.GalleryListAdapter;
 import com.imengyu.vr720.adapter.SimpleListAdapter;
-import com.imengyu.vr720.config.MainMessages;
-import com.imengyu.vr720.dialog.CommonDialog;
-import com.imengyu.vr720.model.GalleryItem;
-import com.imengyu.vr720.model.list.GalleryListItem;
-import com.imengyu.vr720.service.ListDataService;
 import com.imengyu.vr720.utils.AlertDialogTool;
 import com.imengyu.vr720.utils.PixelTool;
+import com.imengyu.vr720.utils.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 
 public class ChooseItemDialogFragment extends DialogFragment {
 
+    public ChooseItemDialogFragment() {
+        setStyle(DialogFragment.STYLE_NORMAL, R.style.CustomDialog);
+    }
     public ChooseItemDialogFragment(String title, String[] items) {
-        super();
         this.items = items;
         this.title = title;
         setStyle(DialogFragment.STYLE_NORMAL, R.style.CustomDialog);
     }
 
-    private final String title;
-    private final String[] items;
+    private String title;
+    private String[] items;
     private OnChooseItemListener onChooseItemListener;
+    private boolean cancelButtonVisible = true;
 
     public interface OnChooseItemListener {
         void onChooseItem(boolean choosed, int index, String item);
     }
 
+    public void setCancelButtonVisible(boolean cancelButtonVisible) {
+        this.cancelButtonVisible = cancelButtonVisible;
+    }
     public void setOnChooseItemListener(OnChooseItemListener onChooseItemListener) {
         this.onChooseItemListener = onChooseItemListener;
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        outState.putBoolean("stateSaved", true);
+        outState.putBoolean("cancelButtonVisible", cancelButtonVisible);
+        outState.putString("title", title);
+        outState.putStringArray("items", items);
+        super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    public void onViewStateRestored(@Nullable Bundle savedInstanceState) {
+        if(savedInstanceState != null && savedInstanceState.getBoolean("stateSaved", false)) {
+            title = savedInstanceState.getString("title");
+            cancelButtonVisible = savedInstanceState.getBoolean("cancelButtonVisible");
+            items = savedInstanceState.getStringArray("items");
+        }
+        super.onViewStateRestored(savedInstanceState);
     }
 
     @Nullable
@@ -60,12 +77,13 @@ public class ChooseItemDialogFragment extends DialogFragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.dialog_choose_item, container, false);
         context = requireContext();
+        text_title = v.findViewById(R.id.text_title);
+        btn_cancel = v.findViewById(R.id.btn_cancel);
 
         final List<String> listItems = new ArrayList<>();
         final SimpleListAdapter adapter = new SimpleListAdapter(context, R.layout.item_simple, listItems);
 
         list_simple = v.findViewById(R.id.list_simple);
-        ((TextView)v.findViewById(R.id.text_title)).setText(title);
         list_simple.setAdapter(adapter);
         list_simple.setDivider(null);
         list_simple.setDividerHeight(0);
@@ -73,8 +91,9 @@ public class ChooseItemDialogFragment extends DialogFragment {
         listItems.addAll(Arrays.asList(items));
         adapter.notifyDataSetChanged();
 
+        text_title.setText(title);
         //按钮事件
-        v.findViewById(R.id.btn_cancel).setOnClickListener(view -> {
+        btn_cancel.setOnClickListener(view -> {
             if(onChooseItemListener != null)
                 onChooseItemListener.onChooseItem(false, -1, null);
             dismiss();
@@ -90,6 +109,8 @@ public class ChooseItemDialogFragment extends DialogFragment {
 
     private Context context;
     private ListView list_simple;
+    private Button btn_cancel;
+    private TextView text_title;
 
     @Override
     public void onResume() {
@@ -102,6 +123,12 @@ public class ChooseItemDialogFragment extends DialogFragment {
         window.setAttributes(params);
 
         onConfigurationChanged(getResources().getConfiguration());
+
+        btn_cancel.setVisibility(cancelButtonVisible ? View.VISIBLE : View.GONE);
+        if(!StringUtils.isNullOrEmpty(title)) {
+            text_title.setText(title);
+            text_title.setVisibility(View.VISIBLE);
+        } else text_title.setVisibility(View.GONE);
         super.onResume();
     }
 

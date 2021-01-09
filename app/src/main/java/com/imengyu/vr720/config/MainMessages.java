@@ -2,6 +2,7 @@ package com.imengyu.vr720.config;
 
 public class MainMessages {
 
+    public static final int MSG_REFRESH_LIST_CHECK = 334;
     public static final int MSG_REFRESH_LIST = 335;
     public static final int MSG_TEST_LIST = 336;
     public static final int MSG_LOAD_IMAGE_INFO = 337;
@@ -19,4 +20,7 @@ public class MainMessages {
     public static final int MSG_FORCE_LOAD_LIST = 349;
     public static final int MSG_CLOSE_LOADING = 350;
     public static final int MSG_DO_LATE_IMPORT = 351;
+    public static final int MSG_LATE_SHOW_APPRAISE = 352;
+    public static final int MSG_ADD_IMAGE_GALLERY = 353;
+    public static final int MSG_IMPORT_DEMO = 354;
 }

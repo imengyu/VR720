@@ -88,16 +88,19 @@ public class GalleryList extends SelectableListSolver<GalleryListItem> {
         if (notify) refresh();
     } 
     public void clear() {
+        selectedItems.clear();
         listItems.clear();
         refresh();
     }
     @UnUsed
     public void deleteItem(GalleryListItem item) {
+        selectedItems.remove(item);
         listItems.remove(item);
         refresh();
     }
     public void deleteItems(List<GalleryListItem> items) {
         listItems.removeAll(items);
+        selectedItems.removeAll(items);
         refresh();
     }
     public void notifyChange() {

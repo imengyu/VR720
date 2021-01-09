@@ -17,9 +17,9 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.hjq.toast.ToastUtils;
 import com.imengyu.vr720.BuildConfig;
-import com.imengyu.vr720.ChooseLanguageActivity;
+import com.imengyu.vr720.activity.ChooseLanguageActivity;
 import com.imengyu.vr720.R;
-import com.imengyu.vr720.SettingsActivity;
+import com.imengyu.vr720.activity.SettingsActivity;
 import com.imengyu.vr720.VR720Application;
 import com.imengyu.vr720.config.Codes;
 import com.imengyu.vr720.utils.AppPages;
@@ -65,13 +65,13 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             new CommonDialog(activity)
                     .setTitle(R.string.text_tip)
                     .setMessage(R.string.text_do_you_want_reset_settings)
-                    .setPositive(R.string.action_ok)
+                    .setPositive(R.string.action_yes)
                     .setNegative(R.string.action_cancel)
                     .setOnResult((b, dialog) -> {
                         if(b == CommonDialog.BUTTON_POSITIVE) {
                             SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext());
-                            sharedPreferences.edit().clear().apply();
-                            ToastUtils.show(getString(R.string.text_success));
+                            sharedPreferences.edit().clear().putBoolean("app_agreement_allowed", true).apply();
+                            ToastUtils.show(getString(R.string.text_all_settings_reset_to_default));
                             return true;
                         } else return b == CommonDialog.BUTTON_NEGATIVE;
                     })
@@ -148,7 +148,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         jsonObject.put("galleryList", application.getListDataService().getGalleryList());
 
         if(FileUtils.writeToTextFile(path, jsonObject.toJSONString()))
-            ToastUtils.show(getString(R.string.text_success));
+            ToastUtils.show(getString(R.string.text_settings_backup_to_file));
         else
             ToastUtils.show(getString(R.string.text_failed));
     }
@@ -164,7 +164,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 .setMessage(R.string.text_we_will_restore)
                 .setCheckBoxText(R.string.text_merge_import_data)
                 .setImageResource(R.drawable.ic_warning)
-                .setPositive(R.string.action_ok)
+                .setPositive(R.string.action_yes)
                 .setNegative(R.string.action_cancel)
                 .setOnResult((b, dialog) -> {
                     if(b == CommonDialog.BUTTON_POSITIVE) {
@@ -205,7 +205,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
 
                             editor.apply();
 
-                            ToastUtils.show(getString(R.string.text_success));
+                            ToastUtils.show(getString(R.string.text_settings_import_success));
                         } catch (Exception e) {
                             e.printStackTrace();
                             ToastUtils.show(getString(R.string.text_failed) + "\n" + e.toString());

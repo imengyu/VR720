@@ -6,14 +6,12 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Size;
 
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -21,8 +19,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-public class ImageUtils
-{
+public class ImageUtils {
     /**
      * 根据指定的图像路径和大小来获取缩略图
      *
@@ -61,7 +58,8 @@ public class ImageUtils
 
     /**
      * 加载图片为 Bitmap
-     * @param path  图像的路径
+     *
+     * @param path 图像的路径
      * @return 返回Bitmap
      */
     public static Bitmap loadBitmap(String path) {
@@ -81,6 +79,7 @@ public class ImageUtils
 
     /**
      * 获取图像大小
+     *
      * @param imagePath 图像路径
      * @return 图像大小
      * @throws IOException 抛出异常
@@ -91,23 +90,24 @@ public class ImageUtils
         options.inJustDecodeBounds = true;
 
         BitmapFactory.decodeFile(imagePath, options);
-        BitmapFactory.decodeStream(fileInputStream,null, options);
+        BitmapFactory.decodeStream(fileInputStream, null, options);
 
         fileInputStream.close();
         return new Size(options.outWidth, options.outHeight);
     }
 
-    public static boolean checkSizeIsNormalPanorama(Size imageSize)  {
+    public static boolean checkSizeIsNormalPanorama(Size imageSize) {
         return checkSizeIs320Panorama(imageSize) || checkSizeIs720Panorama(imageSize);
     }
 
-    public static boolean checkSizeIs720Panorama(Size imageSize)  {
+    public static boolean checkSizeIs720Panorama(Size imageSize) {
         int w = imageSize.getWidth(), h = imageSize.getHeight();
         return Math.abs(2.0 - (double) w / h) < 0.15;
     }
-    public static boolean checkSizeIs320Panorama(Size imageSize)  {
+
+    public static boolean checkSizeIs320Panorama(Size imageSize) {
         int w = imageSize.getWidth(), h = imageSize.getHeight();
-        return h > 0 && (double)w / h > 5;
+        return h > 0 && (double) w / h > 5;
     }
 
     public static class SaveImageResult {
@@ -118,6 +118,7 @@ public class ImageUtils
 
     /**
      * 按自动名称保存图像至存储中
+     *
      * @param bitmap 图像
      * @return 返回是否成功
      */
@@ -125,6 +126,18 @@ public class ImageUtils
 
         SimpleDateFormat simpleDate = new SimpleDateFormat("yyyyMMddHHmmss", Locale.getDefault());
         String fileName = String.format("%s.jpg", simpleDate.format(new Date()));
+        return saveImageToGallery(context, bitmap, fileName);
+    }
+
+    /**
+     * 保存图像至存储中
+     *
+     * @param context  上下文
+     * @param bitmap   图像
+     * @param fileName 文件名
+     * @return 返回是否成功
+     */
+    public static SaveImageResult saveImageToGallery(Context context, Bitmap bitmap, String fileName) {
 
         SaveImageResult result = new SaveImageResult();
 
@@ -139,7 +152,7 @@ public class ImageUtils
             if (uri != null) {
                 try {
                     OutputStream out = context.getContentResolver().openOutputStream(uri);
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out);
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out);
                     out.flush();
                     out.close();
                     values.put(MediaStore.Images.Media.IS_PENDING, false);
@@ -151,9 +164,10 @@ public class ImageUtils
                     result.error = e.toString();
                     result.success = false;
                 }
+            } else {
+                result.error = "uri is null";
             }
-        }
-        else {
+        } else {
 
             String filePath = StorageDirUtils.getFileStoragePath() + fileName;
             result.path = filePath;
@@ -172,6 +186,28 @@ public class ImageUtils
 
         }
 
+        return result;
+    }
+
+
+    public static SaveImageResult saveImageToLocalFolder(Context context, Bitmap bitmap, String fileName) {
+
+        SaveImageResult result = new SaveImageResult();
+
+        String filePath = StorageDirUtils.getFileStoragePath() + fileName;
+        result.path = filePath;
+        try {
+            File file = new File(filePath);
+            FileOutputStream out = new FileOutputStream(file);
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out);
+            out.flush();
+            out.close();
+            result.success = true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            result.error = e.toString();
+            result.success = false;
+        }
         return result;
     }
 }

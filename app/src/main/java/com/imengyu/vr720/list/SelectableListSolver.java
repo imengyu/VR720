@@ -20,7 +20,7 @@ public class SelectableListSolver<T extends CheckableListItem> {
 
     protected CheckableListAdapter<T> listAdapter;
     protected List<T> listItems;
-    private final List<T> selectedItems = new ArrayList<>();
+    protected final List<T> selectedItems = new ArrayList<>();
     private int checkableItemsCount = 0;
 
     public List<T> getSelectedItems() { return selectedItems; }
@@ -46,6 +46,9 @@ public class SelectableListSolver<T extends CheckableListItem> {
         return listAdapter.isCheckable();
     }
     public void setListCheckMode(boolean checkMod) {
+        setListCheckMode(checkMod, true);
+    }
+    public void setListCheckMode(boolean checkMod, boolean notify) {
         if(checkMod != listAdapter.isCheckable()) {
             if(!checkMod) {
                 selectedItems.clear();
@@ -54,7 +57,7 @@ public class SelectableListSolver<T extends CheckableListItem> {
             }
 
             listAdapter.setCheckable(checkMod);
-            listAdapter.notifyDataSetChanged();
+            if(notify) listAdapter.notifyDataSetChanged();
         }
     }
     public int getCheckableItemsCount() {

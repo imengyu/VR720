@@ -24,6 +24,11 @@ enum PanoramaMode : int16_t {
 	PanoramaFullOriginal,
 };
 
+#define ORIENTATION_ROTATE_180 3
+#define ORIENTATION_ROTATE_90 6
+#define ORIENTATION_ROTATE_270 8
+#define ORIENTATION_NORMAL 1
+
 /**
  * 全景游戏基础渲染器
  */
@@ -79,6 +84,10 @@ public:
 	float GetMouseSensitivityInFlat();
 	void SetMouseDragVelocity(float x, float y);
 
+	CCPanoramaCamera * GetCamera() const { return camera; }
+	float GetGyroRotateCorrectionValue() const;
+
+	void AddTextureToQueue(CCTexture* tex, int x, int y, int id) { texLoadQueue->Push(tex, x, y, id); }
 
 	CCamera* GetMercatorCylinderCaptureCamera() { return cameraMercatorCylinderCapture; }
 
@@ -107,6 +116,7 @@ private:
 	bool gyroEnabled = false;
     bool vREnabled = false;
 	bool fullChunkLoadEnabled = false;
+	int gyroRotateCorrection = ORIENTATION_NORMAL;
 
 	void FinishLoadAndNotifyError();
 
@@ -178,4 +188,3 @@ private:
 
     void TryLoadSmallThumbnail();
 };
-

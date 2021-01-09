@@ -29,6 +29,8 @@ public class ScreenUtils {
                 if(!fullScreen) insetsController.show(WindowInsets.Type.statusBars());
                 else insetsController.hide(WindowInsets.Type.statusBars());
             }
+
+            window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
         }
         else {
             WindowManager.LayoutParams attrs = window.getAttributes();

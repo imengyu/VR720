@@ -1,13 +1,11 @@
 package com.imengyu.vr720.dialog.fragment;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.method.LinkMovementMethod;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,18 +19,12 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
-import androidx.preference.PreferenceManager;
 
-import com.imengyu.vr720.BuildConfig;
 import com.imengyu.vr720.R;
 import com.imengyu.vr720.config.Constants;
 import com.imengyu.vr720.utils.AlertDialogTool;
-import com.imengyu.vr720.utils.AppUtils;
-import com.imengyu.vr720.utils.CustomUrlSpan;
+import com.imengyu.vr720.utils.text.CustomUrlSpan;
 import com.imengyu.vr720.utils.PixelTool;
-
-import java.util.Date;
-import java.util.Objects;
 
 public class AgreementDialogFragment extends DialogFragment {
 
@@ -72,7 +64,7 @@ public class AgreementDialogFragment extends DialogFragment {
         if(onAgreementCloseListener!=null)
             urlSpannableStringBuilder.append(getString(R.string.text_i_agree_agreement));
         urlSpannableStringBuilder.append(getString(R.string.text_agreement),
-                new CustomUrlSpan(context, Constants.ARGEEMENY_URL), Spannable.SPAN_INCLUSIVE_EXCLUSIVE);
+                new CustomUrlSpan(context, Constants.ARGEEMENT_URL), Spannable.SPAN_INCLUSIVE_EXCLUSIVE);
         urlSpannableStringBuilder.append(getString(R.string.text_and));
         urlSpannableStringBuilder.append(getString(R.string.text_privacy_policy),
                 new CustomUrlSpan(context, Constants.PRIVACY_POLICY_URL), Spannable.SPAN_INCLUSIVE_EXCLUSIVE);

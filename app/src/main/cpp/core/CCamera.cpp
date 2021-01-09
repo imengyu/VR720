@@ -12,7 +12,9 @@ CCamera::CCamera(glm::vec3 position, glm::vec3 up, glm::vec3 rotate)
 glm::mat4 CCamera::GetViewMatrix()
 {
 	if(VectorDirty) UpdateVectors();
-	return glm::lookAt(Position, Position + GetFront(), GetUp());
+	glm::vec3 front = GetFront();
+	glm::mat4 roll_mat = glm::rotate(glm::mat4(1.0f), glm::radians(mLocalEulerAngles.z), front);
+	return glm::lookAt(Position, Position + front, GetUp() * glm::mat3(roll_mat));
 }
 
 void CCamera::SetFOV(float fov)

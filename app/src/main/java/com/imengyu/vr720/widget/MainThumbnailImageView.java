@@ -33,11 +33,11 @@ public class MainThumbnailImageView extends AppCompatImageView {
     private String imageText = "";
     private String imageSize = "未知";
     private int imageTextColor = Color.WHITE;
-    private int primaryColor = Color.WHITE;
     private int roundWidth = 20;
     private int roundHeight = 20;
     private int imageTextSize = 20;
     private boolean leftTextReserveSpace = false;
+    private boolean enableRenderExtras = true;
     private Context context;
     private final BlendModeColorFilter blendModeColorFilter = new BlendModeColorFilter(Color.GRAY, BlendMode.MULTIPLY);
 
@@ -67,13 +67,10 @@ public class MainThumbnailImageView extends AppCompatImageView {
             roundHeight = a.getDimensionPixelSize(R.styleable.MainThumbnailImageView_imageRoundHeight, roundHeight);
             a.recycle();
         } else {
-            float density = context.getResources().getDisplayMetrics().density;
-            roundWidth = (int) (roundWidth * density);
-            roundHeight = (int) (roundHeight * density);
-            imageTextSize = (int) (imageTextSize * density);
+            roundWidth = PixelTool.dp2px(context, roundWidth);
+            roundHeight = PixelTool.dp2px(context,roundHeight);
+            imageTextSize = PixelTool.dp2px(context,imageTextSize);
         }
-
-        primaryColor = context.getResources().getColor(R.color.colorPrimary, null);
 
         paint0 = new Paint(Paint.ANTI_ALIAS_FLAG);
         paint = new Paint();
@@ -87,28 +84,55 @@ public class MainThumbnailImageView extends AppCompatImageView {
         paintBorder.setAntiAlias(true);
         paintBorder.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_OUT));
 
+        dpTextPadding = PixelTool.dp2px(context, 0);
+        dp7 = PixelTool.dp2px(context, 7);
+        dp50 = PixelTool.dp2px(context, 50);
+
         paintTextBackground = new Paint();
         paintTextBackground.setAntiAlias(true);
         paintTextBackground.setStyle(Paint.Style.FILL);
         paintTextBackground.setColor(Color.WHITE);
-        LinearGradient mShader = new LinearGradient(
-                0, 0,
-                0, PixelTool.dp2px(context, imageTextSize - 6),
-                context.getResources().getColor(R.color.colorTextBgEnd, null),
-                context.getResources().getColor(R.color.colorTextBgStart, null),
-                    Shader.TileMode.MIRROR);
-        paintTextBackground.setShader(mShader);
+
+
     }
+
+    private int dpTextPadding;
+    private int dp7;
+    private int dp50;
+
+    private int lastHeight = 0;
+    private int lastWidth = 0;
 
     @Override
     public void draw(Canvas canvas) {
+
+        if(!enableRenderExtras) {
+            super.draw(canvas);
+            return;
+        }
+
+        int height = getHeight();
+        int width = getWidth();
+
+        if(lastHeight != height || lastWidth != width) {
+            lastHeight = height;
+            lastWidth = width;
+
+            LinearGradient mShader = new LinearGradient(
+                    0, getHeight() - PixelTool.dp2px(context, imageTextSize) - dpTextPadding,
+                    0, getHeight(),
+                    context.getResources().getColor(R.color.colorTextBgStart, null),
+                    context.getResources().getColor(R.color.colorTextBgEnd, null),
+                    Shader.TileMode.MIRROR);
+            paintTextBackground.setShader(mShader);
+        }
 
         Bitmap bitmap = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
         Canvas canvas2 = new Canvas(bitmap);
         super.draw(canvas2);
 
         //文字背景
-        canvas2.drawRect(0,getHeight() - PixelTool.dp2px(context, imageTextSize + 5),
+        canvas2.drawRect(0,getHeight() - PixelTool.dp2px(context, imageTextSize) - dpTextPadding,
                 getWidth(), getHeight() , paintTextBackground);
 
         //圆角
@@ -119,15 +143,15 @@ public class MainThumbnailImageView extends AppCompatImageView {
             paint.setColor(imageTextColor);
             paint.setTextAlign(Paint.Align.LEFT);
             if(imageText.length() >= 32)
-                canvas2.drawText(imageText.substring(0, 30) + "...", leftTextReserveSpace ? 130 : 20, getHeight() - imageTextSize + 5, paint);
+                canvas2.drawText(imageText.substring(0, 30) + "...", leftTextReserveSpace ? dp50 : dp7, getHeight() - imageTextSize - (int)(dpTextPadding / 2.0), paint);
             else
-                canvas2.drawText(imageText, leftTextReserveSpace ? 130 : 20, getHeight() - imageTextSize + 5, paint);
+                canvas2.drawText(imageText, leftTextReserveSpace ? dp50 : dp7, getHeight() - imageTextSize - (int)(dpTextPadding / 2.0), paint);
         }
 
         if(!imageSize.isEmpty()) {
             paint.setTextAlign(Paint.Align.RIGHT);
             paint.setColor(imageTextColor);
-            canvas2.drawText(imageSize, getWidth() - 20, getHeight() - imageTextSize + 5, paint);
+            canvas2.drawText(imageSize, getWidth() - dp7, getHeight() - imageTextSize - (int)(dpTextPadding / 2.0), paint);
         }
 
         canvas.drawBitmap(bitmap, 0, 0, paint0);
@@ -218,5 +242,8 @@ public class MainThumbnailImageView extends AppCompatImageView {
     }
     public void setLeftTextReserveSpace(boolean leftTextReserveSpace) {
         this.leftTextReserveSpace = leftTextReserveSpace;
+    }
+    public void setEnableRenderExtras(boolean enableRenderExtras) {
+        this.enableRenderExtras = enableRenderExtras;
     }
 }

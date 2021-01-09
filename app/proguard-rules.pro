@@ -53,6 +53,7 @@
 -keepclassmembers class * extends android.app.Activity {
    public void *(android.view.View);
 }
+-keep public class * extends android.app.Service
 -keepclassmembers class * extends androidx.appcompat.app.AppCompatActivity {
    public void *(android.view.View);
 }

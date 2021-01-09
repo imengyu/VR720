@@ -1,5 +1,6 @@
 package com.imengyu.vr720.dialog.fragment;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Bundle;
@@ -14,10 +15,10 @@ import android.widget.ListView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.DialogFragment;
 
 import com.imengyu.vr720.R;
+import com.imengyu.vr720.VR720Application;
 import com.imengyu.vr720.adapter.GalleryListAdapter;
 import com.imengyu.vr720.config.MainMessages;
 import com.imengyu.vr720.dialog.CommonDialog;
@@ -33,15 +34,12 @@ import java.util.List;
 
 public class ChooseGalleryDialogFragment extends DialogFragment {
 
-    public ChooseGalleryDialogFragment(ListDataService listDataService, Handler handler) {
-        super();
-        this.listDataService = listDataService;
-        this.handler = handler;
+    public ChooseGalleryDialogFragment() {
         setStyle(DialogFragment.STYLE_NORMAL, R.style.CustomDialog);
     }
 
-    private final ListDataService listDataService;
-    private final Handler handler;
+    private ListDataService listDataService;
+    private Handler handler;
     private OnChooseGalleryListener onChooseGalleryListener;
 
     public interface OnChooseGalleryListener {
@@ -51,12 +49,17 @@ public class ChooseGalleryDialogFragment extends DialogFragment {
     public void setOnChooseGalleryListener(OnChooseGalleryListener onChooseGalleryListener) {
         this.onChooseGalleryListener = onChooseGalleryListener;
     }
+    public void setHandler(Handler handler) {
+        this.handler = handler;
+    }
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.dialog_choose_gallery, container, false);
         context = requireContext();
+        Activity activity = requireActivity();
+        this.listDataService = ((VR720Application)activity.getApplication()).getListDataService();
 
         final List<GalleryListItem> listItems = new ArrayList<>();
         final GalleryListAdapter smallGalleryListAdapter = new GalleryListAdapter(requireActivity(),
@@ -86,7 +89,7 @@ public class ChooseGalleryDialogFragment extends DialogFragment {
             GalleryListItem item = listItems.get(i);
             if(item.getId() == ListDataService.GALLERY_LIST_ID_ADD) {
                 //新建相册
-                new CommonDialog((AppCompatActivity) requireActivity())
+                new CommonDialog(requireActivity())
                         .setEditTextHint(R.string.text_enter_gallery_name)
                         .setTitle(R.string.action_new_gallery)
                         .setPositiveEnable(false)
@@ -104,11 +107,13 @@ public class ChooseGalleryDialogFragment extends DialogFragment {
                                 listItem.createTime = String.valueOf(new Date().getTime());
                                 listDataService.addGalleryItem(listItem);
 
-                                //发送信息到相册界面完成添加 galleryList.addItem(listItem, true);
-                                Message message = new Message();
-                                message.what = MainMessages.MSG_GALLERY_LIST_ADD_ITEM;
-                                message.obj = listItem.id;
-                                handler.sendMessage(message);
+                                if(handler != null) {
+                                    //发送信息到相册界面完成添加 galleryList.addItem(listItem, true);
+                                    Message message = new Message();
+                                    message.what = MainMessages.MSG_GALLERY_LIST_ADD_ITEM;
+                                    message.obj = listItem.id;
+                                    handler.sendMessage(message);
+                                }
 
                                 if(onChooseGalleryListener != null)
                                     onChooseGalleryListener.onChooseGallery(listItem.id);

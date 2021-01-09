@@ -24,7 +24,7 @@ void CMobileGameUIEventDistributor::SendEvent(CCMobileGameUIEvent ev) {
 CMobileGameUIEventDistributor::CMobileGameUIEventDistributor(JNIEnv *env,
                                                              jobject objNativeVR720Renderer) {
     objNativeVR720RendererObject = env->NewGlobalRef(objNativeVR720Renderer);
-    jclass clazz = env->FindClass("com/imengyu/vr720/core/NativeVR720Renderer");
+    jclass clazz = env->FindClass("com/imengyu/vr720/core/natives/NativeVR720Renderer");
     objNativeVR720RendererClass = (jclass) env->NewGlobalRef(clazz);
     if(objNativeVR720RendererClass)
         initSuccess = true;

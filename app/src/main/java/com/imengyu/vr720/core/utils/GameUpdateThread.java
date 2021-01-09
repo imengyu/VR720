@@ -1,6 +1,6 @@
 package com.imengyu.vr720.core.utils;
 
-import com.imengyu.vr720.core.NativeVR720Renderer;
+import com.imengyu.vr720.core.natives.NativeVR720Renderer;
 
 import java.util.TimerTask;
 import java.util.concurrent.Executors;

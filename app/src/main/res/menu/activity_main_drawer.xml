@@ -5,16 +5,17 @@
 
     <group android:checkableBehavior="single">
         <item
-            android:id="@+id/nav_import"
+            android:id="@+id/nav_import_file"
             android:icon="@drawable/ic_menu_import"
             android:title="@string/action_import_pano" />
         <item
-            android:id="@+id/nav_manage"
-            android:icon="@drawable/ic_menu_settings"
-            android:title="@string/action_settings" />
+            android:id="@+id/nav_import_gallery"
+            android:icon="@drawable/ic_menu_gallery"
+            android:title="@string/text_import_folder" />
+
     </group>
 
-    <item android:title="@string/nav_header_soft">
+    <item android:title="@string/nav_header_help">
         <menu>
             <item
                 android:id="@+id/nav_about"
@@ -28,6 +29,15 @@
                 android:id="@+id/nav_send"
                 android:icon="@drawable/ic_menu_add_reaction"
                 android:title="@string/action_send_feed_back" />
+        </menu>
+    </item>
+
+    <item android:title="@string/nav_header_soft">
+        <menu>
+            <item
+                android:id="@+id/nav_manage"
+                android:icon="@drawable/ic_menu_settings"
+                android:title="@string/action_settings" />
             <item
                 android:id="@+id/nav_quit"
                 android:icon="@drawable/ic_menu_quit"

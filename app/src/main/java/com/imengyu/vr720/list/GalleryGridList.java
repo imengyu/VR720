@@ -6,13 +6,10 @@ import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.widget.AbsListView;
 import android.widget.GridView;
-import android.widget.ListView;
 
 import com.imengyu.vr720.R;
 import com.imengyu.vr720.adapter.GalleryGridAdapter;
-import com.imengyu.vr720.adapter.GalleryListAdapter;
 import com.imengyu.vr720.config.MainMessages;
-import com.imengyu.vr720.model.list.MainListItem;
 import com.imengyu.vr720.model.list.MainListItem;
 import com.imengyu.vr720.service.ListImageCacheService;
 
@@ -78,15 +75,18 @@ public class GalleryGridList extends SelectableListSolver<MainListItem> {
         if (notify) refresh();
     }
     public void clear() {
+        selectedItems.clear();
         listItems.clear();
         refresh();
     }
     public void deleteItem(MainListItem item) {
+        selectedItems.remove(item);
         listItems.remove(item);
         refresh();
     }
     public void deleteItems(List<MainListItem> items) {
         listItems.removeAll(items);
+        selectedItems.removeAll(items);
         refresh();
     }
     public void notifyChange() {
@@ -122,6 +122,7 @@ public class GalleryGridList extends SelectableListSolver<MainListItem> {
         return null;
     }
 
+
     //====================================================
     //条目排序
     //====================================================
@@ -146,8 +147,8 @@ public class GalleryGridList extends SelectableListSolver<MainListItem> {
             } else if(sortType == SORT_NAME){
                 result = m1.getFileName().compareTo(m2.getFileName());
             } else if(sortType == SORT_SIZE) {
-                long old1 = Long.parseLong(m1.getFileSize());
-                long old2 = Long.parseLong(m2.getFileSize());
+                long old1 = m1.getFileSizeValue();
+                long old2 = m2.getFileSizeValue();
                 if (old1> old2) result = 1;
                 if (old1 < old2) result = -1;
             }
