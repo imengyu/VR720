@@ -31,10 +31,12 @@ public class WrapHeightGridLayoutManager extends GridLayoutManager {
         final int heightSize = View.MeasureSpec.getSize(heightSpec);
         int height = 0;
         for (int i = 0; i < getItemCount(); ) {
-            measureScrapChild(recycler, i,
-                    View.MeasureSpec.makeMeasureSpec(i, View.MeasureSpec.UNSPECIFIED),
-                    View.MeasureSpec.makeMeasureSpec(i, View.MeasureSpec.UNSPECIFIED),
-                    mMeasuredDimension);
+            if(i >= 0 && i < state.getItemCount()) {
+                measureScrapChild(recycler, i,
+                        View.MeasureSpec.makeMeasureSpec(i, View.MeasureSpec.UNSPECIFIED),
+                        View.MeasureSpec.makeMeasureSpec(i, View.MeasureSpec.UNSPECIFIED),
+                        mMeasuredDimension);
+            }
             height = height + mMeasuredDimension[1];
             i = i + mChildPerLines;
         }
@@ -56,7 +58,12 @@ public class WrapHeightGridLayoutManager extends GridLayoutManager {
     private void measureScrapChild(RecyclerView.Recycler recycler, int position, int widthSpec,
                                    int heightSpec, int[] measuredDimension) {
 
-        View view = recycler.getViewForPosition(position);
+        View view;
+        try {
+            view = recycler.getViewForPosition(position);
+        }catch (Exception e) {
+            return;
+        }
 
         // For adding Item Decor Insets to view
         super.measureChildWithMargins(view, 0, 0);

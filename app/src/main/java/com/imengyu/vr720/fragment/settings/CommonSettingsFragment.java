@@ -73,6 +73,7 @@ public class CommonSettingsFragment extends PreferenceFragmentCompat {
                     .setMessage(getString(R.string.text_sure_to_clear_the_cache))
                     .setPositive(R.string.action_ok)
                     .setNegative(R.string.action_cancel)
+                    .setImageResource(R.drawable.ic_warning)
                     .setOnResult((b, dialog) -> {
                         if(b == CommonDialog.BUTTON_POSITIVE) {
                             LoadingDialog loadingDialog = new LoadingDialog(activity);

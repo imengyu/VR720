@@ -9,13 +9,18 @@ import java.util.List;
 public class ImageItem implements Serializable {
     public String path;
     public List<Integer> belongGalleries = new ArrayList<>();
-    public boolean isVideo = false;
+    public boolean isVideo;
+    public boolean showInMain;
 
-    public ImageItem() {
-
-    }
-    public ImageItem(String path, String belongGalleriesStr) {
+    public ImageItem(String path, String belongGalleriesStr, String showInMain) {
         this.path = path;
+        this.showInMain = "true".equals(showInMain);
+        this.isVideo = FileUtils.getFileIsVideo(path);
+        setBelongGalleries(belongGalleriesStr);
+    }
+    public ImageItem(String path, String belongGalleriesStr, boolean showInMain) {
+        this.path = path;
+        this.showInMain = showInMain;
         this.isVideo = FileUtils.getFileIsVideo(path);
         setBelongGalleries(belongGalleriesStr);
     }

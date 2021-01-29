@@ -37,6 +37,10 @@ public class ImageUtils {
             options.inJustDecodeBounds = true;
             BitmapFactory.decodeStream(in, null, options);
             in.close();
+
+            if(options.outWidth == -1 && options.outHeight == -1)
+                return null;
+
             int i = 0;
             while (true) {
                 if ((options.outWidth >> i <= maxWidth)
@@ -63,7 +67,7 @@ public class ImageUtils {
      * @return 返回Bitmap
      */
     public static Bitmap loadBitmap(String path) {
-        Bitmap bitmap = null;
+        Bitmap bitmap;
         try {
             BufferedInputStream in = new BufferedInputStream(new FileInputStream(
                     new File(path)));

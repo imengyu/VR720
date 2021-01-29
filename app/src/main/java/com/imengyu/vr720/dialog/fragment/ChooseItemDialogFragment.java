@@ -46,11 +46,13 @@ public class ChooseItemDialogFragment extends DialogFragment {
         void onChooseItem(boolean choosed, int index, String item);
     }
 
-    public void setCancelButtonVisible(boolean cancelButtonVisible) {
+    public ChooseItemDialogFragment setCancelButtonVisible(boolean cancelButtonVisible) {
         this.cancelButtonVisible = cancelButtonVisible;
+        return this;
     }
-    public void setOnChooseItemListener(OnChooseItemListener onChooseItemListener) {
+    public ChooseItemDialogFragment setOnChooseItemListener(OnChooseItemListener onChooseItemListener) {
         this.onChooseItemListener = onChooseItemListener;
+        return this;
     }
 
     @Override
@@ -91,7 +93,13 @@ public class ChooseItemDialogFragment extends DialogFragment {
         listItems.addAll(Arrays.asList(items));
         adapter.notifyDataSetChanged();
 
-        text_title.setText(title);
+        if(StringUtils.isNullOrEmpty(title)) {
+            text_title.setVisibility(View.GONE);
+        }
+        else {
+            text_title.setText(title);
+            text_title.setVisibility(View.VISIBLE);
+        }
         //按钮事件
         btn_cancel.setOnClickListener(view -> {
             if(onChooseItemListener != null)

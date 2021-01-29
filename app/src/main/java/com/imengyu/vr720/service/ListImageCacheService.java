@@ -5,7 +5,6 @@ import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.ThumbnailUtils;
-import android.os.Build;
 import android.util.Log;
 import android.util.Size;
 
@@ -19,6 +18,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -99,12 +99,15 @@ public class ListImageCacheService {
             if(cacheThumbnailFile.exists())
                 return fastLoadCacheToThumbnail(path, cacheThumbnailPath, false, true);
 
-            Bitmap videoThumbnail = null;
-                    //保存缩略图至缓存文件
-            FileOutputStream saveImgOut = null;
+            Bitmap videoThumbnail;
+            //保存缩略图至缓存文件
+            FileOutputStream saveImgOut;
             try {
                 saveImgOut = new FileOutputStream(cacheThumbnailFile);
                 videoThumbnail = ThumbnailUtils.createVideoThumbnail(new File(path), new Size(300, 150), null);
+                if(videoThumbnail.getHeight() == videoThumbnail.getWidth() && videoThumbnail.getWidth() == -1)
+                    return null;
+
                 videoThumbnail.compress(Bitmap.CompressFormat.JPEG, 80, saveImgOut);
                 saveImgOut.flush();
                 saveImgOut.close();
@@ -125,8 +128,14 @@ public class ListImageCacheService {
         }
 
         //获取图像大小
-        Size imSize = null;
-        try { imSize = ImageUtils.getImageSize(path); }
+        Size imSize;
+        try {
+            imSize = ImageUtils.getImageSize(path);
+            if(imSize.getWidth() == -1 && imSize.getHeight() == -1) {
+                Log.e(TAG, String.format("Try get image size for thumbnail [%s] failed !", path));
+                return null;
+            }
+        }
         catch (IOException e) {
             Log.e(TAG, String.format("Try get image size for thumbnail [%s] failed ! %s", path, e.toString()));
             return null;
@@ -149,7 +158,7 @@ public class ListImageCacheService {
             if(thumbnail == null) return null;
 
             //保存缩略图至缓存文件
-            FileOutputStream saveImgOut = null;
+            FileOutputStream saveImgOut;
             try {
                 saveImgOut = new FileOutputStream(cacheThumbnailFile);
                 thumbnail.compress(Bitmap.CompressFormat.JPEG, 80, saveImgOut);
@@ -195,7 +204,11 @@ public class ListImageCacheService {
      * @return 返回缩略图
      */
     private Drawable fastLoadCacheToThumbnail(String path, String cachePath, boolean fast, boolean file) {
-        BitmapDrawable drawable = new BitmapDrawable(context.getResources(), ImageUtils.loadBitmap(cachePath));
+        Bitmap bitmap = ImageUtils.loadBitmap(cachePath);
+        if(bitmap == null || bitmap.getWidth() <= 0 || bitmap.getHeight() <= 0)
+            return  null;
+
+        BitmapDrawable drawable = new BitmapDrawable(context.getResources(), bitmap);
         ImageCacheData cacheData = new ImageCacheData();
         cacheData.isFastCache = fast;
         cacheData.isFileCache = file;
@@ -215,21 +228,10 @@ public class ListImageCacheService {
         }
         int removeCount = cacheThumbnailDataLive.size() - cacheThumbnailMaxSize;
         if(removeCount > 0) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                cacheThumbnailDataLive.sort((o1, o2) -> -Integer.compare(o1.cacheUseCount, o2.cacheUseCount));
-                for (int i = removeCount - 1; i >= 0; i--) {
-                    cacheThumbnailDataMap.remove(cacheThumbnailDataLive.get(i).filePath);
-                    cacheThumbnailDataLive.remove(i);
-                }
-            } else {
-                ImageCacheData data ;
-                for (int i = cacheThumbnailDataLive.size() - 1; i >= 0; i--) {
-                    data = cacheThumbnailDataLive.get(i);
-                    if (data.cacheUseCount <= 0) {
-                        cacheThumbnailDataMap.remove(data.filePath);
-                        cacheThumbnailDataLive.remove(i);
-                    }
-                }
+            Collections.sort(cacheThumbnailDataLive, (o1, o2) -> -Integer.compare(o1.cacheUseCount, o2.cacheUseCount));
+            for (int i = removeCount - 1; i >= 0; i--) {
+                cacheThumbnailDataMap.remove(cacheThumbnailDataLive.get(i).filePath);
+                cacheThumbnailDataLive.remove(i);
             }
         }
     }

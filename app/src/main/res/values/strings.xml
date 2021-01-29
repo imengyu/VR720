@@ -176,6 +176,7 @@
     <string name="text_you_can_remove_choose_images_from_gallery">你可以把已选择的 %d 个全景图从此分类收藏夹删除，此操作不会删除源文件</string>
     <string name="text_choose_some_file_to_del">请选择一些你要删除的文件</string>
     <string name="text_choose_one_file_to_open">请选择一个你要打开的文件</string>
+    <string name="text_reached_the_bottom">到底啦</string>
 
     <string name="text_this_is_first_image">已经是第一张图片了哦</string>
     <string name="text_this_is_last_image">已经是最后一张图片了哦</string>
@@ -231,7 +232,7 @@
     <string name="text_settings_backup_to_file">配置设置已经备份至文件</string>
     <string name="text_settings_import_success">配置设置导入成功</string>
     <string name="text_and">与</string>
-    <string name="text_do_you_want_reset_settings">你真的要还原默认设置吗？</string>
+    <string name="text_do_you_want_reset_settings">你真的要还原默认设置吗？\n所有设置将会还原为默认状态，当前未保存设置将会丢失。</string>
     <string name="text_we_will_backup">我们将会备份这些数据：\n- 软件配置设置\n- 已经导入的全景文件索引路径\n- 分类收藏夹数据</string>
     <string name="text_we_will_restore">导入数据后将会覆盖当前数据，并且不可恢复，是否继续？ </string>
     <string name="text_merge_import_data">不覆盖当前数据而是与新数据合并（如果数据重复则不会导入）</string>
@@ -249,6 +250,10 @@
     <string name="text_feed_back_success">反馈成功，感谢您！</string>
     <string name="text_feed_back_failed">反馈失败！错误：%s</string>
     <string name="text_demo_panorama_name">示例全景图片</string>
+    <string name="text_show_in_main">显示在主页</string>
+    <string name="text_do_not_show_in_main">不显示在主页</string>
+    <string name="text_select_items_hidden_in_main">选择的全景图都已在主页隐藏</string>
+    <string name="text_select_items_showed_in_main">选择的全景图都已显示在主页</string>
 
     <!-- error -->
 
@@ -306,8 +311,14 @@
     <string name="settings_key_enable_exception_catch">启用错误自动反馈</string>
     <string name="settings_summary_enable_exception_catch">启用后程序可以在发生错误时抓取错误异常信息，在下次启动时传回服务器（不包含您的个人信息），以帮助我们更好的改进软件（建议开启）</string>
     <string name="settings_key_use_native_decoder">硬件解码（如果可用）</string>
-    <string name="settings_summary_use_native_decoder">开启后将尝试使用硬件解码，如果无对应解码器或是设备不支持硬件解码，则使用软件解码</string>
+    <string name="settings_summary_use_native_decoder">优先尝试使用硬件解码，如果无对应解码器或是设备不支持硬件解码，则使用软件解码</string>
     <string name="settings_key_loop_play_video">循环播放视频</string>
+    <string name="settings_key_double_click_play_pause">双击屏幕时</string>
+    <string name="settings_summary_double_click_play_pause">双击屏幕时自动暂停/播放视频</string>
+    <string name="settings_summary_play_pause_when_headset_state_changed">拔出/插入耳机时暂停/播放视频</string>
+    <string name="settings_key_play_pause_when_headset_state_changed">耳机插入和拔出</string>
+    <string name="settings_key_vol_up">音量增强</string>
+    <string name="settings_summary_vol_up">如果声音太低，软件可尝试增强音量至200%</string>
 
     <!-- agreement -->
     <string name="text_i_agree_agreement">我已阅读并同意</string>

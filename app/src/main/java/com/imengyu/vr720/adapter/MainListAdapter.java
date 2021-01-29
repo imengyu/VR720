@@ -1,6 +1,7 @@
 package com.imengyu.vr720.adapter;
 
 import android.content.Context;
+import android.os.Message;
 import android.util.Size;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,7 +14,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.RequestManager;
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
 import com.imengyu.vr720.R;
+import com.imengyu.vr720.config.MainMessages;
 import com.imengyu.vr720.list.MainList;
 import com.imengyu.vr720.model.OnListCheckableChangedListener;
 import com.imengyu.vr720.model.holder.MainListViewHolder;
@@ -30,7 +33,6 @@ public class MainListAdapter extends RecyclerView.Adapter<MainListViewHolder> im
 
     private final MainList mainList;
     private final int layoutId;
-    private final Context context;
     private final List<MainListItem> list;
     private final RequestManager requestManager;
     private final int dp5;
@@ -41,12 +43,12 @@ public class MainListAdapter extends RecyclerView.Adapter<MainListViewHolder> im
     private final int dp100;
     private final int gridItemSize;
     private final Size screenSize;
+    private final RecyclerView recyclerView;
 
     public MainListAdapter(MainList mainList, Context context, int layoutId, List<MainListItem> list) {
         this.mainList = mainList;
         this.list = list;
         this.layoutId = layoutId;
-        this.context = context;
         this.requestManager =  Glide.with(context);
         this.dp5 = PixelTool.dp2px(context, 5);
         this.dp10 = PixelTool.dp2px(context, 10);
@@ -55,6 +57,7 @@ public class MainListAdapter extends RecyclerView.Adapter<MainListViewHolder> im
         this.dp100 = PixelTool.dp2px(context, 100);
         this.dp24 = PixelTool.dp2px(context, 24);
 
+        recyclerView = mainList.getRecyclerView();
         screenSize = ScreenUtils.getScreenSize(context);
         gridItemSize = (screenSize.getWidth() / 3 - 3);
     }
@@ -65,14 +68,34 @@ public class MainListAdapter extends RecyclerView.Adapter<MainListViewHolder> im
         this.lineItemCount = lineItemCount;
     }
 
+    public static class LateCheckData {
+        public String name;
+        public boolean checked;
+    }
+
+    public void handlerLateCheck(Object o) {
+        LateCheckData lateCheckData = (LateCheckData)o;
+        mainListCheckGroupListener.onMainListCheckGroup(lateCheckData.name, lateCheckData.checked);
+    }
+
     private final CompoundButton.OnCheckedChangeListener groupHeaderCheckedChangeListener = new CompoundButton.OnCheckedChangeListener() {
         @Override
         public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
             final MainListItem item = (MainListItem)buttonView.getTag();
             if(item != null) {
                 item.setChecked(isChecked);
-                if(mainListCheckGroupListener != null)
-                    mainListCheckGroupListener.onMainListCheckGroup(item.getFileName(), isChecked);
+                if(mainListCheckGroupListener != null) {
+                    if(recyclerView.isComputingLayout()) {
+                        Message message = new Message();
+                        LateCheckData lateCheckData = new LateCheckData();
+                        message.what = MainMessages.MSG_LATE_CHECK;
+                        message.obj = lateCheckData;
+                        lateCheckData.checked = isChecked;
+                        lateCheckData.name = item.getFileName();
+                        mainList.getSubHandler().sendMessageDelayed(message, 160);
+                    } else
+                        mainListCheckGroupListener.onMainListCheckGroup(item.getFileName(), isChecked);
+                }
             }
         }
     };
@@ -87,22 +110,23 @@ public class MainListAdapter extends RecyclerView.Adapter<MainListViewHolder> im
     public void onBindViewHolder(@NonNull MainListViewHolder viewHolder, int position) {
         final MainListItem item = list.get(position);
 
+        viewHolder.imageView.setTag(position);
         viewHolder.imageView.setOnLongClickListener(mainList.getMainListBaseOnLongClickListener());
         viewHolder.imageView.setOnClickListener(mainList.getMainListBaseOnClickListener());
         viewHolder.item.setVisibility(item.isSearchHidden() ? View.GONE : View.VISIBLE);
+        viewHolder.item.setTag(item);
 
         int height = 0;
         int width = 0;
 
         if (item.getForceItemType() == MainListItem.ITEM_TYPE_NORMAL) {
 
-            viewHolder.imageView.setTag(position);
             viewHolder.imageView.setVisibility(View.VISIBLE);
             viewHolder.imageView.setImageText(item.getFileName());
             viewHolder.imageView.setLeftTextReserveSpace(item.isVideo());
             viewHolder.imageView.setEnableRenderExtras(!isGrid);
 
-            if(mainList.getMainSortType() == MainList.MAIN_SORT_DATE)
+            if(mainList.getSortType() == MainList.SORT_DATE)
                 viewHolder.imageView.setImageSize(item.getFileModifyDate());
             else
                 viewHolder.imageView.setImageSize(item.getFileSize());
@@ -111,8 +135,14 @@ public class MainListAdapter extends RecyclerView.Adapter<MainListViewHolder> im
                 viewHolder.imageView.setImageResource(R.drawable.ic_tumb);
             else if (item.isThumbnailFail() || item.getThumbnail() == null)
                 viewHolder.imageView.setImageResource(R.drawable.ic_noprob);
-            else if(item.getThumbnail() != viewHolder.imageView.getDrawable())
-                viewHolder.imageView.setImageDrawable(item.getThumbnail());
+            else if(item.getThumbnail() != viewHolder.imageView.getDrawable()) {
+                requestManager
+                        .load(item.getThumbnail())
+                        .placeholder(R.drawable.ic_tumb)
+                        .fitCenter()
+                        .transition(DrawableTransitionOptions.withCrossFade())
+                        .into(viewHolder.imageView);
+            }
 
             if (!item.isThumbnailLoadingStarted()) {
                 item.setThumbnailLoadingStarted(true);
@@ -134,6 +164,7 @@ public class MainListAdapter extends RecyclerView.Adapter<MainListViewHolder> im
         else if (item.getForceItemType() == MainListItem.ITEM_TYPE_TEXT) {
             viewHolder.imageView.setVisibility(View.GONE);
             viewHolder.textView.setVisibility(View.VISIBLE);
+            viewHolder.textView.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
             viewHolder.checkMark.setVisibility(View.GONE);
             viewHolder.videoMark.setVisibility(View.GONE);
             viewHolder.textView.setText(item.getFileName());
@@ -147,6 +178,8 @@ public class MainListAdapter extends RecyclerView.Adapter<MainListViewHolder> im
         else if (item.getForceItemType() == MainListItem.ITEM_TYPE_GROUP_HEADER) {
             viewHolder.imageView.setVisibility(View.GONE);
             viewHolder.textView.setVisibility(View.VISIBLE);
+            viewHolder.textView.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
+            viewHolder.checkMark.setOnCheckedChangeListener(null);
             viewHolder.checkMark.setChecked(item.isChecked());
             viewHolder.checkMark.setVisibility(isCheckable() ? View.VISIBLE : View.GONE);
             viewHolder.checkMark.setOnCheckedChangeListener(groupHeaderCheckedChangeListener);
@@ -191,30 +224,12 @@ public class MainListAdapter extends RecyclerView.Adapter<MainListViewHolder> im
             param.height = 0;
             param.width = 0;
         }
-        if(!isGrid) {
-            if (getItemCount() > 3 && position == getItemCount() - 1)
-                param.setMargins(0, 0, 0, dp100);
-            else
-                param.setMargins(0, 0, 0, 0);
-        } else {
-
-            int lastLineCount = getItemCount() % lineItemCount;
-            if(lastLineCount == 0) lastLineCount = lineItemCount;
-            for(int i = 0; i < lastLineCount; i++) {
-                if(getItem(getItemCount() - 1 - i).getForceItemType() != MainListItem.ITEM_TYPE_NORMAL) {
-                    lastLineCount = i + 1;
-                    break;
-                }
-            }
-
-            if (item.getForceItemType() == MainListItem.ITEM_TYPE_NORMAL
-                    && getItemCount() > lineItemCount && position >= getItemCount() - lastLineCount)
-                param.setMargins(0, 0, 0, dp100);
-            else
-                param.setMargins(0, 0, 0, 0);
-        }
-
         viewHolder.view.setLayoutParams(param);
+    }
+    @Override
+    public void onViewRecycled(@NonNull MainListViewHolder holder) {
+        requestManager.clear(holder.imageView);
+        super.onViewRecycled(holder);
     }
     @Override
     public int getItemCount() {
@@ -223,6 +238,15 @@ public class MainListAdapter extends RecyclerView.Adapter<MainListViewHolder> im
     @Override
     public MainListItem getItem(int index) {
         return list.get(index);
+    }
+    @Override
+    public long getItemId(int position) {
+        return super.getItemId(position);
+    }
+    @Override
+    public int getItemViewType(int position) {
+        final MainListItem item = list.get(position);
+        return item.getForceItemType();
     }
 
     private boolean isGrid = false;

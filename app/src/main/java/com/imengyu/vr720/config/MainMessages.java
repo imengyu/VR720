@@ -1,7 +1,9 @@
 package com.imengyu.vr720.config;
 
 public class MainMessages {
-
+    public static final int MSG_REFRESH_LIST_WITH_NOTIFY = 331;
+    public static final int MSG_REFRESH_LIST_CHECK_COUNT = 332;
+    public static final int MSG_NOTIFY_DATA_CHANGED = 333;
     public static final int MSG_REFRESH_LIST_CHECK = 334;
     public static final int MSG_REFRESH_LIST = 335;
     public static final int MSG_TEST_LIST = 336;
@@ -23,4 +25,8 @@ public class MainMessages {
     public static final int MSG_LATE_SHOW_APPRAISE = 352;
     public static final int MSG_ADD_IMAGE_GALLERY = 353;
     public static final int MSG_IMPORT_DEMO = 354;
+    public static final int MSG_LATE_CHECK = 355;
+    public static final int MSG_LATE_DEL_ITEMS = 356;
+    public static final int MSG_LATE_CUT_HEADERS = 357;
+    public static final int MSG_RELOAD_MAIN_LIST = 358;
 }

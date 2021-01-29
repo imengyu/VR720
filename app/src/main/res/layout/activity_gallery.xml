@@ -16,12 +16,10 @@
         app:layout_constraintTop_toTopOf="parent"
         app:title_bar_type="TwoButton" />
 
-    <GridView
+    <com.imengyu.vr720.widget.RecyclerViewEmptySupport
         android:id="@+id/grid_gallery"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:numColumns="3"
-        android:stretchMode="columnWidth"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -29,7 +27,7 @@
 
     <include
         android:id="@+id/layout_selection"
-        layout="@layout/layout_selection_main"
+        layout="@layout/layout_selection_gallery_innern"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="parent"

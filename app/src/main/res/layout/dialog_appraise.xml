@@ -43,16 +43,16 @@
         <Button
             android:id="@+id/button_good"
             style="@style/ButtonRoundPrimary"
-            android:layout_width="200dp"
-            android:layout_height="35dp"
+            android:layout_width="250dp"
+            android:layout_height="40dp"
             android:layout_marginTop="30dp"
             android:text="@string/text_give_a_start" />
 
         <Button
             android:id="@+id/button_bad"
             style="@style/ButtonRound"
-            android:layout_width="200dp"
-            android:layout_height="35dp"
+            android:layout_width="250dp"
+            android:layout_height="40dp"
             android:layout_marginTop="8dp"
             android:text="@string/text_bad_app" />
 

@@ -3,8 +3,9 @@ package com.imengyu.vr720.list;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.util.Size;
 
 import androidx.recyclerview.widget.DefaultItemAnimator;
@@ -17,6 +18,7 @@ import com.imengyu.vr720.adapter.MainListAdapter;
 import com.imengyu.vr720.config.MainMessages;
 import com.imengyu.vr720.fragment.HomeFragment;
 import com.imengyu.vr720.model.ImageItem;
+import com.imengyu.vr720.model.list.ItemGroupData;
 import com.imengyu.vr720.model.list.MainListItem;
 import com.imengyu.vr720.service.ListImageCacheService;
 import com.imengyu.vr720.utils.DateUtils;
@@ -25,11 +27,14 @@ import com.imengyu.vr720.utils.StringUtils;
 import com.imengyu.vr720.utils.layout.WrapHeightGridLayoutManager;
 
 import java.io.File;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
@@ -43,8 +48,7 @@ public class MainList extends SelectableListSolver<MainListItem> {
         resources = context.getResources();
     }
 
-    public void init(Handler handler, RecyclerView recycler_main) {
-        this.handler = handler;
+    public void init(RecyclerView recycler_main) {
         this.recycler_main = recycler_main;
 
         mainListAdapter = new MainListAdapter(this, context, R.layout.item_main, mainListGropedItems);
@@ -72,6 +76,11 @@ public class MainList extends SelectableListSolver<MainListItem> {
         recycler_main.setHasFixedSize(false);
         recycler_main.setAdapter(mainListAdapter);
         recycler_main.setItemAnimator(new DefaultItemAnimator());
+
+        bottomItems.add(new MainListItem("", false));
+        bottomItems.add(new MainListItem(context.getString(R.string.text_reached_the_bottom), false));
+        bottomItems.add(new MainListItem("", false));
+
         updateLayout();
     }
 
@@ -82,15 +91,20 @@ public class MainList extends SelectableListSolver<MainListItem> {
     private GridLayoutManager gridSmallHorizontalLayoutManager;
     private RecyclerView recycler_main;
 
+    public RecyclerView getRecyclerView() {
+        return recycler_main;
+    }
+
     private final Resources resources;
     private final Context context;
     private final ListImageCacheService listImageCacheService;
-    private Handler handler;
 
     /**
      * 获取资源
      */
     public Resources getResources() { return resources; }
+
+    private final List<MainListItem> bottomItems = new ArrayList<>();
 
     private boolean isHorizontal = false;
     private boolean isGrid = false;
@@ -107,6 +121,7 @@ public class MainList extends SelectableListSolver<MainListItem> {
         if(recycler_main != null)
             updateLayout();
         resetAllThumbnail();
+        groupItems();
         notifyChange();
     }
     public void setListIsHorizontal(boolean isHorizontal) {
@@ -122,6 +137,7 @@ public class MainList extends SelectableListSolver<MainListItem> {
     }
     public void setGroupByDate(boolean groupByDate) {
         this.groupByDate = groupByDate;
+        this.sort();
     }
 
     private int gridLineItemCount = 0;
@@ -216,10 +232,14 @@ public class MainList extends SelectableListSolver<MainListItem> {
     //主列表控制
     //====================================================
 
-    private final List<String> mainListDateItems = new ArrayList<>();
+    private final HashMap<String, ItemGroupData> mainListDateItems = new HashMap<>();
     private final List<MainListItem> mainListGropedItems = new ArrayList<>();
     private final List<MainListItem> mainListItems = new ArrayList<>();
     private MainListAdapter mainListAdapter = null;
+
+    //====================================================
+    //分组管理
+    //====================================================
 
     private int getGridSpanSize(int pos) {
         MainListItem item = mainListGropedItems.get(pos);
@@ -230,37 +250,89 @@ public class MainList extends SelectableListSolver<MainListItem> {
             return 1;
     }
     private void groupItems() {
+
+        mainListGropedItems.removeAll(bottomItems);
+
         if(isGrid && groupByDate) {
 
-            mainListDateItems.clear();
+            //清空索引数
+            for(String keys : mainListDateItems.keySet()) {
+                ItemGroupData itemGroupData = mainListDateItems.get(keys);
+                if (itemGroupData != null)
+                    itemGroupData.useCount = 0;
+            }
 
+            //分组
+            ItemGroupData itemGroupData;
             for (MainListItem i : mainListItems) {
-                if (!mainListDateItems.contains(i.getFileModifyDate()))
-                    mainListDateItems.add(i.getFileModifyDate());
+                if (!mainListDateItems.containsKey(i.getGroup())) {
+                    //添加组
+                    MainListItem itemHeader = new MainListItem(i.getGroup(), true);
+                    mainListGropedItems.add(itemHeader);
+                    //添加
+                    itemGroupData = new ItemGroupData(i.getGroup(), 1);
+                    itemGroupData.tag = itemHeader;
+                    mainListDateItems.put(i.getGroup(), itemGroupData);
+                }
+                else {
+                    itemGroupData = mainListDateItems.get(i.getGroup());
+                    if(itemGroupData != null) {
+                        itemGroupData.useCount++;
+                        MainListItem itemHeader = (MainListItem) itemGroupData.tag;
+                        if (!mainListGropedItems.contains(itemHeader))
+                            mainListGropedItems.add(itemHeader);
+                    }
+                }
             }
 
-            mainListGropedItems.clear();
+            //Log.d("MainList", String.format("mainListDateItems: %d", mainListDateItems.size()));
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                mainListDateItems.sort((o1, o2) -> -o1.compareTo(o2));
+            for(int i = mainListGropedItems.size() - 1; i>= 0; i--) {
+                MainListItem item = mainListGropedItems.get(i);
+                //清空不存在子条目的组
+                if(item.getForceItemType() == MainListItem.ITEM_TYPE_GROUP_HEADER) {
+                    itemGroupData = mainListDateItems.get(item.getGroup());
+                    if(itemGroupData == null || itemGroupData.useCount <= 0) {
+                        mainListGropedItems.remove(item);
+                        mainListDateItems.remove(item.getGroup());
+                    }
+                }
+                //清除条目
+                else if(item.getForceItemType() == MainListItem.ITEM_TYPE_NORMAL)
+                    mainListGropedItems.remove(i);
             }
-
-            for (String i : mainListDateItems) {
-                MainListItem itemHeader = new MainListItem(i, true);
-                mainListGropedItems.add(itemHeader);
+            //根据日期排序
+            Collections.sort(mainListGropedItems, (o1, o2) -> {
+                int result = -o1.getGroup().compareTo(o2.getGroup());
+                return (sortType == SORT_DATE && mainSortReverse) ?
+                        -result : result;
+            });
+            //插入条目
+            int index ;
+            for (String key : mainListDateItems.keySet()) {
+                ItemGroupData groupData = mainListDateItems.get(key);
+                MainListItem itemHeader = (MainListItem) Objects.requireNonNull(groupData).tag;
+                index = mainListGropedItems.indexOf(itemHeader) + 1;
 
                 boolean checked = true;
-                for (MainListItem j : mainListItems)
-                    if (j.getFileModifyDate().equals(i)) {
-                        if(checked && !j.isChecked()) checked = false;
-                        mainListGropedItems.add(j);
+                MainListItem item;
+                for (int j = mainListItems.size() - 1; j >= 0; j--) {
+                    item = mainListItems.get(j);
+                    if (item.getGroup().equals(key)) {
+                        if (checked && !item.isChecked()) checked = false;
+                        mainListGropedItems.add(index, item);
                     }
+                }
                 itemHeader.setChecked(checked);
             }
-        }else {
+        }
+        else {
             mainListGropedItems.clear();
             mainListGropedItems.addAll(mainListItems);
         }
+
+        if(mainListItems.size() > 0)
+            mainListGropedItems.addAll(bottomItems);
     }
     private void checkGroupItems(String name, boolean check) {
         for (MainListItem i : mainListItems) {
@@ -276,6 +348,19 @@ public class MainList extends SelectableListSolver<MainListItem> {
         }
         notifyCheckItemCountChanged();
         mainListAdapter.notifyDataSetChanged();
+    }
+    public void cutDateHeaderRef(String header) {
+        ItemGroupData itemGroupData = mainListDateItems.get(header);
+        if(itemGroupData != null) {
+            itemGroupData.useCount--;
+            if(itemGroupData.useCount <= 0) {
+                MainListItem item = (MainListItem)itemGroupData.tag;
+                int index = mainListGropedItems.indexOf(item);
+                mainListGropedItems.remove(index);
+                mainListDateItems.remove(header);
+                mainListAdapter.notifyItemRemoved(index);
+            }
+        }
     }
 
     public ArrayList<CharSequence> getMainListPathItems() {
@@ -310,7 +395,7 @@ public class MainList extends SelectableListSolver<MainListItem> {
             synchronized (changeLockSyl) {
                 if (!changeLock) {
                     changeLock = true;
-                    handler.sendEmptyMessageDelayed(MainMessages.MSG_REFRESH_LIST_CHECK, 900);
+                    subHandler.sendEmptyMessageDelayed(MainMessages.MSG_REFRESH_LIST_CHECK, 900);
                 }
             }
         }).start();
@@ -373,6 +458,7 @@ public class MainList extends SelectableListSolver<MainListItem> {
             newItem.setFileModifyDateValue(f.lastModified());
             newItem.setFileModifyDate(DateUtils.format(new Date(f.lastModified()), DateUtils.FORMAT_SHORT));
             newItem.setFileSizeValue(f.length());
+            newItem.setGroup(newItem.getFileModifyDate());
 
             mainListItems.add(newItem);
         } else {
@@ -391,6 +477,7 @@ public class MainList extends SelectableListSolver<MainListItem> {
         searchedItems.clear();
         mainListItems.clear();
         mainListGropedItems.clear();
+        mainListDateItems.clear();
         mainListAdapter.notifyDataSetChanged();
     }
 
@@ -401,12 +488,14 @@ public class MainList extends SelectableListSolver<MainListItem> {
     public void deleteItem(MainListItem item) {
         selectedItems.remove(item);
         mainListItems.remove(item);
+
+        cutDateHeaderRef(item.getGroup());
+
         int index = mainListGropedItems.indexOf(item);
         if(index >= 0) {
             mainListGropedItems.remove(index);
             mainListAdapter.notifyItemRemoved(index);
         }
-        else mainListAdapter.notifyDataSetChanged();
     }
     /**
      * 删除某些项目
@@ -414,28 +503,36 @@ public class MainList extends SelectableListSolver<MainListItem> {
     public void deleteItems(List<MainListItem> items) {
         mainListItems.removeAll(items);
 
-        if(items.size() < 16)
-            for(MainListItem item : items) {
+        if(items.size() == 1) {
+            deleteItem(items.get(0));
+        } else {
+            if(items.size() >= 10) {
+                mainListGropedItems.removeAll(items);
+                subHandler.sendEmptyMessageDelayed(MainMessages.MSG_REFRESH_LIST, 360);
+            }else for(MainListItem item : items) {
+
+                cutDateHeaderRef(item.getGroup());
+
                 int index = mainListGropedItems.indexOf(item);
-                if (index >= 0) {
+                if(index >= 0) {
                     mainListGropedItems.remove(index);
                     mainListAdapter.notifyItemRemoved(index);
                 }
+
+                subHandler.sendEmptyMessageDelayed(MainMessages.MSG_REFRESH_LIST, 460);
             }
-        else
-            mainListGropedItems.removeAll(items);
+        }
+
         selectedItems.removeAll(items);
-        notifyChange(1000);
+
+        subHandler.sendEmptyMessageDelayed(MainMessages.MSG_REFRESH_LIST_CHECK_COUNT, 360);
     }
+
     /**
      * 通知刷新
      */
     public void notifyChange() {
-        groupItems();
-        handler.sendEmptyMessage(MainMessages.MSG_REFRESH_LIST);
-    }
-    public void notifyChange(int delay) {
-        handler.sendEmptyMessageDelayed(MainMessages.MSG_REFRESH_LIST, delay);
+        subHandler.sendEmptyMessage(MainMessages.MSG_REFRESH_LIST);
     }
     @Override
     public void refresh() {
@@ -446,11 +543,11 @@ public class MainList extends SelectableListSolver<MainListItem> {
     //条目排序
     //====================================================
 
-    public static final int MAIN_SORT_DATE = 681;
-    public static final int MAIN_SORT_NAME = 682;
-    public static final int MAIN_SORT_SIZE = 683;
+    public static final int SORT_DATE = 681;
+    public static final int SORT_NAME = 682;
+    public static final int SORT_SIZE = 683;
 
-    private int mainSortType = MAIN_SORT_DATE;
+    private int sortType = SORT_DATE;
     private boolean mainSortReverse = false;
 
     private class MainComparatorValues implements Comparator<MainListItem> {
@@ -458,14 +555,14 @@ public class MainList extends SelectableListSolver<MainListItem> {
         @Override
         public int compare(MainListItem m1, MainListItem m2) {
             int result = 0;
-            if(mainSortType == MAIN_SORT_DATE){
+            if(sortType == SORT_DATE){
                 long old1 = m1.getFileModifyDateValue();
                 long old2 = m2.getFileModifyDateValue();
                 if (old1 > old2) result = 1;
                 if (old1 < old2) result = -1;
-            } else if(mainSortType == MAIN_SORT_NAME){
+            } else if(sortType == SORT_NAME){
                 result = m1.getFileName().compareTo(m2.getFileName());
-            } else if(mainSortType == MAIN_SORT_SIZE){
+            } else if(sortType == SORT_SIZE){
                 long old1 = m1.getFileSizeValue();
                 long old2 = m2.getFileSizeValue();
                 if (old1> old2) result = 1;
@@ -482,23 +579,68 @@ public class MainList extends SelectableListSolver<MainListItem> {
         notifyChange();
     }
     public void sort(int sortType) {
-        if (mainSortType != sortType)
-            mainSortType = sortType;
+        if (this.sortType != sortType)
+            this.sortType = sortType;
         else
             mainSortReverse = !mainSortReverse;
         sort();
     }
 
-    public int getMainSortType() {
-        return mainSortType;
+    public int getSortType() {
+        return sortType;
     }
-    public boolean isMainSortReverse() {
+    public boolean isSortReverse() {
         return mainSortReverse;
     }
-    public void setMainSortType(int mainSortType) {
-        this.mainSortType = mainSortType;
+    public void setSortType(int sortType) {
+        this.sortType = sortType;
     }
-    public void setMainSortReverse(boolean mainSortReverse) {
-        this.mainSortReverse = mainSortReverse;
+    public void setSortReverse(boolean sortReverse) {
+        this.mainSortReverse = sortReverse;
+    }
+
+    //====================================================
+    //Handler
+    //====================================================
+
+    public static class SubHandler extends Handler {
+        private final WeakReference<MainList> mTarget;
+
+        SubHandler(MainList target) {
+            super(Looper.myLooper());
+            mTarget = new WeakReference<>(target);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case MainMessages.MSG_REFRESH_LIST_WITH_NOTIFY:
+                    mTarget.get().mainListAdapter.notifyItemRangeChanged(0, mTarget.get().mainListGropedItems.size());
+                    break;
+                case MainMessages.MSG_REFRESH_LIST_CHECK:
+                    mTarget.get().changeCheck();
+                    break;
+                case MainMessages.MSG_REFRESH_LIST_CHECK_COUNT:
+                    mTarget.get().notifyCheckItemCountChanged();
+                    break;
+                case MainMessages.MSG_NOTIFY_DATA_CHANGED:
+                    mTarget.get().mainListAdapter.notifyDataSetChanged();
+                    break;
+                case MainMessages.MSG_REFRESH_LIST:
+                    mTarget.get().refresh();
+                    mTarget.get().mainListAdapter.notifyDataSetChanged();
+                    break;
+                case MainMessages.MSG_LATE_CHECK:
+                    mTarget.get().mainListAdapter.handlerLateCheck(msg.obj);
+                    break;
+                case MainMessages.MSG_LATE_DEL_ITEMS:
+                    break;
+            }
+        }
+    }
+    private final SubHandler subHandler = new SubHandler(this);
+
+    public SubHandler getSubHandler() {
+        return subHandler;
     }
 }

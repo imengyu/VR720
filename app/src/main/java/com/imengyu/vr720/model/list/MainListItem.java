@@ -35,6 +35,7 @@ public class MainListItem extends CheckableListItem {
     public MainListItem(String itemText, boolean isHeader){
         this.forceItemType = isHeader ? ITEM_TYPE_GROUP_HEADER : ITEM_TYPE_TEXT;
         this.fileName = itemText;
+        this.group = isHeader ? itemText : "";
         this.setCheckable(false);
     }
     public MainListItem(ImageItem imageItem) {
@@ -51,6 +52,15 @@ public class MainListItem extends CheckableListItem {
     }
     public void setThumbnailLoaded(boolean thumbnailLoaded) {
         this.thumbnailLoaded = thumbnailLoaded;
+    }
+
+    private String group;
+
+    public void setGroup(String group) {
+        this.group = group;
+    }
+    public String getGroup() {
+        return group;
     }
 
     public Drawable getThumbnail() {

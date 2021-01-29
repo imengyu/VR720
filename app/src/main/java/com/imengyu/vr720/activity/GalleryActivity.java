@@ -9,7 +9,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.util.Size;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -17,7 +16,6 @@ import android.view.View;
 import android.view.animation.AnimationSet;
 import android.view.animation.AnimationUtils;
 import android.widget.Button;
-import android.widget.GridView;
 import android.widget.PopupMenu;
 
 import androidx.annotation.NonNull;
@@ -38,17 +36,17 @@ import com.imengyu.vr720.dialog.CommonDialog;
 import com.imengyu.vr720.dialog.fragment.ChooseGalleryDialogFragment;
 import com.imengyu.vr720.dialog.fragment.ChooseItemDialogFragment;
 import com.imengyu.vr720.dialog.fragment.ChooseSystemGalleryDialogFragment;
-import com.imengyu.vr720.list.GalleryGridList;
+import com.imengyu.vr720.list.MainList;
 import com.imengyu.vr720.model.GalleryItem;
 import com.imengyu.vr720.model.ImageItem;
 import com.imengyu.vr720.model.list.MainListItem;
 import com.imengyu.vr720.plugin.GlideEngine;
 import com.imengyu.vr720.service.ListDataService;
 import com.imengyu.vr720.utils.FileUtils;
-import com.imengyu.vr720.utils.ScreenUtils;
 import com.imengyu.vr720.utils.ShareUtils;
 import com.imengyu.vr720.utils.StatusBarUtils;
 import com.imengyu.vr720.widget.MyTitleBar;
+import com.imengyu.vr720.widget.RecyclerViewEmptySupport;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
@@ -68,9 +66,8 @@ public class GalleryActivity extends AppCompatActivity {
         currentGalleryId = intent.getIntExtra("galleryId", 0);
 
         listDataService = ((VR720Application)getApplication()).getListDataService();
-        galleryGridList = new GalleryGridList(this, ((VR720Application)getApplication()).getListImageCacheService());
+        galleryGridList = new MainList(this, ((VR720Application)getApplication()).getListImageCacheService());
         resources = getResources();
-        screenSize = ScreenUtils.getScreenSize(this);
 
         initView();
         initMenu();
@@ -90,13 +87,10 @@ public class GalleryActivity extends AppCompatActivity {
     private GalleryItem currentGallery = null;
     private String currentGalleryName = "";
 
-    private GalleryGridList galleryGridList = null;
+    private MainList galleryGridList = null;
     private ListDataService listDataService = null;
 
     private MyTitleBar titleBar;
-    private GridView gridView;
-
-    private Size screenSize = null;
 
     //====================================================
     //菜单
@@ -106,6 +100,8 @@ public class GalleryActivity extends AppCompatActivity {
     private MenuItem action_sort_date;
     private MenuItem action_sort_name;
     private MenuItem action_sort_size;
+    private MenuItem action_list_mode;
+    private MenuItem action_show_hide_date;
 
     private void initMenu() {
         mainMenu = new PopupMenu(this, titleBar.getRightButton(), Gravity.TOP);
@@ -113,6 +109,8 @@ public class GalleryActivity extends AppCompatActivity {
         mainMenu.getMenuInflater().inflate(R.menu.menu_gallery, menu);
         mainMenu.setOnMenuItemClickListener(this::onOptionsItemSelected);
 
+        action_list_mode = menu.findItem(R.id.action_list_mode);
+        action_show_hide_date = menu.findItem(R.id.action_show_hide_date);
         action_sort_date = menu.findItem(R.id.action_sort_date);
         action_sort_name = menu.findItem(R.id.action_sort_name);
         action_sort_size = menu.findItem(R.id.action_sort_size);
@@ -146,19 +144,37 @@ public class GalleryActivity extends AppCompatActivity {
             chooseItemDialogFragment.show(getSupportFragmentManager(), "AddChooseItem");
         }
         else if(item.getItemId() == R.id.action_sort_name) {
-            galleryGridList.sort(GalleryGridList.SORT_NAME);
+            galleryGridList.sort(MainList.SORT_NAME);
             updateSortMenuActive();
         }
         else if(item.getItemId() == R.id.action_sort_date) {
-            galleryGridList.sort(GalleryGridList.SORT_DATE);
+            galleryGridList.sort(MainList.SORT_DATE);
             updateSortMenuActive();
         }
         else if(item.getItemId() == R.id.action_sort_size) {
-            galleryGridList.sort(GalleryGridList.SORT_SIZE);
+            galleryGridList.sort(MainList.SORT_SIZE);
             updateSortMenuActive();
         }
         else if(item.getItemId() == R.id.action_rename) {
             onRenameGalleryClick();
+        }
+        else if(item.getItemId() == R.id.action_show_in_main) {
+            listDataService.setGalleryListItemShowInMain(currentGalleryId, true);
+            listDataService.setDataDirty(true);
+            ToastUtils.show(getString(R.string.text_select_items_showed_in_main));
+        }
+        else if(item.getItemId() == R.id.action_hide_in_main) {
+            listDataService.setGalleryListItemShowInMain(currentGalleryId, false);
+            listDataService.setDataDirty(true);
+            ToastUtils.show(getString(R.string.text_select_items_hidden_in_main));
+        }
+        else if(item.getItemId() == R.id.action_list_mode) {
+            galleryGridList.setListIsGrid(!galleryGridList.isGrid());
+            updateListGridMode();
+        }
+        else if(item.getItemId() == R.id.action_show_hide_date) {
+            galleryGridList.setGroupByDate(!galleryGridList.isGroupByDate());
+            updateShowHideDateMenuActive();
         }
         return super.onOptionsItemSelected(item);
     }
@@ -175,23 +191,23 @@ public class GalleryActivity extends AppCompatActivity {
         titleBar.setLeftIconOnClickListener(v -> onBackPressed());
         titleBar.setRightIconOnClickListener((v) -> onMoreClicked());
 
-        gridView = findViewById(R.id.grid_gallery);
-        gridView.setAdapter(galleryGridList.getListAdapter());
-        gridView.setEmptyView(findViewById(R.id.layout_empty));
+        RecyclerViewEmptySupport recyclerView = findViewById(R.id.grid_gallery);
+        recyclerView.setAdapter(galleryGridList.getMainListAdapter());
+        recyclerView.setEmptyView(findViewById(R.id.layout_empty));
 
         View layout_selection = findViewById(R.id.layout_selection);
         layout_selection.setVisibility(View.GONE);
-        Button button_mainsel_openwith = layout_selection.findViewById(R.id.button_mainsel_openwith);
-        Button button_mainsel_share = layout_selection.findViewById(R.id.button_mainsel_share);
-        Button button_mainsel_delete = layout_selection.findViewById(R.id.button_mainsel_delete);
-        Button button_mainsel_add_to = layout_selection.findViewById(R.id.button_mainsel_add_to);
+        Button button_selection_open_with = layout_selection.findViewById(R.id.button_selection_open_with);
+        Button button_selection_add_to = layout_selection.findViewById(R.id.button_selection_add_to);
+        Button button_selection_delete = layout_selection.findViewById(R.id.button_selection_delete);
+        Button button_selection_more = layout_selection.findViewById(R.id.button_selection_more);
 
-        button_mainsel_openwith.setOnClickListener(v -> onOpenImageWithClick());
-        button_mainsel_delete.setOnClickListener(v -> onDeleteImageClick());
-        button_mainsel_share.setOnClickListener(v -> onShareImageClick());
-        button_mainsel_add_to.setOnClickListener(v -> onAddImageToClick());
+        button_selection_open_with.setOnClickListener(v -> onOpenImageWithClick());
+        button_selection_delete.setOnClickListener(v -> onDeleteImageClick());
+        button_selection_add_to.setOnClickListener(v -> onAddImageToClick());
+        button_selection_more.setOnClickListener(v -> onImageMoreClick());
 
-        galleryGridList.init(handler, gridView);
+        galleryGridList.init(recyclerView);
         galleryGridList.setListCheckableChangedListener(checkable -> {
             if (checkable) {
                 AnimationSet animationSet = (AnimationSet) AnimationUtils.loadAnimation(GalleryActivity.this, R.anim.bottom_up);
@@ -210,16 +226,16 @@ public class GalleryActivity extends AppCompatActivity {
         });
         galleryGridList.setListCheckItemCountChangedListener((count) -> {
 
-            button_mainsel_openwith.setEnabled(count == 1);
-            button_mainsel_share.setEnabled(count > 1);
-            button_mainsel_delete.setEnabled(count > 0);
-            button_mainsel_add_to.setEnabled(count > 0);
+            button_selection_open_with.setEnabled(count == 1);
+            button_selection_more.setEnabled(count > 0);
+            button_selection_delete.setEnabled(count > 0);
+            button_selection_add_to.setEnabled(count > 0);
 
             onTitleSelectionChanged(
                         galleryGridList.isListCheckMode(), count, count == galleryGridList.getCheckableItemsCount());
         });
         galleryGridList.setListOnItemClickListener((parent, v, position, id) -> {
-            MainListItem item = galleryGridList.getListAdapter().getItem(position);
+            MainListItem item = galleryGridList.getMainListAdapter().getItem(position);
             if(item != null) {
                 onOpenImageClick(item.getFilePath());
             }
@@ -233,11 +249,13 @@ public class GalleryActivity extends AppCompatActivity {
         }
         currentGallery = listDataService.getGalleryItem(currentGalleryId);
         currentGalleryName = currentGallery.name;
-        List<ImageItem> list = listDataService.collectGalleryItems(currentGalleryId);
 
+        galleryGridList.clear();
+
+        List<ImageItem> list = listDataService.collectGalleryItems(currentGalleryId);
         for (ImageItem item : list)
-            galleryGridList.addItem(new MainListItem(item), false);
-        galleryGridList.notifyChange();
+            galleryGridList.addImageToItem(item);
+        galleryGridList.sort();
 
         titleBar.setTitle(currentGalleryName);
     }
@@ -245,7 +263,7 @@ public class GalleryActivity extends AppCompatActivity {
         int addCount = 0;
         for (Photo photo : photos)
             if(listDataService.findImageItem(photo.path) == null) {
-                galleryGridList.addItem(new MainListItem(listDataService.addImageItem(photo.path)), false);
+                galleryGridList.addImageToItem(listDataService.addImageItem(photo.path, currentGalleryId, false));
                 addCount++;
             }
         galleryGridList.sort();
@@ -262,7 +280,7 @@ public class GalleryActivity extends AppCompatActivity {
         Intent intent = new Intent(this, PanoActivity.class);
         intent.putExtra("openFilePath", path);
         intent.putExtra("openFileArgPath", path);
-        intent.putCharSequenceArrayListExtra("fileList", galleryGridList.getListPathItems());
+        intent.putCharSequenceArrayListExtra("fileList", galleryGridList.getMainListPathItems());
         startActivityForResult(intent, Codes.REQUEST_CODE_PANO);
     }
     private void onShareImageClick() {
@@ -370,6 +388,33 @@ public class GalleryActivity extends AppCompatActivity {
                 })
                 .show();
     }
+    private void onImageMoreClick() {
+        final List<MainListItem> sel = galleryGridList.getSelectedItems();
+        if(sel.size() > 0) {
+            new ChooseItemDialogFragment(null, new String[] {
+                    getString(R.string.text_show_in_main),
+                    getString(R.string.text_do_not_show_in_main),
+                    getString(R.string.action_share),
+            })
+                    .setOnChooseItemListener((choosed, index, item) -> {
+                        if(choosed) {
+                            if(index == 0 || index == 1) {
+                                for(MainListItem listItem : sel)
+                                    listItem.getImageItem().showInMain = index == 0;
+                                listDataService.setDataDirty(true);
+                                galleryGridList.setListCheckMode(false);
+
+                                ToastUtils.show(getString(index == 0 ?
+                                        R.string.text_select_items_showed_in_main :
+                                        R.string.text_select_items_hidden_in_main));
+                            } else if(index == 2) {
+                                onShareImageClick();
+                            }
+                        }
+                    })
+                    .show(getSupportFragmentManager(), "ChooseImageMore");
+        }
+    }
 
     //====================================================
     //其他事件
@@ -429,9 +474,9 @@ public class GalleryActivity extends AppCompatActivity {
 
     private void onUpdateScreenOrientation(Configuration newConfig) {
         if(newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
-            gridView.setNumColumns(3);
+            galleryGridList.setListIsHorizontal(false);
         } else if(newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            gridView.setNumColumns(screenSize.getHeight() / (screenSize.getWidth() / 3));
+            galleryGridList.setListIsHorizontal(true);
         }
     }
 
@@ -441,7 +486,9 @@ public class GalleryActivity extends AppCompatActivity {
     private void loadSettings() {
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         galleryGridList.setSortReverse(sharedPreferences.getBoolean("gallery_" + currentGalleryId + "_sort_reverse", false));
-        galleryGridList.setSortType(sharedPreferences.getInt("gallery_" + currentGalleryId + "_sort_type", GalleryGridList.SORT_DATE));
+        galleryGridList.setSortType(sharedPreferences.getInt("gallery_" + currentGalleryId + "_sort_type", MainList.SORT_DATE));
+        galleryGridList.setGroupByDate(sharedPreferences.getBoolean("gallery_" + currentGalleryId + "_group_by_date", true));
+        galleryGridList.setListIsGrid(sharedPreferences.getBoolean("gallery_" + currentGalleryId + "_is_grid", true));
         galleryGridList.sort();
 
         updateSortMenuActive();
@@ -451,6 +498,8 @@ public class GalleryActivity extends AppCompatActivity {
 
         editor.putInt("gallery_" + currentGalleryId + "_sort_type", galleryGridList.getSortType());
         editor.putBoolean("gallery_" + currentGalleryId + "_sort_reverse", galleryGridList.isSortReverse());
+        editor.putBoolean("gallery_" + currentGalleryId + "_is_grid", galleryGridList.isGrid());
+        editor.putInt("gallery_" + currentGalleryId + "_sort_type", galleryGridList.getSortType());
 
         editor.apply();
     }
@@ -507,6 +556,20 @@ public class GalleryActivity extends AppCompatActivity {
     }
 
 
+    private void updateListGridMode() {
+        if(galleryGridList.isGrid()) {
+            action_list_mode.setTitle(getString(R.string.text_list_mode));
+            action_show_hide_date.setVisible(true);
+        }
+        else {
+            action_list_mode.setTitle(getString(R.string.text_grid_mode));
+            action_show_hide_date.setVisible(false);
+        }
+    }
+    private void updateShowHideDateMenuActive() {
+        action_show_hide_date.setTitle(galleryGridList.isGroupByDate() ?
+                R.string.text_hide_date : R.string.text_show_date);
+    }
     private void updateSortMenuActive() {
 
         int sort = galleryGridList.getSortType();
@@ -517,13 +580,13 @@ public class GalleryActivity extends AppCompatActivity {
         action_sort_size.setIcon(R.drawable.ic_sort_none);
 
         switch (sort) {
-            case GalleryGridList.SORT_DATE:
+            case MainList.SORT_DATE:
                 action_sort_date.setIcon(icon);
                 break;
-            case GalleryGridList.SORT_NAME:
+            case MainList.SORT_NAME:
                 action_sort_name.setIcon(icon);
                 break;
-            case GalleryGridList.SORT_SIZE:
+            case MainList.SORT_SIZE:
                 action_sort_size.setIcon(icon);
                 break;
         }

@@ -67,6 +67,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                     .setMessage(R.string.text_do_you_want_reset_settings)
                     .setPositive(R.string.action_yes)
                     .setNegative(R.string.action_cancel)
+                    .setImageResource(R.drawable.ic_warning)
                     .setOnResult((b, dialog) -> {
                         if(b == CommonDialog.BUTTON_POSITIVE) {
                             SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext());

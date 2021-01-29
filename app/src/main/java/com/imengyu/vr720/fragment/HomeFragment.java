@@ -163,7 +163,7 @@ public class HomeFragment extends Fragment implements IMainFragment {
 
         //List
         mainList = new MainList(context, application.getListImageCacheService());
-        mainList.init(handler, recycler_main);
+        mainList.init(recycler_main);
         mainList.setListCheckableChangedListener(checkable -> {
             if (checkable) {
                 fab_right.startAnimation(fade_hide);
@@ -206,11 +206,10 @@ public class HomeFragment extends Fragment implements IMainFragment {
         });
 
         refreshLayout = view.findViewById(R.id.refreshLayout);
-        refreshLayout.setRefreshHeader(new ClassicsHeader(requireContext()));
+        refreshLayout.setRefreshHeader(new ClassicsHeader(requireContext()).setEnableLastTime(false));
         refreshLayout.setRefreshFooter(new ClassicsFooter(requireContext()));
         refreshLayout.setEnableLoadMore(false);
         refreshLayout.setOnRefreshListener(refreshlayout -> loadList());
-
 
         //搜索类型选择
 
@@ -394,7 +393,7 @@ public class HomeFragment extends Fragment implements IMainFragment {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if(listDataService.isDataDirty())
-            handler.sendEmptyMessageDelayed(MainMessages.MSG_FORCE_LOAD_LIST, 1000);
+            handler.sendEmptyMessageDelayed(MainMessages.MSG_FORCE_LOAD_LIST, 700);
         if (requestCode == Codes.REQUEST_CODE_OPEN_IMAGE && data != null) {
             //获取选择器返回的数据
             ArrayList<Photo> resultPhotos = data.getParcelableArrayListExtra(EasyPhotos.RESULT_PHOTOS);
@@ -421,7 +420,6 @@ public class HomeFragment extends Fragment implements IMainFragment {
 
                         mainList.addImageToItem(listDataService.addImageItem(filePath));
                         mainList.sort();
-                        mainList.notifyChange();
 
                     } else {
                         needShowAddAskDialog = true;
@@ -438,7 +436,6 @@ public class HomeFragment extends Fragment implements IMainFragment {
                                     if (b == CommonDialog.BUTTON_POSITIVE) {
                                         mainList.addImageToItem(listDataService.addImageItem(filePath));
                                         mainList.sort();
-                                        mainList.notifyChange();
 
                                         if (dialog.isCheckBoxChecked()) {
                                             sharedPreferences.edit()
@@ -493,9 +490,6 @@ public class HomeFragment extends Fragment implements IMainFragment {
     @Override
     public void handleMessage(Message msg) {
         switch (msg.what) {
-            case MainMessages.MSG_REFRESH_LIST_CHECK:
-                mainList.changeCheck();
-                break;
             case MainMessages.MSG_REFRESH_LIST:
                 mainList.refresh();
                 break;
@@ -504,7 +498,6 @@ public class HomeFragment extends Fragment implements IMainFragment {
                 if(listDataService.findImageItem(path) == null) {
                     mainList.addImageToItem(listDataService.addImageItem(path));
                     mainList.sort();
-                    mainList.notifyChange();
                 }
                 break;
             }
@@ -517,6 +510,7 @@ public class HomeFragment extends Fragment implements IMainFragment {
             case MainMessages.MSG_ADD_IMAGE_GALLERY:
                 onAddImageSystemGallery();
                 break;
+            case MainMessages.MSG_RELOAD_MAIN_LIST:
             case MainMessages.MSG_FORCE_LOAD_LIST:
                 loadList();
                 break;
@@ -534,29 +528,32 @@ public class HomeFragment extends Fragment implements IMainFragment {
     }
 
     public void importFiles(ArrayList<CharSequence> list, int importCount) {
-
-        int addCount = 0;
-        for(CharSequence path : list)
-            if(listDataService.findImageItem(path.toString()) == null) {
-                mainList.addImageToItem(listDataService.addImageItem(path.toString()));
-                addCount++;
-            }
-        mainList.sort();
-        mainList.notifyChange();
-
-        Log.d("Import", "importFiles : importCount: " + importCount + " success: " + addCount);
-
-        ToastUtils.show(String.format(getString(R.string.text_import_success_count), addCount));
+        Log.d("MainList", "importFiles: " + importCount);
+        ArrayList<String> photoPath = new ArrayList<>();
+        for (CharSequence photo : list)
+            photoPath.add(photo.toString());
+        importFilesPath(photoPath);
     }
     private void importFiles(ArrayList<Photo> photos) {
-        int addCount = 0;
+        ArrayList<String> photoPath = new ArrayList<>();
         for (Photo photo : photos)
-            if(listDataService.findImageItem(photo.path) == null) {
-                mainList.addImageToItem(listDataService.addImageItem(photo.path));
+            photoPath.add(photo.path);
+        importFilesPath(photoPath);
+    }
+    private void importFilesPath(ArrayList<String> photos) {
+        int addCount = 0;
+        for (String photo : photos) {
+            ImageItem imageItem = listDataService.findImageItem(photo);
+            if (imageItem == null){
+                mainList.addImageToItem(listDataService.addImageItem(photo));
+                addCount++;
+            } else if(!imageItem.showInMain) {
+                imageItem.showInMain = true;
+                mainList.addImageToItem(imageItem);
                 addCount++;
             }
+        }
         mainList.sort();
-        mainList.notifyChange();
 
         ToastUtils.show(String.format(getString(R.string.text_import_success_count), addCount));
     }
@@ -578,8 +575,10 @@ public class HomeFragment extends Fragment implements IMainFragment {
 
         mainList.clear();
         ArrayList<ImageItem> items = listDataService.getImageList();
-        for(ImageItem imageItem : items)
-            mainList.addImageToItem(imageItem);
+        for(ImageItem imageItem : items) {
+            if(imageItem.showInMain)
+                mainList.addImageToItem(imageItem);
+        }
         mainList.sort();
 
         new Timer().schedule(new TimerTask() {
@@ -614,10 +613,10 @@ public class HomeFragment extends Fragment implements IMainFragment {
     private void loadSettings() {
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         appraiseDialogShowed = sharedPreferences.getBoolean("appraise_dialog_opened", false);
-        mainList.setMainSortReverse(sharedPreferences.getBoolean("main_list_sort_reverse", false));
+        mainList.setSortReverse(sharedPreferences.getBoolean("main_list_sort_reverse", false));
         mainList.setGroupByDate(sharedPreferences.getBoolean("main_list_group_by_date", true));
         mainList.setListIsGrid(sharedPreferences.getBoolean("main_list_is_grid", false));
-        mainList.setMainSortType(sharedPreferences.getInt("main_list_sort_type", MainList.MAIN_SORT_DATE));
+        mainList.setSortType(sharedPreferences.getInt("main_list_sort_type", MainList.SORT_DATE));
         mainList.sort();
 
         updateSortMenuActive();
@@ -629,8 +628,8 @@ public class HomeFragment extends Fragment implements IMainFragment {
 
         editor.putBoolean("main_list_group_by_date", mainList.isGroupByDate());
         editor.putBoolean("main_list_is_grid", mainList.isGrid());
-        editor.putInt("main_list_sort_type", mainList.getMainSortType());
-        editor.putBoolean("main_list_sort_reverse", mainList.isMainSortReverse());
+        editor.putInt("main_list_sort_type", mainList.getSortType());
+        editor.putBoolean("main_list_sort_reverse", mainList.isSortReverse());
 
         editor.apply();
     }
@@ -670,17 +669,14 @@ public class HomeFragment extends Fragment implements IMainFragment {
                     for (Photo photo : album.photos) {
                         ImageItem imageItem = listDataService.findImageItem(photo.path);
                         if (imageItem == null) {
-                            imageItem = listDataService.addImageItem(photo.path);
-                            imageItem.belongGalleries.add(galleryItem.id);
+                            imageItem = listDataService.addImageItem(photo.path, galleryItem.id, false);
                             mainList.addImageToItem(imageItem);
-                            addCount++;
                         } else {
                             imageItem.belongGalleries.add(galleryItem.id);
-                            addCount++;
                         }
+                        addCount++;
                     }
                     mainList.sort();
-                    mainList.notifyChange();
 
                     //相册界面更新
                     notifyGalleriesUpdate(-6);
@@ -810,17 +806,17 @@ public class HomeFragment extends Fragment implements IMainFragment {
             return true;
         }
         if(id == R.id.action_sort_date) {
-            onSortClick(MainList.MAIN_SORT_DATE);
+            onSortClick(MainList.SORT_DATE);
             updateSortMenuActive();
             return true;
         }
         if(id == R.id.action_sort_name) {
-            onSortClick(MainList.MAIN_SORT_NAME);
+            onSortClick(MainList.SORT_NAME);
             updateSortMenuActive();
             return true;
         }
         if(id == R.id.action_sort_size) {
-            onSortClick(MainList.MAIN_SORT_SIZE);
+            onSortClick(MainList.SORT_SIZE);
             updateSortMenuActive();
             return true;
         }
@@ -830,7 +826,6 @@ public class HomeFragment extends Fragment implements IMainFragment {
         }
         if(id == R.id.action_show_hide_date) {
             mainList.setGroupByDate(!mainList.isGroupByDate());
-            mainList.notifyChange();
             updateShowHideDateMenuActive();
         }
         return super.onOptionsItemSelected(item);
@@ -842,21 +837,21 @@ public class HomeFragment extends Fragment implements IMainFragment {
     }
     private void updateSortMenuActive() {
 
-        int sort = mainList.getMainSortType();
-        int icon = mainList.isMainSortReverse() ? R.drawable.ic_sort_up : R.drawable.ic_sort_down;
+        int sort = mainList.getSortType();
+        int icon = mainList.isSortReverse() ? R.drawable.ic_sort_up : R.drawable.ic_sort_down;
 
         action_sort_date.setIcon(R.drawable.ic_sort_none);
         action_sort_name.setIcon(R.drawable.ic_sort_none);
         action_sort_size.setIcon(R.drawable.ic_sort_none);
 
         switch (sort) {
-            case MainList.MAIN_SORT_DATE:
+            case MainList.SORT_DATE:
                 action_sort_date.setIcon(icon);
                 break;
-            case MainList.MAIN_SORT_NAME:
+            case MainList.SORT_NAME:
                 action_sort_name.setIcon(icon);
                 break;
-            case MainList.MAIN_SORT_SIZE:
+            case MainList.SORT_SIZE:
                 action_sort_size.setIcon(icon);
                 break;
         }

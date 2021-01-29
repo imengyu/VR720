@@ -41,6 +41,18 @@
             app:hoverColor="@color/colorPrimary"
             app:normalColor="?android:attr/textColorPrimary" />
 
+        <com.imengyu.vr720.widget.ToolbarButton
+            android:id="@+id/button_selection_more"
+            style="@style/Widget.AppCompat.Button.Borderless"
+            android:layout_width="90dp"
+            android:layout_height="70dp"
+            android:drawableTop="@drawable/ic_menu_more"
+            android:text="@string/text_more"
+            android:textAlignment="center"
+            android:textColor="?android:attr/textColorPrimary"
+            app:hoverColor="@color/colorPrimary"
+            app:normalColor="?android:attr/textColorPrimary" />
+
 
     </LinearLayout>
 

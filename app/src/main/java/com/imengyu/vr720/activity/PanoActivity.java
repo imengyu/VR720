@@ -5,6 +5,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
@@ -39,12 +40,15 @@ import com.imengyu.vr720.config.MainMessages;
 import com.imengyu.vr720.core.natives.NativeVR720;
 import com.imengyu.vr720.core.natives.NativeVR720Renderer;
 import com.imengyu.vr720.core.panorama.PanoramaViewBinder;
+import com.imengyu.vr720.core.representation.Vector3f;
 import com.imengyu.vr720.core.sensor.ImprovedOrientationSensor1Provider;
 import com.imengyu.vr720.core.utils.GameUpdateThread;
 import com.imengyu.vr720.dialog.CommonDialog;
 import com.imengyu.vr720.dialog.LoadingDialog;
 import com.imengyu.vr720.model.ImageInfo;
 import com.imengyu.vr720.model.ImageItem;
+import com.imengyu.vr720.receiver.HeadsetButtonReceiver;
+import com.imengyu.vr720.receiver.HeadsetDetectReceiver;
 import com.imengyu.vr720.service.ListDataService;
 import com.imengyu.vr720.service.ListImageCacheService;
 import com.imengyu.vr720.utils.DateUtils;
@@ -80,7 +84,7 @@ public class PanoActivity extends AppCompatActivity {
 
     private int findIndexInPathList(String path) {
         for(int i = 0; i < fileList.size(); i++) {
-            if(path.contentEquals(fileList.get(i)))
+            if(path != null && path.contentEquals(fileList.get(i)))
                 return i;
         }
         return -1;
@@ -142,7 +146,20 @@ public class PanoActivity extends AppCompatActivity {
 
         //加载图片
         readArgAndLoadImage();
+
+        //耳机广播接收器
+        headsetDetectReceiver = new HeadsetDetectReceiver(this);
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(Intent.ACTION_HEADSET_PLUG);
+        registerReceiver(headsetDetectReceiver, intentFilter);
+        headsetButtonReceiver = new HeadsetButtonReceiver(this);
+        intentFilter = new IntentFilter();
+        intentFilter.addAction(Intent.ACTION_MEDIA_BUTTON);
+        registerReceiver(headsetButtonReceiver, intentFilter);
     }
+
+    private HeadsetDetectReceiver headsetDetectReceiver = null;
+    private HeadsetButtonReceiver headsetButtonReceiver = null;
 
     private void readArgAndLoadImage() {
         //读取参数
@@ -161,6 +178,8 @@ public class PanoActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        unregisterReceiver(headsetDetectReceiver);
+        unregisterReceiver(headsetButtonReceiver);
         unInitSensor();
         viewBinder.glSurfaceView.setCaptureCallback(null);
         renderer.onDestroy();
@@ -245,14 +264,20 @@ public class PanoActivity extends AppCompatActivity {
         renderer.setVREnable(vrEnabled);
         renderer.setGyroEnable(gyroEnabled);
 
+
+        final Vector3f lastDownPos = new Vector3f();
         //视图点击事件
         viewBinder.glSurfaceView.setOnTouchListener((view, motionEvent) -> {
             switch (motionEvent.getAction()) {
                 case MotionEvent.ACTION_MOVE: {
-                    lastTouchMoved = true;
+                    if (Math.abs(lastDownPos.x() - motionEvent.getX()) >= 6
+                            && Math.abs(lastDownPos.y() - motionEvent.getY()) >= 6)
+                        lastTouchMoved = true;
                     break;
                 }
                 case MotionEvent.ACTION_DOWN: {
+                    lastDownPos.x(motionEvent.getX());
+                    lastDownPos.y(motionEvent.getY());
                     lastTouchMoved = false;
                     if (panoMenuShow)
                         setPanoMenuStatus(false, true);
@@ -265,7 +290,7 @@ public class PanoActivity extends AppCompatActivity {
                         lastDoubleClick = true;
                         firstClickTime = 0;
 
-                        if(currentFileIsVideo) switchVideoState();
+                        if(currentFileIsVideo && doubleClickPlayPause) switchVideoState();
                         else resetMode();
                     }
                     break;
@@ -474,6 +499,9 @@ public class PanoActivity extends AppCompatActivity {
         loopPlay = sharedPreferences.getBoolean("loop_play", false);
         showStatusBar = sharedPreferences.getBoolean("enable_non_fullscreen", false);
         keepScrennOn = sharedPreferences.getBoolean("enable_keep_screen_on", false);
+        doubleClickPlayPause = sharedPreferences.getBoolean("double_click_play_pause", true);
+        playPauseWhenHeadsetStateChanged = sharedPreferences.getBoolean("play_pause_when_headset_state_changed", true);
+        //volUp200 = sharedPreferences.getBoolean("vol_up", false);
     }
     private void saveSettings() {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
@@ -542,6 +570,8 @@ public class PanoActivity extends AppCompatActivity {
     private boolean enableLowFps = false;
     private boolean enableCustomFps = false;
     private boolean useNativeDecoder = true;
+    private boolean doubleClickPlayPause = true;
+    private boolean playPauseWhenHeadsetStateChanged = true;
     private int customFps = 0;
     private boolean dontCheckImageNormalSize = true;
     private boolean lockVideoSeekUpdate = false;
@@ -654,6 +684,8 @@ public class PanoActivity extends AppCompatActivity {
         setToolBarStatus(!toolbarOn);
     }
     private void setToolBarStatus(boolean show) {
+        if(toolbarOn == show)
+            return;
         toolbarOn = show;
         if (toolbarOn) {
             viewBinder.pano_tools.startAnimation(viewBinder.bottom_up);
@@ -856,29 +888,38 @@ public class PanoActivity extends AppCompatActivity {
         setPanoMenuStatus(false, false);
         setToolBarStatus(true);
     }
+    private void onRendererCloseFile() {
+        //清空状态
+        viewBinder.layout_video_control.setVisibility(View.GONE);
+        currentFileIsVideo = false;
+        currentVideoLength = 0;
+        currentVideoPlaying = false;
+        currentFileHasError = false;
+        fileLoaded = false;
+        //关闭后删除缓存文件
+        if (currentFileIsOpenInCache && filePath.startsWith(StorageDirUtils.getViewCachePath())) {
+            try {
+                File file = new File(filePath);
+                if (file.exists())
+                    Log.i(TAG, String.format("Delete temp file : %s ,result: %b", filePath, file.delete()));
+            }catch (Exception e) {
+                Log.w(TAG, String.format("Try delete temp file : %s failed: %s", filePath, e.toString()), e.fillInStackTrace());
+            }
+        }
+        //如果是退出则销毁
+        if (closeMarked) {
+            renderer.destroy();
+        }
+        else if (openNextMarked) {
+            openNextMarked = false;
+            loadFile(openNextPath, false);
+            openNextPath = null;
+        }
+    }
     private void onRendererMessage(int msg) {
         switch (msg) {
             case NativeVR720Renderer.MobileGameUIEvent_FileClosed: {
-                fileLoaded = false;
-                //关闭后删除缓存文件
-                if (currentFileIsOpenInCache && filePath.startsWith(StorageDirUtils.getViewCachePath())) {
-                    try {
-                        File file = new File(filePath);
-                        if (file.exists())
-                            Log.i(TAG, String.format("Delete temp file : %s ,result: %b", filePath, file.delete()));
-                    }catch (Exception e) {
-                        Log.w(TAG, String.format("Try delete temp file : %s failed: %s", filePath, e.toString()), e.fillInStackTrace());
-                    }
-                }
-                //如果是退出则销毁
-                if (closeMarked) {
-                    renderer.destroy();
-                }
-                else if (openNextMarked) {
-                    openNextMarked = false;
-                    loadFile(openNextPath, false);
-                    openNextPath = null;
-                }
+                onRendererCloseFile();
                 break;
             }
             case NativeVR720Renderer.MobileGameUIEvent_MarkLoadFailed: {
@@ -974,6 +1015,25 @@ public class PanoActivity extends AppCompatActivity {
         else if(!closeMarked) closeFile(true);
         else super.onBackPressed();
     }
+
+    //耳机插入弹出
+    //**********************
+
+    public void onHeadsetStateChanged(boolean on) {
+        if(playPauseWhenHeadsetStateChanged && currentFileIsVideo && fileLoaded) {
+            int state = renderer.getVideoState();
+            if(!on && state == NativeVR720Renderer.VideoState_Playing)
+                switchVideoState();
+            else if(on && state != NativeVR720Renderer.VideoState_Playing)
+                switchVideoState();
+        }
+    }
+    public void onHeadsetPlayButton() {
+        if(currentFileIsVideo && fileLoaded)
+            switchVideoState();
+    }
+    public void onHeadsetNextButton() { nextFile(); }
+    public void onHeadsetPrevButton() { prevFile(); }
 
     //屏幕旋转的处理
     //**********************
@@ -1327,7 +1387,7 @@ public class PanoActivity extends AppCompatActivity {
         if(fileLoading)
             return;
         int currentIndex = findIndexInPathList(filePath);
-        if(currentIndex == 0) {
+        if(currentIndex <= 0) {
             ToastUtils.show(getString(R.string.text_this_is_first_image));
             return;
         }

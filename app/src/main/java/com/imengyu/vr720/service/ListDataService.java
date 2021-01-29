@@ -42,7 +42,8 @@ public class ListDataService {
         while (cursor.moveToNext()) {
             imageList.add(new ImageItem(
                     cursor.getString(1),
-                    cursor.getString(2)
+                    cursor.getString(2),
+                    cursor.getString(3)
             ));
         }
         cursor.close();
@@ -93,8 +94,8 @@ public class ListDataService {
 
         //Save image list
         for(ImageItem i : imageList) {
-            String sql = "insert into image_list(path,belong_galleries) values('" +
-                    i.path + "','" + i.getBelongGalleries() + "')";
+            String sql = "insert into image_list(path,belong_galleries,show_in_main) values('" +
+                    i.path + "','" + i.getBelongGalleries() + "','" + i.showInMain + "')";
             db.execSQL(sql);
         }
         //Save gallery list
@@ -125,16 +126,18 @@ public class ListDataService {
         return false;
     }
     public ImageItem addImageItem(String path) {
-        return addImageItem(path, 0);
+        return addImageItem(path, 0, true);
     }
-    public ImageItem addImageItem(String path, int belongGallery) {
+    public ImageItem addImageItem(String path, int belongGallery, boolean showInMain) {
         ImageItem item = findImageItem(path);
         if(item != null) {
             if(belongGallery != 0 && !item.isInBelongGalleries(belongGallery))
                 item.belongGalleries.add(belongGallery);
             return item;
         }
-        item = new ImageItem(path, belongGallery != 0 ? String.valueOf(belongGallery) : "");
+        item = new ImageItem(path, belongGallery != 0 ? String.valueOf(belongGallery) : "", showInMain);
+        if(belongGallery != 0 && !item.isInBelongGalleries(belongGallery))
+            item.belongGalleries.add(belongGallery);
         imageList.add(item);
         dataDirty = true;
         return item;
@@ -183,6 +186,14 @@ public class ListDataService {
         return galleryList;
     }
 
+    public void setGalleryListItemShowInMain(int galleryId, boolean showInMain) {
+        ImageItem item = null;
+        for(int i = imageList.size() - 1; i>=0;i--) {
+            item = imageList.get(i);
+            if (item.isInBelongGalleries(galleryId))
+                item.showInMain = showInMain;
+        }
+    }
     public GalleryItem getGalleryItem(int galleryId) {
         GalleryItem item = null;
         for(int i = galleryList.size() - 1; i>=0;i--) {

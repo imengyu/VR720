@@ -91,7 +91,8 @@
 
             <com.scwang.smart.refresh.header.ClassicsHeader
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content"
+                app:srlEnableLastTime="false" />
 
             <com.imengyu.vr720.widget.RecyclerViewEmptySupport
                 android:id="@+id/recycler_main"

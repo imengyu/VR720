@@ -8,6 +8,10 @@
         android:title="@string/action_import_pano" />
 
     <item
+        android:id="@+id/action_rename"
+        android:title="@string/text_rename_gallery" />
+
+    <item
         android:id="@+id/action_sort"
         android:title="@string/action_sort" >
 
@@ -26,7 +30,17 @@
     </item>
 
     <item
-        android:id="@+id/action_rename"
-        android:title="@string/action_rename" />
+        android:id="@+id/action_list_mode"
+        android:title="@string/text_grid_mode" />
+    <item
+        android:id="@+id/action_show_hide_date"
+        android:title="@string/text_show_date" />
+    <item
+        android:id="@+id/action_show_in_main"
+        android:title="@string/text_show_in_main" />
+    <item
+        android:id="@+id/action_hide_in_main"
+        android:title="@string/text_do_not_show_in_main" />
+
 
 </menu>

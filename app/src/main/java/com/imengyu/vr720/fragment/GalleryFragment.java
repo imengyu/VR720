@@ -23,6 +23,7 @@ import androidx.fragment.app.Fragment;
 import androidx.preference.PreferenceManager;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.hjq.toast.ToastUtils;
 import com.imengyu.vr720.activity.GalleryActivity;
 import com.imengyu.vr720.activity.MainActivity;
 import com.imengyu.vr720.R;
@@ -30,6 +31,7 @@ import com.imengyu.vr720.VR720Application;
 import com.imengyu.vr720.config.Codes;
 import com.imengyu.vr720.config.MainMessages;
 import com.imengyu.vr720.dialog.CommonDialog;
+import com.imengyu.vr720.dialog.fragment.ChooseItemDialogFragment;
 import com.imengyu.vr720.list.GalleryList;
 import com.imengyu.vr720.model.GalleryItem;
 import com.imengyu.vr720.model.TitleSelectionChangedCallback;
@@ -87,9 +89,11 @@ public class GalleryFragment extends Fragment implements IMainFragment {
 
         final View button_rename = view.findViewById(R.id.button_rename);
         final View button_delete = view.findViewById(R.id.button_delete);
+        final View button_selection_more = view.findViewById(R.id.button_selection_more);
 
         button_rename.setOnClickListener(v -> onRenameGalleryClick());
         button_delete.setOnClickListener(v -> onDeleteGalleryClick());
+        button_selection_more.setOnClickListener(v -> onGalleryMoreClick());
 
         galleryList = new GalleryList(getActivity(),
                 requireContext(), ((VR720Application)requireActivity().getApplication()).getListImageCacheService());
@@ -136,7 +140,7 @@ public class GalleryFragment extends Fragment implements IMainFragment {
         listView.setEmptyView(view.findViewById(R.id.empty_main));
 
         refreshLayout = view.findViewById(R.id.refreshLayout);
-        refreshLayout.setRefreshHeader(new ClassicsHeader(requireContext()));
+        refreshLayout.setRefreshHeader(new ClassicsHeader(requireContext()).setEnableLastTime(false));
         refreshLayout.setOnRefreshListener(refreshlayout -> loadList());
     }
 
@@ -222,13 +226,18 @@ public class GalleryFragment extends Fragment implements IMainFragment {
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         if(requestCode == Codes.REQUEST_CODE_GALLERY) {
-            if(data != null && data.getBooleanExtra("galleryChanged", false)) {
-                int id = data.getIntExtra("galleryId", 0);
-                if(id > 0) {
-                    GalleryListItem item = galleryList.findItem(id);
-                    if (item != null)
-                        onGalleryRefresh(item);
-                    handler.sendEmptyMessage(MainMessages.MSG_REFRESH_GALLERY_LIST);
+            if (data != null) {
+                if (data.getBooleanExtra("galleryChanged", false)) {
+                    int id = data.getIntExtra("galleryId", 0);
+                    if (id > 0) {
+                        GalleryListItem item = galleryList.findItem(id);
+                        if (item != null)
+                            onGalleryRefresh(item);
+                        handler.sendEmptyMessage(MainMessages.MSG_REFRESH_GALLERY_LIST);
+                    }
+                }
+                if (data.getBooleanExtra("galleryItemVisibleChanged", false)) {
+                    handler.sendEmptyMessage(MainMessages.MSG_RELOAD_MAIN_LIST);
                 }
             }
         }
@@ -353,6 +362,33 @@ public class GalleryFragment extends Fragment implements IMainFragment {
                         } else return b == CommonDialog.BUTTON_NEGATIVE;
                     })
                     .show();
+        }
+    }
+    private void onGalleryMoreClick() {
+        final List<GalleryListItem> sel = galleryList.getSelectedItems();
+        if(sel.size() > 0) {
+            new ChooseItemDialogFragment(null, new String[] {
+                        getString(R.string.text_show_in_main),
+                        getString(R.string.text_do_not_show_in_main),
+                    })
+                    .setOnChooseItemListener((choosed, index, item) -> {
+                        if(choosed) {
+                            if(index == 0 || index == 1) {
+                                for(GalleryListItem galleryListItem : sel) {
+                                    listDataService.setGalleryListItemShowInMain(
+                                            galleryListItem.getId(), index == 0);
+                                }
+                                ToastUtils.show(getString(index == 0 ?
+                                        R.string.text_select_items_showed_in_main :
+                                        R.string.text_select_items_hidden_in_main));
+
+                                listDataService.setDataDirty(true);
+                                handler.sendEmptyMessageDelayed(MainMessages.MSG_FORCE_LOAD_LIST, 1200);
+                                galleryList.setListCheckMode(false);
+                            }
+                        }
+                    })
+                    .show(getParentFragmentManager(), "ChooseGalleryMore");
         }
     }
     private void onOpenGalleryClick(GalleryListItem item) {

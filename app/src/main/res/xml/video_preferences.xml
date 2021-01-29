@@ -3,26 +3,48 @@
     app:iconSpaceReserved="false">
 
     <PreferenceCategory
-        app:title="@string/text_video">
+        app:title="@string/text_video"
+        app:iconSpaceReserved="false">
 
         <CheckBoxPreference
             app:key="use_native_decoder"
             app:defaultValue="true"
+            app:iconSpaceReserved="false"
             app:title="@string/settings_key_use_native_decoder"
             app:summary="@string/settings_summary_use_native_decoder" />
 
         <CheckBoxPreference
             app:key="loop_play_video"
             app:defaultValue="false"
+            app:iconSpaceReserved="false"
             app:title="@string/settings_key_loop_play_video" />
+
+        <CheckBoxPreference
+            app:key="double_click_play_pause"
+            app:defaultValue="true"
+            app:iconSpaceReserved="false"
+            app:title="@string/settings_key_double_click_play_pause"
+            app:summary="@string/settings_summary_double_click_play_pause" />
 
     </PreferenceCategory>
 
     <PreferenceCategory
-        app:title="@string/settings_header_audio">
+        app:title="@string/settings_header_audio"
+        app:iconSpaceReserved="false">
 
+        <CheckBoxPreference
+            app:key="play_pause_when_headset_state_changed"
+            app:defaultValue="true"
+            app:iconSpaceReserved="false"
+            app:title="@string/settings_key_play_pause_when_headset_state_changed"
+            app:summary="@string/settings_summary_play_pause_when_headset_state_changed" />
 
-
+        <CheckBoxPreference
+            app:key="vol_up"
+            app:defaultValue="false"
+            app:iconSpaceReserved="false"
+            app:title="@string/settings_key_vol_up"
+            app:summary="@string/settings_summary_vol_up" />
 
     </PreferenceCategory>
 

@@ -109,6 +109,7 @@
 	<string name="text_file_delete_count">Successfully deleted %d files</string>
 	<string name="text_open_way">Open with</string>
 	<string name="text_rename_gallery">Rename favorites</string>
+	<string name="text_reached_the_bottom">You\'ve reached the bottom</string>
 	<string name="text_more_actions">More operations</string>
 	<string name="text_i_new">I got it!</string>
 	<string name="text_i_like_it">I like it</string>
@@ -168,6 +169,10 @@
 	<string name="text_method_move">Move to the corresponding favorite</string>
 	<string name="text_method_copy">Copy to the corresponding favorite</string>
 	<string name="text_add_success_to_gallery_with_count">Successfully added %d items to favorites</string>
+	<string name="text_show_in_main">Show in home page</string>
+	<string name="text_do_not_show_in_main">Hide in home page</string>
+	<string name="text_select_items_hidden_in_main">All selected panoramas are hidden in the home page</string>
+	<string name="text_select_items_showed_in_main">All selected panoramas are displayed on the home page</string>
 	<string name="text_add_success">Successfully added!</string>
 	<string name="text_gyro_not_support">Device not supported</string>
 	<string name="text_gyro_cant_use_in_mode">Gyro rotation is not supported in this mode</string>
@@ -258,7 +263,7 @@
     <string name="settings_key_auto_import">Automatically import to list when opening file</string>
     <string name="text_share_files_title">Share %d files</string>
     <string name="text_import_to_list_and_do_not_remind_me_next">Import next time, don\'t need to remind me</string>
-    <string name="text_do_you_want_reset_settings">Do you really want to reset all the settings to default ?</string>
+    <string name="text_do_you_want_reset_settings">Do you really want to reset all the settings to default ?\nAll settings will be reset to the default state, and the current unsaved settings will be lost.</string>
 	<string name="settings_key_app_reset_all">Reset all settings to default</string>
     <string name="text_agreement_base_welcome">Welcome to VR720! You can use this APP to browse and manage your local panorama. In addition, in order for the application to run normally, the application requires the following permissions:</string>
 	<string name="text_agreement_base">In order for the application to run normally, the application requires the following permissions:</string>
@@ -281,5 +286,12 @@
 	<string name="text_settings_import_success">Configuration settings imported successfully</string>
 	<string name="text_open_source_license">Open source software license</string>
     <string name="nav_header_help">Help</string>
+
+	<string name="settings_key_double_click_play_pause">When double-click the screen</string>
+	<string name="settings_summary_double_click_play_pause">Pause / play video when double clicking screen</string>
+	<string name="settings_summary_play_pause_when_headset_state_changed">Pause / play video when headphones are pulled out / inserted</string>
+	<string name="settings_key_play_pause_when_headset_state_changed">Headphone insertion and removal</string>
+	<string name="settings_key_vol_up">Volume up</string>
+	<string name="settings_summary_vol_up">If the sound is too low, the software can try to increase the volume to 200%</string>
 
 </resources>

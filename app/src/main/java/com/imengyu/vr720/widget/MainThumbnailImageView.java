@@ -23,6 +23,7 @@ import androidx.appcompat.widget.AppCompatImageView;
 
 import com.imengyu.vr720.R;
 import com.imengyu.vr720.utils.PixelTool;
+import com.imengyu.vr720.utils.StringUtils;
 
 public class MainThumbnailImageView extends AppCompatImageView {
 
@@ -142,10 +143,18 @@ public class MainThumbnailImageView extends AppCompatImageView {
         if(!imageText.isEmpty()) {
             paint.setColor(imageTextColor);
             paint.setTextAlign(Paint.Align.LEFT);
-            if(imageText.length() >= 32)
-                canvas2.drawText(imageText.substring(0, 30) + "...", leftTextReserveSpace ? dp50 : dp7, getHeight() - imageTextSize - (int)(dpTextPadding / 2.0), paint);
-            else
-                canvas2.drawText(imageText, leftTextReserveSpace ? dp50 : dp7, getHeight() - imageTextSize - (int)(dpTextPadding / 2.0), paint);
+
+            int textBoxWidth = getWidth() - (leftTextReserveSpace ? dp50 : dp7) - dp50;
+            String subText = imageText;
+            if(!StringUtils.isNullOrEmpty(imageText)) {
+                float textWidth = paint.measureText(imageText);
+                if (textWidth > textBoxWidth) {
+                    int subIndex = paint.breakText(imageText, 0, imageText.length(), true, textBoxWidth, null);
+                    subText = imageText.substring(0, subIndex-3) + "...";
+                }
+            }
+
+            canvas2.drawText(subText, leftTextReserveSpace ? dp50 : dp7, getHeight() - imageTextSize - (int)(dpTextPadding / 2.0), paint);
         }
 
         if(!imageSize.isEmpty()) {
