@@ -1,14 +1,28 @@
 VR720
 ---
-A 720 Panorama viewer for Android
+A 720 Panorama viewer for Android 这是一个安卓端的720°全景图片/全景视频浏览软件
 
-#### About
+#### 简介
 
+这是一个安卓端的720°全景图片/全景视频浏览软件，用它可以快速的打开您拍摄的全景图，
 
+您还可以为自己的全景图进行分类，方便您的浏览。
 
+![image](https://github.com/imengyu/VR720/raw/master/images/1mi.s.jpg)
+![image](https://github.com/imengyu/VR720/raw/master/images/2mi.s.jpg)
+![image](https://github.com/imengyu/VR720/raw/master/images/3mi.s.jpg)
+![image](https://github.com/imengyu/VR720/raw/master/images/5mi.s.jpg)
 
+#### 使用和说明
 
-#### Others
+您可以下载 [DEMO](https://github.com/imengyu/VR720/raw/master/app/release/app-release.apk) 查看效果。
+
+您可以在App中点击 “主菜单” > “帮助文档” 来查看软件使用说明文档。
+#### 其他
 
 This software is based in part on the work of the Independent JPEG Group.
+
+这个软件的内核浏览模块全部是作者自己一点点做出来的，如果您要二次开发，请尊重作者劳动成果，在使用或发行的时候请保留所有版权说明，非常感谢您的支持！
+
+本软件采用 [MIT](https://github.com/imengyu/VR720/blob/master/LICENSE) 协议。
 

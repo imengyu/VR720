@@ -325,7 +325,7 @@
     <string name="text_agreement_notice">为了便于我们更好的为你提供服务，在使用本产品前，请务必仔细阅读本产品相关的《用户协议》与《隐私政策》，点击同意即表明您接受并遵守本协议约定。</string>
     <string name="text_agreement">《用户协议》</string>
     <string name="text_privacy_policy">《隐私政策》</string>
-    <string name="text_agreement_base_welcome">欢迎使用 VR720 ！您可以使用本应快速用浏览、管理您本地的全景图。另外为了更好地使用产品功能，需征求您的允许，获得以下权限：</string>
+    <string name="text_agreement_base_welcome">欢迎使用 VR720 ！您可以使用本应用快速用浏览、管理您本地的全景图。另外为了更好地使用产品功能，需征求您的允许，获得以下权限：</string>
     <string name="text_agreement_base">为了更好地使用产品功能，应用还征求您的允许获得以下权限：</string>
     <string name="text_agreement_devinfo">设备信息</string>
     <string name="text_agreement_devinfo_sub">包括设备ID/屏幕尺寸/操作系统/设备型号/网络连接模式/移动国家代码/屏幕分辨率及系统语言；用于根据不同的设备及系统版本来提供不同的功能和体验，获取产品的使用情况及Bug信息，帮助我们不断改进产品功能和体验。</string>
