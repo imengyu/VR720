@@ -10,8 +10,8 @@ A 720 Panorama viewer for Android 这是一个安卓端的720°全景图片/全�
 
 ![image](https://github.com/imengyu/VR720/raw/master/images/1mi.s.jpg)
 ![image](https://github.com/imengyu/VR720/raw/master/images/2mi.s.jpg)
-![image](https://github.com/imengyu/VR720/raw/master/images/3mi.s.jpg)
-![image](https://github.com/imengyu/VR720/raw/master/images/5mi.s.jpg)
+![image](https://github.com/imengyu/VR720/raw/master/images/3.mi.s.jpg)
+![image](https://github.com/imengyu/VR720/raw/master/images/5.mi.s.jpg)
 
 #### 使用和说明
 
