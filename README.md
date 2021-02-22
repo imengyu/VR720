@@ -26,3 +26,6 @@ This software is based in part on the work of the Independent JPEG Group.
 
 本软件采用 [MIT](https://github.com/imengyu/VR720/blob/master/LICENSE) 协议。
 
+#### 本项目还有PC版本
+
+您可以点击 [这里](https://github.com/imengyu/720PanoramaViewer) 查看。
