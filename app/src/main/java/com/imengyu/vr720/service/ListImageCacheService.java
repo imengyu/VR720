@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.ThumbnailUtils;
+import android.os.Build;
 import android.util.Log;
 import android.util.Size;
 
@@ -104,8 +105,11 @@ public class ListImageCacheService {
             FileOutputStream saveImgOut;
             try {
                 saveImgOut = new FileOutputStream(cacheThumbnailFile);
-                videoThumbnail = ThumbnailUtils.createVideoThumbnail(new File(path), new Size(300, 150), null);
-                if(videoThumbnail.getHeight() == videoThumbnail.getWidth() && videoThumbnail.getWidth() == -1)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    videoThumbnail = ThumbnailUtils.createVideoThumbnail(new File(path), new Size(300, 150), null);
+                    if(videoThumbnail.getHeight() == videoThumbnail.getWidth() && videoThumbnail.getWidth() == -1)
+                        return null;
+                } else
                     return null;
 
                 videoThumbnail.compress(Bitmap.CompressFormat.JPEG, 80, saveImgOut);
